@@ -37,12 +37,12 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
       <div 
         id="check-pnl-modal"
-        className="bg-[#0b0f19] border border-white/10 rounded-3xl w-full max-w-md shadow-2xl transition-all overflow-hidden"
+        className="bg-[#161f2e] border border-white/10 rounded-3xl w-full max-w-md shadow-2xl transition-all overflow-hidden"
       >
         <div className="flex items-center justify-between border-b border-white/5 px-6 py-4.5">
           <div className="flex items-center gap-3">
-            <span className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 shadow-md">
-              <RefreshCw className="w-5 h-5 animate-spin text-[#d97706]" />
+            <span className="p-2.5 bg-[#e8a04d]/10 border border-[#e8a04d]/20 rounded-xl text-[#e8a04d] shadow-md">
+              <RefreshCw className="w-5 h-5 animate-spin text-[#cf8b3a]" />
             </span>
             <div>
               <h3 className="font-extrabold text-sm text-white font-sans uppercase tracking-widest">
@@ -98,9 +98,9 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
                 value={currentVal}
                 onChange={e => validateAndSetDecimal(e.target.value, setCurrentVal)}
                 autoFocus
-                className="w-full bg-slate-950 border border-white/10 focus:border-[#bef264] transition rounded-xl px-4 py-3 text-white focus:outline-none font-mono text-sm"
+                className="w-full bg-slate-950 border border-white/10 focus:border-[#7fb3d5] transition rounded-xl px-4 py-3 text-white focus:outline-none font-mono text-sm"
               />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-orange-400/80 text-[10px] font-black font-mono select-none uppercase tracking-widest">
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[#e8a04d]/80 text-[10px] font-black font-mono select-none uppercase tracking-widest">
                 {trade.currency}
               </div>
             </div>
@@ -110,14 +110,14 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
           {evaluation ? (
             <div className={`p-4 rounded-2xl border transition-all duration-200 shadow-sm ${
               evaluation.points >= 0
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                : 'bg-rose-500/10 border-rose-500/30 text-rose-455'
+                ? 'bg-[#5dcaa5]/10 border-[#5dcaa5]/30 text-[#5dcaa5]'
+                : 'bg-[#e8a04d]/10 border-[#e8a04d]/30 text-[#e8a04d]'
             }`}>
               <div className="flex items-center gap-1.5 border-b border-white/5 pb-2.5 mb-3">
                 {evaluation.points >= 0 ? (
-                  <TrendingUp className="w-4 h-4 text-emerald-400 animate-pulse" />
+                  <TrendingUp className="w-4 h-4 text-[#5dcaa5] animate-pulse" />
                 ) : (
-                  <TrendingDown className="w-4 h-4 text-rose-455 animate-pulse" />
+                  <TrendingDown className="w-4 h-4 text-[#e8a04d] animate-pulse" />
                 )}
                 <span className="text-[10px] font-black tracking-widest uppercase font-mono">
                   {evaluation.points >= 0 ? 'Estimated Advantage' : 'Estimated Deficit'}
@@ -147,7 +147,7 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
                   <span className="block text-[9px] text-slate-400 font-extrabold tracking-widest uppercase mb-1.5 font-mono">
                     Double Brokerages
                   </span>
-                  <span className="font-mono text-rose-405 text-xs font-black">
+                  <span className="font-mono text-[#e8a04d] text-xs font-black">
                     -₹{formatAmount(evaluation.estimatedBrokerage)}
                   </span>
                 </div>
@@ -156,7 +156,7 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
                     Net Yield (INR Estimate)
                   </span>
                   <span className={`font-mono font-black text-sm block ${
-                    evaluation.netProfit >= 0 ? 'text-[#10b981]' : 'text-[#f43f5e]'
+                    evaluation.netProfit >= 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'
                   }`}>
                     {evaluation.netProfit >= 0 ? '+' : ''}
                     ₹{formatAmount(evaluation.netProfit)}
@@ -170,7 +170,7 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
             </div>
           ) : (
             <div className="bg-slate-950/60 p-6 rounded-2xl border border-dashed border-white/5 text-center text-slate-400 text-xs font-medium leading-relaxed font-mono">
-              <Layers className="w-8 h-8 text-orange-400 mx-auto mb-2.5 stroke-1" />
+              <Layers className="w-8 h-8 text-[#e8a04d] mx-auto mb-2.5 stroke-1" />
               Enter current trade rate above to generate instant real-time profit and loss calculations.
             </div>
           )}

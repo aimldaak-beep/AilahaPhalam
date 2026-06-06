@@ -42,9 +42,9 @@ const STATUSES: { value: TradeStatus; label: string }[] = [
 
 // Field styling shared with the close-trade modal so this feels familiar.
 const inputClass =
-  'w-full bg-slate-950 border border-white/10 focus:border-[#bef264] transition rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-bold font-mono';
+  'w-full bg-slate-950 border border-white/10 focus:border-[#7fb3d5] transition rounded-xl px-3.5 py-3 text-base text-white focus:outline-none font-bold font-mono';
 const labelClass =
-  'block text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono mb-1.5';
+  'block text-[13px] font-black text-slate-400 uppercase tracking-widest font-mono mb-1.5';
 
 // Turn a string→string record into string→number, dropping blanks / NaN.
 // This is the PnL-safety guard: a blank per-week input is OMITTED, never stored as 0.
@@ -166,19 +166,19 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
       <div
         id="edit-trade-modal"
-        className="bg-[#0b0f19] border border-white/10 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-[#161f2e] border border-white/10 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
         {/* Header — mirrors CloseTradeModal, lime accent + pencil */}
         <div className="flex items-center justify-between border-b border-white/5 px-6 py-4 shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="p-2.5 bg-[#bef264]/10 border border-[#bef264]/20 rounded-xl text-[#bef264] shadow-md">
+          <div className="flex items-center gap-4">
+            <span className="p-2.5 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 rounded-xl text-[#7fb3d5] shadow-md">
               <Pencil className="w-5 h-5" />
             </span>
             <div>
               <h3 className="font-extrabold text-sm text-white font-sans uppercase tracking-widest">
                 Edit Position
               </h3>
-              <p className="text-[9px] text-[#bef264] font-bold font-mono uppercase tracking-widest">
+              <p className="text-[13px] text-[#7fb3d5] font-bold font-mono uppercase tracking-widest">
                 {trade.symbol} • {trade.instrument} • Correct any value
               </p>
             </div>
@@ -304,17 +304,17 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
           {currency === 'USD' && (
             <div className="bg-slate-950/90 border border-white/5 p-4 rounded-2xl grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[9px] font-black text-orange-400 uppercase tracking-widest font-mono mb-1.5">
+                <label className="block text-[13px] font-black text-[#e8a04d] uppercase tracking-widest font-mono mb-1.5">
                   USD/INR Rate (general)
                 </label>
                 <input type="text" inputMode="decimal" value={usdToInrRate} onChange={(e) => setUsdToInrRate(e.target.value)} className={inputClass} placeholder="e.g. 83.24" />
               </div>
               <div>
-                <label className="block text-[9px] font-black text-orange-400 uppercase tracking-widest font-mono mb-1.5">
+                <label className="block text-[13px] font-black text-[#e8a04d] uppercase tracking-widest font-mono mb-1.5">
                   Closed USD/INR Rate
                 </label>
                 <input type="text" inputMode="decimal" value={closedUsdToInrRate} onChange={(e) => setClosedUsdToInrRate(e.target.value)} className={inputClass} placeholder="closing-week rate (blank = use general)" />
-                <p className="text-[9px] text-slate-500 mt-1 font-medium leading-snug">
+                <p className="text-[13px] text-slate-500 mt-1 font-medium leading-snug">
                   Takes precedence on the closing week. This is the one to fix when correcting a mid-week FX estimate.
                 </p>
               </div>
@@ -325,12 +325,12 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
           {activeWeeks.length > 0 && (
             <div className="bg-slate-950/60 border border-white/5 p-4 rounded-2xl space-y-3">
               <div className="flex items-center gap-2">
-                <AlertCircle className="w-3.5 h-3.5 text-[#bef264]" />
-                <span className="text-[9px] font-black text-[#bef264] uppercase tracking-widest font-mono">
+                <AlertCircle className="w-3.5 h-3.5 text-[#7fb3d5]" />
+                <span className="text-[13px] font-black text-[#7fb3d5] uppercase tracking-widest font-mono">
                   Per-Week Friday Closes{currency === 'USD' ? ' & FX Rates' : ''}
                 </span>
               </div>
-              <p className="text-[9px] text-slate-500 font-medium leading-snug">
+              <p className="text-[13px] text-slate-500 font-medium leading-snug">
                 One row per ISO week this trade spans. Leave blank to omit (a blank is never stored as 0). The closing
                 week uses the exit price, not a Friday close.
               </p>
@@ -339,7 +339,7 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
                   const isCloseWeek = w.weekKey === closeWeekKey;
                   return (
                     <div key={w.weekKey} className="grid grid-cols-12 gap-2 items-center">
-                      <div className="col-span-4 text-[10px] font-mono text-slate-300 font-bold leading-tight">
+                      <div className="col-span-4 text-[12px] font-mono text-slate-300 font-bold leading-tight">
                         {w.weekKey}
                         {isCloseWeek && (
                           <span className="block text-[8px] text-purple-400 uppercase tracking-wider">closing week</span>
@@ -375,18 +375,18 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
           )}
 
           {/* Actions */}
-          <div className="flex gap-3 justify-end pt-4 border-t border-white/5 sticky bottom-0">
+          <div className="flex gap-4 justify-end pt-4 border-t border-white/5 sticky bottom-0">
             <button
               type="button"
               onClick={onClose}
-              className="bg-slate-950 hover:bg-slate-900 border border-white/5 hover:border-white/10 px-5 py-2.5 rounded-xl text-xs font-black text-slate-200 transition cursor-pointer font-mono uppercase tracking-wider"
+              className="bg-slate-950 hover:bg-slate-900 border border-white/5 hover:border-white/10 px-5 py-3 rounded-xl text-sm font-black text-slate-200 transition cursor-pointer font-mono uppercase tracking-wider"
             >
               Cancel
             </button>
             <button
               type="submit"
               id="confirm-edit-btn"
-              className="bg-[#bef264] hover:bg-[#a3e635] text-[#0b0f19] px-6 py-2.5 rounded-xl text-xs font-black transition cursor-pointer font-mono uppercase tracking-wider shadow-lg shadow-[#bef264]/10"
+              className="bg-[#7fb3d5] hover:bg-[#5f9fc8] text-[#161f2e] px-6 py-3 rounded-xl text-sm font-black transition cursor-pointer font-mono uppercase tracking-wider shadow-lg shadow-[#7fb3d5]/10"
             >
               Save Changes
             </button>

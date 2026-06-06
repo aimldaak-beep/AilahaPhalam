@@ -68,18 +68,18 @@ export default function CarryForwardModal({
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
       <div 
         id="carry-forward-modal"
-        className="bg-[#0b0f19] border border-white/10 rounded-3xl w-full max-w-md shadow-2xl transition-all overflow-hidden"
+        className="bg-[#161f2e] border border-white/10 rounded-3xl w-full max-w-md shadow-2xl transition-all overflow-hidden"
       >
         <div className="flex items-center justify-between border-b border-white/5 px-6 py-4.5">
           <div className="flex items-center gap-3">
-            <span className="p-2.5 bg-[#bef264]/10 border border-[#bef264]/20 rounded-xl text-[#bef264] shadow-md">
-              <RefreshCw className="w-5 h-5 text-[#bef264]" />
+            <span className="p-2.5 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 rounded-xl text-[#7fb3d5] shadow-md">
+              <RefreshCw className="w-5 h-5 text-[#7fb3d5]" />
             </span>
             <div>
               <h3 className="font-extrabold text-sm text-white font-sans uppercase tracking-widest">
                 Carry Forward Pos.
               </h3>
-              <p className="text-[9px] text-[#bef264] font-bold font-mono uppercase tracking-widest">
+              <p className="text-[9px] text-[#7fb3d5] font-bold font-mono uppercase tracking-widest">
                 {trade.symbol} • {weekKey}
               </p>
             </div>
@@ -127,7 +127,7 @@ export default function CarryForwardModal({
               placeholder="0.00"
               value={fridayClosePrice}
               onChange={e => validateAndSetDecimal(e.target.value, setFridayClosePrice)}
-              className="w-full bg-slate-950 border border-white/10 focus:border-[#bef264] transition rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-bold font-mono"
+              className="w-full bg-slate-950 border border-white/10 focus:border-[#7fb3d5] transition rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-bold font-mono"
               autoFocus
             />
             <p className="text-[10px] text-slate-400 leading-normal font-medium">
@@ -138,8 +138,8 @@ export default function CarryForwardModal({
           {/* USD to INR Exchange rate (if USD trade) */}
           {trade.currency === 'USD' && (
             <div className="bg-slate-950/90 border border-white/5 p-4 rounded-2xl space-y-2">
-              <label className="block text-[9px] font-black text-[#bef264] uppercase tracking-widest flex items-center gap-1.5 font-mono">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#bef264] inline-block"></span>
+              <label className="block text-[9px] font-black text-[#7fb3d5] uppercase tracking-widest flex items-center gap-1.5 font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#7fb3d5] inline-block"></span>
                 Friday EOD USD/INR Exchange Rate
               </label>
               <input
@@ -149,7 +149,7 @@ export default function CarryForwardModal({
                 placeholder="e.g. 83.24"
                 value={fridayExchangeRate}
                 onChange={e => validateAndSetDecimal(e.target.value, setFridayExchangeRate)}
-                className="w-full bg-slate-900 border border-white/10 focus:border-[#bef264] transition rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none font-mono font-bold"
+                className="w-full bg-slate-900 border border-white/10 focus:border-[#7fb3d5] transition rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none font-mono font-bold"
               />
               <p className="text-[10px] text-slate-400 leading-normal">
                 * Specify the exchange rate used to book cumulative unrealized value on Friday EOD.
@@ -173,7 +173,7 @@ export default function CarryForwardModal({
             <button
               type="submit"
               id="confirm-carry-forward-btn"
-              className="bg-[#bef264] hover:bg-[#bef264]/95 text-[#0b0f19] px-6 py-2.5 rounded-xl text-xs font-black transition cursor-pointer font-mono uppercase tracking-wider shadow-lg"
+              className="bg-[#7fb3d5] hover:bg-[#7fb3d5]/95 text-[#161f2e] px-6 py-2.5 rounded-xl text-xs font-black transition cursor-pointer font-mono uppercase tracking-wider shadow-lg"
             >
               Rollover Position
             </button>

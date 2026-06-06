@@ -94,8 +94,8 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
       {/* Title Bar */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <span className="p-2 bg-[#242f36] border border-white/10 rounded-xl text-[#bef264] shadow-xl">
-            <Sparkles className="w-4 h-4 text-[#bef264]" />
+          <span className="p-2 bg-[#222e42] border border-white/10 rounded-xl text-[#7fb3d5] shadow-xl">
+            <Sparkles className="w-4 h-4 text-[#7fb3d5]" />
           </span>
           <h2 className="text-xs font-black uppercase tracking-widest text-slate-200 font-mono">
             Cumulative Core Analytics Matrix
@@ -103,9 +103,9 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
         </div>
         <button
           onClick={() => exportToExcel(trades)}
-          className="bg-[#bef264]/10 hover:bg-[#bef264]/20 border border-[#bef264]/30 text-[#bef264] px-4 py-2 rounded-xl text-xs transition duration-200 flex items-center gap-1.5 cursor-pointer font-sans font-bold uppercase tracking-wider shadow-md"
+          className="bg-[#7fb3d5]/10 hover:bg-[#7fb3d5]/20 border border-[#7fb3d5]/30 text-[#7fb3d5] px-4 py-2 rounded-xl text-xs transition duration-200 flex items-center gap-1.5 cursor-pointer font-sans font-bold uppercase tracking-wider shadow-md"
         >
-          <Download className="w-3.5 h-3.5 text-[#bef264]" />
+          <Download className="w-3.5 h-3.5 text-[#7fb3d5]" />
           Excel Ledger Raw Export
         </button>
       </div>
@@ -113,15 +113,15 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
       {/* Stats grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Total Net Profit */}
-        <div id="cum-net-profit" className="relative overflow-hidden bg-[#242f36] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm transition-all duration-200">
-          <div className="absolute right-4 top-4 bg-[#bef264]/10 border border-[#bef264]/20 p-2 rounded-xl text-[#bef264] shadow-md">
-            <Landmark className="w-4 h-4 text-[#bef264]" />
+        <div id="cum-net-profit" className="relative overflow-hidden bg-[#222e42] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm transition-all duration-200">
+          <div className="absolute right-4 top-4 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 p-2 rounded-xl text-[#7fb3d5] shadow-md">
+            <Landmark className="w-4 h-4 text-[#7fb3d5]" />
           </div>
           <span className="block text-[9px] font-black text-slate-300 uppercase tracking-widest font-mono font-bold">
             Net Cumulative Yield
           </span>
           <span className={`block text-2xl font-black font-mono tracking-tight mt-3 ${
-            totalNetProfit >= 0 ? 'text-[#bef264]' : 'text-rose-400'
+            totalNetProfit >= 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'
           }`}>
             {totalNetProfit >= 0 ? '+' : ''}
             ₹{formatAmount(totalNetProfit)}
@@ -129,9 +129,9 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
         </div>
 
         {/* Win Rate */}
-        <div id="cum-win-rate" className="relative overflow-hidden bg-[#242f36] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm transition-all duration-200">
-          <div className="absolute right-4 top-4 bg-[#bef264]/10 border border-[#bef264]/20 p-2 rounded-xl text-[#bef264] shadow-md">
-            <Scale className="w-4 h-4 text-[#bef264]" />
+        <div id="cum-win-rate" className="relative overflow-hidden bg-[#222e42] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm transition-all duration-200">
+          <div className="absolute right-4 top-4 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 p-2 rounded-xl text-[#7fb3d5] shadow-md">
+            <Scale className="w-4 h-4 text-[#7fb3d5]" />
           </div>
           <span className="block text-[9px] font-black text-slate-300 uppercase tracking-widest font-mono font-bold">
             Consolidated Win Rate
@@ -140,25 +140,25 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
             {formatAmount(winRate, 1)}%
           </span>
           <div className="mt-4 flex items-center gap-1.5 text-[9px] font-bold font-mono tracking-wider">
-            <span className="bg-[#bef264]/10 border border-[#bef264]/30 text-[#bef264] px-2 py-0.5 rounded-lg">
+            <span className="bg-[#7fb3d5]/10 border border-[#7fb3d5]/30 text-[#7fb3d5] px-2 py-0.5 rounded-lg">
               {winningTradesCount} WON
             </span>
-            <span className="bg-rose-500/15 border border-rose-500/30 text-rose-400 px-2 py-0.5 rounded-lg">
+            <span className="bg-[#e8a04d]/15 border border-[#e8a04d]/30 text-[#e8a04d] px-2 py-0.5 rounded-lg">
               {losingTradesCount} LOST
             </span>
           </div>
         </div>
 
         {/* Gross Profit */}
-        <div id="cum-gross-profit" className="relative overflow-hidden bg-[#242f36] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm transition-all duration-200">
-          <div className="absolute right-4 top-4 bg-[#bef264]/10 border border-[#bef264]/20 p-2 rounded-xl text-[#bef264] shadow-md">
-            <TrendingUp className="w-4 h-4 text-[#bef264]" />
+        <div id="cum-gross-profit" className="relative overflow-hidden bg-[#222e42] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm transition-all duration-200">
+          <div className="absolute right-4 top-4 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 p-2 rounded-xl text-[#7fb3d5] shadow-md">
+            <TrendingUp className="w-4 h-4 text-[#7fb3d5]" />
           </div>
           <span className="block text-[9px] font-black text-slate-300 uppercase tracking-widest font-mono font-bold">
             Gross Executed PnL
           </span>
           <span className={`block text-2xl font-black font-mono tracking-tight mt-3 ${
-            totalGrossProfit >= 0 ? 'text-[#bef264]' : 'text-rose-400'
+            totalGrossProfit >= 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'
           }`}>
             {totalGrossProfit >= 0 ? '+' : ''}
             ₹{formatAmount(totalGrossProfit)}
@@ -166,24 +166,24 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
         </div>
 
         {/* Total Brokerage */}
-        <div id="cum-brokerage" className="relative overflow-hidden bg-[#242f36] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm transition-all duration-200">
-          <div className="absolute right-4 top-4 bg-[#bef264]/10 border border-[#bef264]/20 p-2 rounded-xl text-[#bef264] shadow-md">
-            <TrendingDown className="w-4 h-4 text-[#bef264]" />
+        <div id="cum-brokerage" className="relative overflow-hidden bg-[#222e42] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm transition-all duration-200">
+          <div className="absolute right-4 top-4 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 p-2 rounded-xl text-[#7fb3d5] shadow-md">
+            <TrendingDown className="w-4 h-4 text-[#7fb3d5]" />
           </div>
           <span className="block text-[9px] font-black text-slate-300 uppercase tracking-widest font-mono font-bold">
             Total Brokerage Spent
           </span>
-          <span className="block text-2xl font-black font-mono tracking-tight mt-3 text-rose-400 font-bold">
+          <span className="block text-2xl font-black font-mono tracking-tight mt-3 text-[#e8a04d] font-bold">
             -₹{formatAmount(totalBrokerage)}
           </span>
         </div>
       </div>
 
       {/* Total Offset Summary — lifetime running total of all weekly offsets */}
-      <div id="cum-lifetime-offset" className="relative overflow-hidden bg-[#242f36] border border-[#bef264]/25 rounded-3xl p-5 shadow-lg backdrop-blur-sm flex flex-wrap items-center justify-between gap-4">
+      <div id="cum-lifetime-offset" className="relative overflow-hidden bg-[#222e42] border border-[#7fb3d5]/25 rounded-3xl p-5 shadow-lg backdrop-blur-sm flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="p-2.5 bg-[#bef264]/10 border border-[#bef264]/30 rounded-xl text-[#bef264] shadow-md">
-            <Scale className="w-5 h-5 text-[#bef264]" />
+          <span className="p-2.5 bg-[#7fb3d5]/10 border border-[#7fb3d5]/30 rounded-xl text-[#7fb3d5] shadow-md">
+            <Scale className="w-5 h-5 text-[#7fb3d5]" />
           </span>
           <div>
             <span className="block text-[9px] font-black text-slate-300 uppercase tracking-widest font-mono">
@@ -196,7 +196,7 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
         </div>
         <div className="text-right">
           <span className={`block text-2xl font-black font-mono tracking-tight ${
-            lifetimeOffset === 0 ? 'text-slate-300' : lifetimeOffset > 0 ? 'text-[#bef264]' : 'text-rose-400'
+            lifetimeOffset === 0 ? 'text-slate-300' : lifetimeOffset > 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'
           }`}>
             {lifetimeOffset > 0 ? '+' : ''}₹{formatAmount(lifetimeOffset)}
           </span>
@@ -208,32 +208,32 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
 
       {/* Secondary micro details */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-[#242f36] border border-white/10 p-4 rounded-2xl flex items-center justify-between text-xs shadow-md">
+        <div className="bg-[#222e42] border border-white/10 p-4 rounded-2xl flex items-center justify-between text-xs shadow-md">
           <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-[#bef264]" />
+            <BookOpen className="w-4 h-4 text-[#7fb3d5]" />
             <span className="text-slate-300 font-bold font-mono text-[10px] uppercase tracking-wider">Registered Ledgers</span>
           </div>
-          <span className="font-bold text-white font-mono text-xs bg-[#1e272d] px-3 py-1.5 rounded-xl border border-white/10">
+          <span className="font-bold text-white font-mono text-xs bg-[#172234] px-3 py-1.5 rounded-xl border border-white/10">
             {totalTradesCount.toString().padStart(2, '0')} contracts
           </span>
         </div>
 
-        <div className="bg-[#242f36] border border-white/10 p-4 rounded-2xl flex items-center justify-between text-xs shadow-md">
+        <div className="bg-[#222e42] border border-white/10 p-4 rounded-2xl flex items-center justify-between text-xs shadow-md">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-[#bef264]" />
+            <TrendingUp className="w-4 h-4 text-[#7fb3d5]" />
             <span className="text-slate-300 font-bold font-mono text-[10px] uppercase tracking-wider">Top Realized Trade</span>
           </div>
-          <span className="font-extrabold text-[#bef264] font-mono text-xs bg-[#bef264]/10 px-3 py-1.5 rounded-xl border border-[#bef264]/20">
+          <span className="font-extrabold text-[#7fb3d5] font-mono text-xs bg-[#7fb3d5]/10 px-3 py-1.5 rounded-xl border border-[#7fb3d5]/20">
             {bestTradeSymbol} {bestTradeNet > 0 ? `(+₹${formatAmount(bestTradeNet, 1)})` : ''}
           </span>
         </div>
 
-        <div className="bg-[#242f36] border border-white/10 p-4 rounded-2xl flex items-center justify-between text-xs shadow-md">
+        <div className="bg-[#222e42] border border-white/10 p-4 rounded-2xl flex items-center justify-between text-xs shadow-md">
           <div className="flex items-center gap-2">
-            <TrendingDown className="w-4 h-4 text-[#bef264]" />
+            <TrendingDown className="w-4 h-4 text-[#7fb3d5]" />
             <span className="text-slate-300 font-bold font-mono text-[10px] uppercase tracking-wider">Max Deficit Trade</span>
           </div>
-          <span className="font-extrabold text-rose-400 font-mono text-xs bg-rose-500/10 px-3 py-1.5 rounded-xl border border-rose-500/20">
+          <span className="font-extrabold text-[#e8a04d] font-mono text-xs bg-[#e8a04d]/10 px-3 py-1.5 rounded-xl border border-[#e8a04d]/20">
             {worstTradeSymbol} {worstTradeNet < 0 ? `(-₹${formatAmount(Math.abs(worstTradeNet), 1)})` : ''}
           </span>
         </div>

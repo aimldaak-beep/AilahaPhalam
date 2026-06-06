@@ -11,7 +11,8 @@ import {
   getWeeksBetween,
   getWeekInfo,
   getIsClosedInOrBeforeWeek,
-  getWeekKeyForClose
+  getWeekKeyForClose,
+  estimateInstantPnL
 } from '../types';
 import type { WeekOffset } from '../lib/offsets';
 import { 
@@ -34,7 +35,8 @@ import {
   AlertCircle,
   Pencil,
   Scale,
-  Trash2
+  Trash2,
+  FastForward
 } from 'lucide-react';
 import { formatNumber, formatAmount, formatPrice } from '../lib/format';
 
@@ -233,20 +235,61 @@ export default function WeeklyReport({
     }
   };
 
+  // ---- Blotter data (layout only — all numbers come from the existing PnL math) ----
+  // Active table shows ALL open positions, regardless of the selected week.
+  const openTrades = trades.filter(
+    (t) => t.status === 'CarryForwardLong' || t.status === 'CarryForwardShort',
+  );
+
+  // Current PnL for an open position. Prefers a live entered price (estimateInstantPnL);
+  // otherwise falls back to the last-known mark-to-date via calculateTradeForWeek. Never fabricated.
+  const currentPnLForOpenTrade = (trade: Trade): { value: number | null; live: boolean } => {
+    if (trade.currentTradingPrice != null && trade.currentTradingPrice > 0) {
+      return { value: estimateInstantPnL(trade, trade.currentTradingPrice).netProfit, live: true };
+    }
+    let net = 0;
+    let anyActive = false;
+    getWeeksBetween(trade.dateInitiated, todayStr).forEach((w) => {
+      const c = calculateTradeForWeek(trade, w.weekKey);
+      if (c.isActive) {
+        net += c.netProfit;
+        anyActive = true;
+      }
+    });
+    return { value: anyActive ? net : null, live: false };
+  };
+
+  // Final realized net across a trade's life (existing ledger math).
+  const tradeTotalNet = (trade: Trade): number => {
+    const end =
+      trade.status === 'Closed' || trade.status === 'CarryForwardClosed'
+        ? (trade.direction === 'Long' ? trade.sellDate || todayStr : trade.buyDate || todayStr)
+        : todayStr;
+    return getWeeksBetween(trade.dateInitiated, end).reduce((s, w) => {
+      const c = calculateTradeForWeek(trade, w.weekKey);
+      return c.isActive ? s + c.netProfit : s;
+    }, 0);
+  };
+
+  // Closed/settled trades that were active during the selected week.
+  const closedInWeek = activeTradesInWeek.filter((item) =>
+    getIsClosedInOrBeforeWeek(item.trade, selectedWeekKey),
+  );
+
   return (
     <div className="space-y-6 text-slate-100">
       {/* Week Selector Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-[#242f36] border border-white/10 rounded-3xl px-6 py-5 shadow-xl backdrop-blur-sm">
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-[#222e42] border border-white/10 rounded-3xl px-6 py-5 shadow-xl backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <span className="p-3 bg-[#bef264]/10 border border-[#bef264]/30 rounded-2xl text-[#bef264] shadow-md">
-            <Calendar className="w-5 h-5 shrink-0 text-[#bef264]" />
+          <span className="p-3 bg-[#7fb3d5]/10 border border-[#7fb3d5]/30 rounded-2xl text-[#7fb3d5] shadow-md">
+            <Calendar className="w-5 h-5 shrink-0 text-[#7fb3d5]" />
           </span>
           <div>
             <h2 className="text-[9px] font-black text-slate-300 uppercase tracking-widest font-mono">
               Selected Reporting Frame
             </h2>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className="font-extrabold text-[#bef264] font-sans text-lg tracking-wide">
+              <span className="font-extrabold text-[#7fb3d5] font-sans text-lg tracking-wide">
                 Week {activeWeekInfo.weekNum}
               </span>
               <span className="text-[10px] text-slate-300 font-mono">
@@ -262,22 +305,22 @@ export default function WeeklyReport({
             id="report-week-select"
             value={selectedWeekKey}
             onChange={e => onSelectWeek(e.target.value)}
-            className="bg-[#1e272d] border border-white/10 hover:border-[#bef264]/40 hover:text-[#bef264] text-slate-200 rounded-xl px-4 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#bef264] transition cursor-pointer"
+            className="bg-[#172234] border border-white/10 hover:border-[#7fb3d5]/40 hover:text-[#7fb3d5] text-slate-200 rounded-xl px-4 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#7fb3d5] transition cursor-pointer"
           >
             {sortedWeeks.map(w => (
-              <option key={w.weekKey} value={w.weekKey} className="bg-[#1e272d] text-slate-200">
+              <option key={w.weekKey} value={w.weekKey} className="bg-[#172234] text-slate-200">
                 Week {w.weekNum} ({w.weekRange.split(',')[0]})
               </option>
             ))}
           </select>
 
           {/* Navigation Arrows */}
-          <div className="flex p-0.5 bg-[#1e272d] border border-white/10 rounded-xl">
+          <div className="flex p-0.5 bg-[#172234] border border-white/10 rounded-xl">
             <button
               onClick={() => shiftWeek('prev')}
               disabled={currentWeekIndex <= 0}
               id="prev-week-btn"
-              className="p-2 rounded-lg text-slate-400 hover:text-[#bef264] disabled:opacity-20 disabled:pointer-events-none transition cursor-pointer"
+              className="p-2 rounded-lg text-slate-400 hover:text-[#7fb3d5] disabled:opacity-20 disabled:pointer-events-none transition cursor-pointer"
               title="Previous Week"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -287,7 +330,7 @@ export default function WeeklyReport({
               onClick={() => shiftWeek('next')}
               disabled={currentWeekIndex >= sortedWeeks.length - 1}
               id="next-week-btn"
-              className="p-2 rounded-lg text-slate-400 hover:text-[#bef264] disabled:opacity-20 disabled:pointer-events-none transition cursor-pointer"
+              className="p-2 rounded-lg text-slate-400 hover:text-[#7fb3d5] disabled:opacity-20 disabled:pointer-events-none transition cursor-pointer"
               title="Next Week"
             >
               <ChevronRight className="w-4 h-4" />
@@ -298,13 +341,13 @@ export default function WeeklyReport({
 
       {/* Saturday 10:00 AM Prompt Warning Banner */}
       {pendingSaturdayDemands.length > 0 && (
-        <div id="saturday-closing-warning" className="bg-[#bef264]/5 border border-[#bef264]/20 rounded-3xl p-5 space-y-4 shadow-xl">
+        <div id="saturday-closing-warning" className="bg-[#7fb3d5]/5 border border-[#7fb3d5]/20 rounded-3xl p-5 space-y-4 shadow-xl">
           <div className="flex gap-3.5">
-            <div className="bg-[#bef264]/10 p-2.5 rounded-2xl text-[#bef264] border border-[#bef264]/20 shrink-0">
-              <Clock className="w-5 h-5 text-[#bef264]" />
+            <div className="bg-[#7fb3d5]/10 p-2.5 rounded-2xl text-[#7fb3d5] border border-[#7fb3d5]/20 shrink-0">
+              <Clock className="w-5 h-5 text-[#7fb3d5]" />
             </div>
             <div>
-              <h4 className="font-extrabold text-[#bef264] text-xs uppercase tracking-widest font-mono">
+              <h4 className="font-extrabold text-[#7fb3d5] text-xs uppercase tracking-widest font-mono">
                 Saturday 10:00 AM Closing Price Demanded
               </h4>
             </div>
@@ -341,7 +384,7 @@ export default function WeeklyReport({
                           ...prev,
                           [trade.id]: e.target.value
                         }))}
-                        className="w-full flex-1 bg-slate-905 border border-white/10 focus:border-orange-500 transition rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-mono"
+                        className="w-full flex-1 bg-slate-905 border border-white/10 focus:border-[#e8a04d] transition rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-mono"
                       />
                       {trade.currency === 'USD' && (
                         <input
@@ -353,14 +396,14 @@ export default function WeeklyReport({
                             ...prev,
                             [trade.id]: e.target.value
                           }))}
-                          className="w-20 bg-slate-905 border border-white/10 focus:border-orange-500 transition rounded-xl px-2.5 py-2 text-[11px] text-white focus:outline-none font-mono"
+                          className="w-20 bg-slate-905 border border-white/10 focus:border-[#e8a04d] transition rounded-xl px-2.5 py-2 text-[11px] text-white focus:outline-none font-mono"
                           title="Exchange Rate e.g. 83.24"
                         />
                       )}
                     </div>
                     <button
                       onClick={() => handleFridayInputSave(trade.id, trade.currency === 'USD')}
-                      className="bg-orange-500/20 hover:bg-orange-500/35 border border-orange-500/40 text-orange-400 px-4 py-2 rounded-xl text-xs font-black font-mono transition shrink-0 cursor-pointer shadow-md"
+                      className="bg-[#e8a04d]/20 hover:bg-[#e8a04d]/35 border border-[#e8a04d]/40 text-[#e8a04d] px-4 py-2 rounded-xl text-xs font-black font-mono transition shrink-0 cursor-pointer shadow-md"
                     >
                       Save EOD
                     </button>
@@ -375,21 +418,21 @@ export default function WeeklyReport({
       {/* Weekly performance grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Weekly Net PnL card */}
-        <div id="weekly-net-card" className="bg-[#242f36] border border-white/10 rounded-3xl p-5 relative overflow-hidden shadow-lg backdrop-blur-sm">
-          <div className="absolute right-4 top-4 bg-[#bef264]/10 text-[#bef264] p-2 border border-[#bef264]/20 rounded-xl shadow-md">
-            <Calculator className="w-4 h-4 text-[#bef264]" />
+        <div id="weekly-net-card" className="bg-[#222e42] border border-white/10 rounded-3xl p-5 relative overflow-hidden shadow-lg backdrop-blur-sm">
+          <div className="absolute right-4 top-4 bg-[#7fb3d5]/10 text-[#7fb3d5] p-2 border border-[#7fb3d5]/20 rounded-xl shadow-md">
+            <Calculator className="w-4 h-4 text-[#7fb3d5]" />
           </div>
           <span className="block text-[9px] font-black text-slate-300 uppercase tracking-widest font-mono font-bold">
             Weekly Net {savedOffsetAmount !== 0 ? 'Reconciled' : 'Realized'}
           </span>
           <span className={`block text-2xl font-black font-mono tracking-wide mt-3 ${
-            adjustedWeeklyNet >= 0 ? 'text-[#bef264]' : 'text-rose-400'
+            adjustedWeeklyNet >= 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'
           }`}>
             {adjustedWeeklyNet >= 0 ? '+' : ''}
             ₹{formatAmount(adjustedWeeklyNet)}
           </span>
           <div className="text-[10px] text-slate-300 font-mono mt-3.5 flex items-center gap-1.5 font-bold">
-            <span className={`w-1.5 h-1.5 rounded-full ${adjustedWeeklyNet >= 0 ? 'bg-[#bef264]' : 'bg-rose-500'}`} />
+            <span className={`w-1.5 h-1.5 rounded-full ${adjustedWeeklyNet >= 0 ? 'bg-[#5dcaa5]' : 'bg-[#e8a04d]'}`} />
             {savedOffsetAmount !== 0
               ? <>Calc ₹{formatAmount(weeklyNetSum)} {savedOffsetAmount >= 0 ? '+' : '−'} ₹{formatAmount(Math.abs(savedOffsetAmount))} offset</>
               : <>Net of Week {activeWeekInfo.weekNum}</>}
@@ -397,74 +440,74 @@ export default function WeeklyReport({
         </div>
 
         {/* Weekly Gross PnL card */}
-        <div id="weekly-gross-card" className="bg-[#242f36] border border-white/10 rounded-3xl p-5 relative overflow-hidden shadow-lg backdrop-blur-sm">
-          <div className="absolute right-4 top-4 bg-[#bef264]/10 text-[#bef264] p-2 border border-[#bef264]/20 rounded-xl shadow-md">
-            <SlidersHorizontal className="w-4 h-4 text-[#bef264]" />
+        <div id="weekly-gross-card" className="bg-[#222e42] border border-white/10 rounded-3xl p-5 relative overflow-hidden shadow-lg backdrop-blur-sm">
+          <div className="absolute right-4 top-4 bg-[#7fb3d5]/10 text-[#7fb3d5] p-2 border border-[#7fb3d5]/20 rounded-xl shadow-md">
+            <SlidersHorizontal className="w-4 h-4 text-[#7fb3d5]" />
           </div>
           <span className="block text-[9px] font-black text-slate-300 uppercase tracking-widest font-mono font-bold">
             Weekly Gross Profit
           </span>
           <span className={`block text-2xl font-black font-mono tracking-wide mt-3 ${
-            weeklyGrossSum >= 0 ? 'text-[#bef264]' : 'text-rose-400'
+            weeklyGrossSum >= 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'
           }`}>
             {weeklyGrossSum >= 0 ? '+' : ''}
             ₹{formatAmount(weeklyGrossSum)}
           </span>
           <div className="text-[10px] text-slate-300 font-mono mt-3.5 flex items-center gap-1.5 font-bold">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#bef264]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#7fb3d5]" />
             Gross of Week {activeWeekInfo.weekNum}
           </div>
         </div>
 
         {/* Weekly Brokerage card */}
-        <div id="weekly-brokerage-card" className="bg-[#242f36] border border-white/10 rounded-3xl p-5 relative overflow-hidden shadow-lg backdrop-blur-sm">
-          <div className="absolute right-4 top-4 bg-[#bef264]/10 text-[#bef264] p-2 border border-[#bef264]/20 rounded-xl shadow-md">
-            <Clock className="w-4 h-4 text-[#bef264]" />
+        <div id="weekly-brokerage-card" className="bg-[#222e42] border border-white/10 rounded-3xl p-5 relative overflow-hidden shadow-lg backdrop-blur-sm">
+          <div className="absolute right-4 top-4 bg-[#7fb3d5]/10 text-[#7fb3d5] p-2 border border-[#7fb3d5]/20 rounded-xl shadow-md">
+            <Clock className="w-4 h-4 text-[#7fb3d5]" />
           </div>
           <span className="block text-[9px] font-black text-slate-300 uppercase tracking-widest font-mono font-bold">
             Commissions Deductions
           </span>
-          <span className="block text-2xl font-black font-mono tracking-wide mt-3 text-rose-400">
+          <span className="block text-2xl font-black font-mono tracking-wide mt-3 text-[#e8a04d]">
             -₹{formatAmount(weeklyBrokerageSum)}
           </span>
           <div className="text-[10px] text-slate-300 font-mono mt-3.5 flex items-center gap-1.5 font-bold">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#e8a04d]" />
             Charges for Week {activeWeekInfo.weekNum}
           </div>
         </div>
       </div>
 
       {/* Per-week reconciliation offset editor */}
-      <div id="week-offset-card" className="bg-[#242f36] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm space-y-4">
+      <div id="week-offset-card" className="bg-[#222e42] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm space-y-4">
         <div className="flex items-center gap-2">
-          <span className="p-1.5 bg-[#bef264]/10 border border-[#bef264]/30 rounded-lg text-[#bef264]">
-            <Scale className="w-4 h-4 text-[#bef264]" />
+          <span className="p-1.5 bg-[#7fb3d5]/10 border border-[#7fb3d5]/30 rounded-lg text-[#7fb3d5]">
+            <Scale className="w-4 h-4 text-[#7fb3d5]" />
           </span>
-          <span className="text-xs font-black text-[#bef264] uppercase tracking-widest font-mono">
+          <span className="text-xs font-black text-[#7fb3d5] uppercase tracking-widest font-mono">
             Broker Reconciliation — Week {activeWeekInfo.weekNum}
           </span>
         </div>
 
         {/* Calculated → Offset → Adjusted breakdown */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="bg-[#1e272d] border border-white/10 rounded-2xl p-3.5">
+          <div className="bg-[#172234] border border-white/10 rounded-2xl p-3.5">
             <span className="block text-[9px] text-slate-300 font-extrabold uppercase tracking-widest mb-1.5 font-mono">Calculated Net</span>
-            <span className={`font-mono font-black text-sm ${weeklyNetSum >= 0 ? 'text-slate-100' : 'text-rose-400'}`}>
+            <span className={`font-mono font-black text-sm ${weeklyNetSum >= 0 ? 'text-slate-100' : 'text-[#e8a04d]'}`}>
               {weeklyNetSum >= 0 ? '+' : ''}₹{formatAmount(weeklyNetSum)}
             </span>
           </div>
-          <div className="bg-[#1e272d] border border-white/10 rounded-2xl p-3.5">
+          <div className="bg-[#172234] border border-white/10 rounded-2xl p-3.5">
             <span className="block text-[9px] text-slate-300 font-extrabold uppercase tracking-widest mb-1.5 font-mono">Offset Applied</span>
-            <span className={`font-mono font-black text-sm ${savedOffsetAmount === 0 ? 'text-slate-400' : savedOffsetAmount > 0 ? 'text-[#bef264]' : 'text-rose-400'}`}>
+            <span className={`font-mono font-black text-sm ${savedOffsetAmount === 0 ? 'text-slate-400' : savedOffsetAmount > 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'}`}>
               {savedOffsetAmount > 0 ? '+' : ''}₹{formatAmount(savedOffsetAmount)}
             </span>
             {savedOffset?.note ? (
               <span className="block text-[9px] text-slate-400 font-mono mt-1 truncate" title={savedOffset.note}>“{savedOffset.note}”</span>
             ) : null}
           </div>
-          <div className="bg-[#bef264]/5 border border-[#bef264]/30 rounded-2xl p-3.5">
-            <span className="block text-[9px] text-[#bef264] font-extrabold uppercase tracking-widest mb-1.5 font-mono">Adjusted Total (Reconciled)</span>
-            <span className={`font-mono font-black text-base ${adjustedWeeklyNet >= 0 ? 'text-[#bef264]' : 'text-rose-400'}`}>
+          <div className="bg-[#7fb3d5]/5 border border-[#7fb3d5]/30 rounded-2xl p-3.5">
+            <span className="block text-[9px] text-[#7fb3d5] font-extrabold uppercase tracking-widest mb-1.5 font-mono">Adjusted Total (Reconciled)</span>
+            <span className={`font-mono font-black text-base ${adjustedWeeklyNet >= 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'}`}>
               {adjustedWeeklyNet >= 0 ? '+' : ''}₹{formatAmount(adjustedWeeklyNet)}
             </span>
           </div>
@@ -480,7 +523,7 @@ export default function WeeklyReport({
               placeholder="Offset ± (INR)"
               value={offsetAmountInput}
               onChange={e => setOffsetAmountInput(sanitizeSigned(e.target.value))}
-              className="w-full bg-slate-950 border border-white/10 focus:border-[#bef264] transition rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-bold font-mono"
+              className="w-full bg-slate-950 border border-white/10 focus:border-[#7fb3d5] transition rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-bold font-mono"
             />
           </div>
           <input
@@ -489,13 +532,13 @@ export default function WeeklyReport({
             placeholder="Note — what the broker said / why it differs"
             value={offsetNoteInput}
             onChange={e => setOffsetNoteInput(e.target.value)}
-            className="flex-1 bg-slate-950 border border-white/10 focus:border-[#bef264] transition rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-mono"
+            className="flex-1 bg-slate-950 border border-white/10 focus:border-[#7fb3d5] transition rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-mono"
           />
           <div className="flex gap-2">
             <button
               type="button"
               onClick={handleSaveOffsetClick}
-              className="bg-[#bef264] hover:bg-[#a3e635] text-[#0b0f19] px-5 py-2.5 rounded-xl text-xs font-black font-mono uppercase tracking-wider transition cursor-pointer shadow-md active:scale-[0.98]"
+              className="bg-[#7fb3d5] hover:bg-[#5f9fc8] text-[#161f2e] px-5 py-2.5 rounded-xl text-xs font-black font-mono uppercase tracking-wider transition cursor-pointer shadow-md active:scale-[0.98]"
             >
               Save
             </button>
@@ -503,7 +546,7 @@ export default function WeeklyReport({
               <button
                 type="button"
                 onClick={handleClearOffsetClick}
-                className="bg-[#232b31] border border-white/10 hover:border-rose-500/40 text-slate-300 hover:text-rose-400 px-4 py-2.5 rounded-xl text-xs font-black font-mono uppercase tracking-wider transition cursor-pointer"
+                className="bg-[#1e2a3d] border border-white/10 hover:border-[#e8a04d]/40 text-slate-300 hover:text-[#e8a04d] px-4 py-2.5 rounded-xl text-xs font-black font-mono uppercase tracking-wider transition cursor-pointer"
               >
                 Clear
               </button>
@@ -515,219 +558,172 @@ export default function WeeklyReport({
         </p>
       </div>
 
-      {/* List of active trades in currently selected week */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+      {/* === ACTIVE POSITIONS — all open trades, any week (live blotter) === */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between border-b border-[#7fb3d5]/20 pb-3">
           <div className="flex items-center gap-2">
-            <span className="p-1 px-1.5 bg-[#1e272d] border border-white/10 rounded-lg text-slate-300">
-              <BookOpen className="w-4 h-4 text-[#bef264]" />
+            <span className="p-1.5 bg-[#7fb3d5]/10 border border-[#7fb3d5]/30 rounded-lg text-[#7fb3d5]">
+              <TrendingUp className="w-4 h-4 text-[#7fb3d5]" />
             </span>
-            <span className="text-xs font-black text-[#bef264] uppercase tracking-widest font-mono font-bold">
-              Weekly Activity Log ({activeTradesInWeek.length} Positions)
+            <span className="text-xs font-black text-[#7fb3d5] uppercase tracking-widest font-mono">
+              Active Positions ({openTrades.length})
             </span>
           </div>
-          <span className="text-[10px] text-slate-300 font-mono font-bold">
-            TIMELINE SPAN of Week {activeWeekInfo.weekNum}
-          </span>
+          <span className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-wider">Live · all weeks</span>
         </div>
 
-        {activeTradesInWeek.length === 0 ? (
-          <div className="bg-[#242f36] border border-dashed border-white/10 p-12 rounded-3xl text-center shadow-lg">
-            <Sliders className="w-10 h-10 text-[#bef264] mx-auto mb-4" />
-            <p className="text-slate-300 text-sm font-bold">No recorded trades active for this week.</p>
+        {openTrades.length === 0 ? (
+          <div className="bg-[#222e42] border border-dashed border-white/10 p-8 rounded-2xl text-center">
+            <p className="text-slate-400 text-sm font-bold font-mono">No open positions.</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {activeTradesInWeek.map(({ trade, role, openingPrice, closingPrice, points, grossProfit, brokerageDeducted, netProfit, isMissingFridayClose }) => {
-              const isClosedState = getIsClosedInOrBeforeWeek(trade, selectedWeekKey);
-              
-              // Map role badges nicely
-              let roleBadge = '';
-              let roleClass = '';
-              switch (role) {
-                case 'same-week-closed':
-                  roleBadge = 'SAME WEEK CLOSED';
-                  roleClass = 'bg-[#bef264]/10 border border-[#bef264]/30 text-[#bef264]';
-                  break;
-                case 'initiation':
-                  roleBadge = 'INITIATED & ROLL CF';
-                  roleClass = 'bg-[#bef264]/10 border border-[#bef264]/30 text-[#bef264]';
-                  break;
-                case 'closing':
-                  roleBadge = 'CF CLOSED IN WEEK';
-                  roleClass = 'bg-purple-500/10 border border-purple-500/30 text-purple-400';
-                  break;
-                case 'intermediate':
-                  roleBadge = 'ROLOVER CARRY';
-                  roleClass = 'bg-slate-800/80 border border-white/10 text-slate-300';
-                  break;
-              }
-
-              return (
-                <div 
-                  key={trade.id} 
-                  id={`weekly-trade-item-${trade.id}`}
-                  className="bg-[#242f36] border border-white/10 rounded-3xl p-6 hover:border-[#bef264]/35 transition-all duration-200 space-y-4 shadow-xl relative overflow-hidden"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex flex-col">
-                        <span className="font-extrabold text-white font-mono text-base tracking-wide">
-                          {trade.symbol}
+          <div className="overflow-x-auto rounded-2xl border border-[#7fb3d5]/25 bg-[#222e42] shadow-lg">
+            <table className="w-full min-w-[820px] text-left border-collapse">
+              <thead>
+                <tr className="bg-[#172234] text-slate-300 uppercase text-[10px] font-mono tracking-widest border-b border-white/10">
+                  <th className="py-2.5 px-4 font-black">Symbol</th>
+                  <th className="py-2.5 px-3 font-black">Type</th>
+                  <th className="py-2.5 px-3 font-black">Lots</th>
+                  <th className="py-2.5 px-3 font-black text-right">Entry</th>
+                  <th className="py-2.5 px-3 font-black">Entry Date</th>
+                  <th className="py-2.5 px-3 font-black text-right">Current PnL</th>
+                  <th className="py-2.5 px-4 font-black text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {openTrades.map((trade) => {
+                  const sym = trade.currency === 'USD' ? '$' : '₹';
+                  const entryPrice = trade.direction === 'Long' ? trade.buyPrice : trade.sellPrice;
+                  const { value: curPnl, live } = currentPnLForOpenTrade(trade);
+                  return (
+                    <tr key={trade.id} id={`active-trade-${trade.id}`} className="hover:bg-white/5 transition">
+                      <td className="py-2.5 px-4 font-mono font-extrabold text-white text-sm">{trade.symbol}</td>
+                      <td className="py-2.5 px-3">
+                        <span className={`text-[10px] font-black font-mono uppercase px-1.5 py-0.5 rounded ${trade.direction === 'Long' ? 'bg-[#5dcaa5]/10 text-[#5dcaa5] border border-[#5dcaa5]/25' : 'bg-[#e8a04d]/10 text-[#e8a04d] border border-[#e8a04d]/25'}`}>
+                          {trade.direction}
                         </span>
-                        <span className="text-[9px] text-slate-400 font-bold font-mono tracking-widest uppercase mt-1 leading-none">
-                          {trade.instrument} • {trade.direction === 'Long' ? 'LONG' : 'SHORT'}
-                        </span>
-                      </div>
-                      <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-mono tracking-widest font-black leading-tight ${roleClass}`}>
-                        {roleBadge}
-                      </span>
-                    </div>
-
-                    {/* Action Panel: edit is always available; close/check/carry only while open */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      {!isClosedState ? (
-                        <>
-                          {/* 1. Close Trade */}
-                          <button
-                            type="button"
-                            onClick={() => onOpenCloseTrade(trade)}
-                            className="bg-rose-500/10 border border-rose-500/30 hover:border-rose-500/50 text-rose-400 hover:bg-rose-500 hover:text-white px-3 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer shadow-md flex items-center gap-1 active:scale-[0.98]"
+                        <span className="block text-[10px] text-slate-400 font-mono mt-0.5">{trade.instrument}</span>
+                      </td>
+                      <td className="py-2.5 px-3 font-mono text-slate-200 text-sm whitespace-nowrap">{trade.numberOfLots} × {trade.lotSize}</td>
+                      <td className="py-2.5 px-3 font-mono text-slate-100 text-sm text-right font-bold whitespace-nowrap">{sym}{formatPrice(entryPrice)}</td>
+                      <td className="py-2.5 px-3 font-mono text-slate-400 text-xs whitespace-nowrap">{trade.dateInitiated}</td>
+                      <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                        {curPnl === null ? (
+                          <span className="font-mono text-slate-500 text-sm">—</span>
+                        ) : (
+                          <span
+                            className={`font-mono font-black text-sm ${curPnl >= 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'}`}
+                            title={live ? 'Live — from your entered current price' : 'Mark-to-date — last recorded weekly closes'}
                           >
-                            Close the Trade
+                            {curPnl >= 0 ? '+' : ''}₹{formatAmount(curPnl)}
+                            <span className="block text-[8px] text-slate-500 font-bold uppercase tracking-wider">{live ? 'live' : 'to date'}</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button type="button" title="Close trade" onClick={() => onOpenCloseTrade(trade)} className="p-1.5 rounded-lg bg-[#e8a04d]/10 border border-[#e8a04d]/30 text-[#e8a04d] hover:bg-[#e8a04d] hover:text-white transition cursor-pointer active:scale-95">
+                            <Lock className="w-3.5 h-3.5" />
                           </button>
-
-                          {/* 2. Check current PnL */}
-                          <button
-                            type="button"
-                            onClick={() => onOpenCheckPnL(trade)}
-                            className="bg-amber-500/10 border border-amber-500/30 hover:border-[#bef264]/40 text-amber-400 hover:bg-amber-500 hover:text-[#0b0f19] px-3 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer shadow-md flex items-center gap-1 active:scale-[0.98]"
-                          >
-                            Check current PnL
+                          <button type="button" title="Check current PnL" onClick={() => onOpenCheckPnL(trade)} className="p-1.5 rounded-lg bg-[#e8a04d]/10 border border-[#e8a04d]/30 text-[#e8a04d] hover:bg-[#e8a04d] hover:text-[#161f2e] transition cursor-pointer active:scale-95">
+                            <DollarSign className="w-3.5 h-3.5" />
                           </button>
-
-                          {/* 2b. What-If Close (read-only preview) */}
-                          <button
-                            type="button"
-                            title="What-if close calculator — preview only, does not close the trade"
-                            onClick={() => onOpenWhatIf(trade)}
-                            className="bg-[#1e272d] border border-white/10 hover:border-[#bef264]/50 text-slate-300 hover:text-[#bef264] px-3 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer shadow-md flex items-center gap-1.5 active:scale-[0.98]"
-                          >
+                          <button type="button" title="What-if close (preview only)" onClick={() => onOpenWhatIf(trade)} className="p-1.5 rounded-lg bg-[#172234] border border-white/10 text-slate-300 hover:text-[#7fb3d5] hover:border-[#7fb3d5]/50 transition cursor-pointer active:scale-95">
                             <Calculator className="w-3.5 h-3.5" />
-                            What-If
                           </button>
-
-                          {/* 3. Carry Forward */}
-                          <button
-                            type="button"
-                            onClick={() => onOpenCarryForward(trade, selectedWeekKey)}
-                            className="bg-[#bef264]/10 border border-[#bef264]/30 hover:border-[#bef264]/65 text-[#bef264] hover:bg-[#bef264] hover:text-[#0b0f19] px-3 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer shadow-md flex items-center gap-1 active:scale-[0.98]"
-                          >
-                            Carry Forward
+                          <button type="button" title="Carry forward" onClick={() => onOpenCarryForward(trade, selectedWeekKey)} className="p-1.5 rounded-lg bg-[#7fb3d5]/10 border border-[#7fb3d5]/30 text-[#7fb3d5] hover:bg-[#7fb3d5] hover:text-[#161f2e] transition cursor-pointer active:scale-95">
+                            <FastForward className="w-3.5 h-3.5" />
                           </button>
-                        </>
-                      ) : (
-                        <div className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl font-bold font-mono uppercase tracking-widest leading-none select-none">
-                          ✓ Position Settled
+                          <button type="button" title="Edit / correct" onClick={() => onOpenEditTrade(trade)} className="p-1.5 rounded-lg bg-slate-800/80 border border-white/10 text-slate-300 hover:text-[#7fb3d5] hover:border-[#7fb3d5]/50 transition cursor-pointer active:scale-95">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button type="button" title="Delete (PIN protected)" onClick={() => onDeleteTrade(trade)} className="p-1.5 rounded-lg bg-[#e8a04d]/10 border border-[#e8a04d]/30 text-[#e8a04d] hover:bg-[#e8a04d] hover:text-white transition cursor-pointer active:scale-95">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                      )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
-                      {/* Edit — works on open AND closed trades (correct FX, prices, dates, etc.) */}
-                      <button
-                        type="button"
-                        title="Edit / correct this trade"
-                        onClick={() => onOpenEditTrade(trade)}
-                        className="bg-slate-800/80 border border-white/10 hover:border-[#bef264]/50 text-slate-300 hover:text-[#bef264] px-3 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer shadow-md flex items-center gap-1.5 active:scale-[0.98]"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                        Edit
-                      </button>
+      {/* === CLOSED / SETTLED TRADES — selected week === */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 bg-[#172234] border border-white/10 rounded-lg text-slate-300">
+              <CheckCircle className="w-4 h-4 text-[#5dcaa5]" />
+            </span>
+            <span className="text-xs font-black text-slate-200 uppercase tracking-widest font-mono">
+              Closed Trades — Week {activeWeekInfo.weekNum} ({closedInWeek.length})
+            </span>
+          </div>
+          <span className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-wider">Settled</span>
+        </div>
 
-                      {/* Delete — PIN protected (confirmation handled in App before it runs) */}
-                      <button
-                        type="button"
-                        title="Delete this trade (PIN protected)"
-                        onClick={() => onDeleteTrade(trade)}
-                        className="bg-rose-500/10 border border-rose-500/30 hover:border-rose-500/60 text-rose-400 hover:bg-rose-500 hover:text-white px-3 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer shadow-md flex items-center gap-1.5 active:scale-[0.98]"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Calculations Details Row */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 bg-[#1e272d] border border-white/10 p-4 rounded-2xl text-[11px] shadow-inner">
-                    <div>
-                      <span className="block text-[9px] text-slate-300 font-extrabold uppercase tracking-widest mb-1.5 font-mono">
-                        Opening Rate (Mon)
-                      </span>
-                      <span className="font-mono text-[#bef264] font-bold text-xs">
-                        {trade.currency === 'USD' ? '$' : '₹'}{formatAmount(openingPrice)}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="block text-[9px] text-slate-300 font-extrabold uppercase tracking-widest mb-1.5 font-mono">
-                        Closing Rate (Fri)
-                      </span>
-                      {isMissingFridayClose ? (
-                        <span className="text-orange-400 font-mono font-black flex items-center gap-1 text-[10px]">
-                          <AlertCircle className="w-3.5 h-3.5 text-[#bef264]" />
-                          PENDING SATURDAY
+        {closedInWeek.length === 0 ? (
+          <div className="bg-[#222e42] border border-dashed border-white/10 p-8 rounded-2xl text-center">
+            <p className="text-slate-400 text-sm font-bold font-mono">No settled trades for this week.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#222e42] shadow-lg">
+            <table className="w-full min-w-[860px] text-left border-collapse">
+              <thead>
+                <tr className="bg-[#172234] text-slate-300 uppercase text-[10px] font-mono tracking-widest border-b border-white/10">
+                  <th className="py-2.5 px-4 font-black">Symbol</th>
+                  <th className="py-2.5 px-3 font-black">Type</th>
+                  <th className="py-2.5 px-3 font-black">Lots</th>
+                  <th className="py-2.5 px-3 font-black text-right">Entry</th>
+                  <th className="py-2.5 px-3 font-black text-right">Close</th>
+                  <th className="py-2.5 px-3 font-black">Exit Date</th>
+                  <th className="py-2.5 px-3 font-black text-right">Net PnL</th>
+                  <th className="py-2.5 px-4 font-black text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {closedInWeek.map(({ trade }) => {
+                  const sym = trade.currency === 'USD' ? '$' : '₹';
+                  const entryPrice = trade.direction === 'Long' ? trade.buyPrice : trade.sellPrice;
+                  const exitPrice = trade.direction === 'Long' ? trade.sellPrice : trade.buyPrice;
+                  const exitDate = trade.direction === 'Long' ? trade.sellDate : trade.buyDate;
+                  const totNet = tradeTotalNet(trade);
+                  return (
+                    <tr key={trade.id} id={`closed-trade-${trade.id}`} className="hover:bg-white/5 transition">
+                      <td className="py-2.5 px-4 font-mono font-extrabold text-white text-sm">{trade.symbol}</td>
+                      <td className="py-2.5 px-3">
+                        <span className={`text-[10px] font-black font-mono uppercase px-1.5 py-0.5 rounded ${trade.direction === 'Long' ? 'bg-[#5dcaa5]/10 text-[#5dcaa5] border border-[#5dcaa5]/25' : 'bg-[#e8a04d]/10 text-[#e8a04d] border border-[#e8a04d]/25'}`}>
+                          {trade.direction}
                         </span>
-                      ) : (
-                        <span className="font-mono text-slate-100 font-bold text-xs">
-                          {trade.currency === 'USD' ? '$' : '₹'}{formatAmount(closingPrice)}
+                        <span className="block text-[10px] text-slate-400 font-mono mt-0.5">{trade.instrument}</span>
+                      </td>
+                      <td className="py-2.5 px-3 font-mono text-slate-200 text-sm whitespace-nowrap">{trade.numberOfLots} × {trade.lotSize}</td>
+                      <td className="py-2.5 px-3 font-mono text-slate-100 text-sm text-right font-bold whitespace-nowrap">{sym}{formatPrice(entryPrice)}</td>
+                      <td className="py-2.5 px-3 font-mono text-slate-100 text-sm text-right font-bold whitespace-nowrap">{sym}{formatPrice(exitPrice)}</td>
+                      <td className="py-2.5 px-3 font-mono text-slate-400 text-xs whitespace-nowrap">{exitDate || '—'}</td>
+                      <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                        <span className={`font-mono font-black text-sm ${totNet >= 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'}`} title="Final realized net across the trade's life">
+                          {totNet >= 0 ? '+' : ''}₹{formatAmount(totNet)}
                         </span>
-                      )}
-                    </div>
-
-                    <div>
-                      <span className="block text-[9px] text-slate-300 font-extrabold uppercase tracking-widest mb-1.5 font-mono">
-                        Points Earned
-                      </span>
-                      <span className={`font-mono font-bold text-xs ${points >= 0 ? 'text-[#bef264]' : 'text-rose-400'}`}>
-                        {points >= 0 ? '+' : ''}{formatAmount(points, 3)}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="block text-[9px] text-slate-300 font-extrabold uppercase tracking-widest mb-1.5 font-mono">
-                        Gross Yield
-                      </span>
-                      <span className={`font-mono font-bold text-xs ${grossProfit >= 0 ? 'text-[#bef264]' : 'text-rose-400'}`}>
-                        {grossProfit >= 0 ? '+' : ''}₹{formatAmount(grossProfit)}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="block text-[9px] text-slate-300 font-extrabold uppercase tracking-widest mb-1.5 font-mono">
-                        Charges Applied
-                      </span>
-                      <span className="font-mono text-xs text-rose-400 font-bold">
-                        -₹{formatAmount(brokerageDeducted)}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="block text-[9px] text-slate-300 font-extrabold uppercase tracking-widest mb-1.5 font-mono">
-                        Net PnL
-                      </span>
-                      <span className={`font-mono font-black text-sm ${netProfit >= 0 ? 'text-[#bef264]' : 'text-rose-405'}`}>
-                        {netProfit >= 0 ? '+' : ''}₹{formatAmount(netProfit)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Lot size detail */}
-                  <div className="flex justify-between text-[9px] text-slate-450 font-mono px-1 font-bold tracking-wider uppercase">
-                    <span>Lots count: {trade.numberOfLots} lots x {trade.lotSize} contract multiplier</span>
-                    <span>Initiation Date: {trade.dateInitiated}</span>
-                  </div>
-                </div>
-              );
-            })}
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button type="button" title="Edit / correct" onClick={() => onOpenEditTrade(trade)} className="p-1.5 rounded-lg bg-slate-800/80 border border-white/10 text-slate-300 hover:text-[#7fb3d5] hover:border-[#7fb3d5]/50 transition cursor-pointer active:scale-95">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button type="button" title="Delete (PIN protected)" onClick={() => onDeleteTrade(trade)} className="p-1.5 rounded-lg bg-[#e8a04d]/10 border border-[#e8a04d]/30 text-[#e8a04d] hover:bg-[#e8a04d] hover:text-white transition cursor-pointer active:scale-95">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

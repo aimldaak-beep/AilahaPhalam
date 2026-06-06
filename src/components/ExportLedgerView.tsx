@@ -97,8 +97,8 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
     <div className="space-y-6 text-slate-100">
       {/* Title Header */}
       <div className="flex items-center gap-3">
-        <span className="p-2 bg-[#242f36] border border-white/10 rounded-xl text-[#bef264] shadow-xl">
-          <Download className="w-4 h-4 text-[#bef264]" />
+        <span className="p-2 bg-[#222e42] border border-white/10 rounded-xl text-[#7fb3d5] shadow-xl">
+          <Download className="w-4 h-4 text-[#7fb3d5]" />
         </span>
         <div>
           <h2 className="text-xs font-black uppercase tracking-widest text-slate-200 font-mono">
@@ -114,9 +114,9 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
         {/* Left column: Setup controls */}
         <div className="lg:col-span-2 space-y-6">
           {/* Card 1: Chronological bounds */}
-          <div className="bg-[#242f36] border border-white/10 rounded-3xl p-6 shadow-lg space-y-4">
+          <div className="bg-[#222e42] border border-white/10 rounded-3xl p-6 shadow-lg space-y-4">
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#bef264]" />
+              <Calendar className="w-4 h-4 text-[#7fb3d5]" />
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-200 font-mono">
                 1. Chronological Bounds (Date Range)
               </h3>
@@ -129,7 +129,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                 onClick={() => setUseDateRange(false)}
                 className={`flex-1 py-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-lg transition duration-200 ${
                   !useDateRange 
-                    ? 'bg-[#bef264]/15 border border-[#bef264]/25 text-[#bef264]' 
+                    ? 'bg-[#7fb3d5]/15 border border-[#7fb3d5]/25 text-[#7fb3d5]' 
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -140,7 +140,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                 onClick={() => setUseDateRange(true)}
                 className={`flex-1 py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-lg transition duration-200 ${
                   useDateRange 
-                    ? 'bg-[#bef264]/15 border border-[#bef264]/25 text-[#bef264]' 
+                    ? 'bg-[#7fb3d5]/15 border border-[#7fb3d5]/25 text-[#7fb3d5]' 
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -160,7 +160,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                     type="date"
                     value={startDate}
                     onChange={e => setStartDate(e.target.value)}
-                    className="w-full bg-slate-950 border border-white/10 hover:border-white/20 focus:border-[#bef264] px-4 py-2.5 rounded-xl text-xs text-white outline-none font-mono transition"
+                    className="w-full bg-slate-950 border border-white/10 hover:border-white/20 focus:border-[#7fb3d5] px-4 py-2.5 rounded-xl text-xs text-white outline-none font-mono transition"
                   />
                 </div>
                 <div>
@@ -172,7 +172,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                     type="date"
                     value={endDate}
                     onChange={e => setEndDate(e.target.value)}
-                    className="w-full bg-slate-950 border border-white/10 hover:border-white/20 focus:border-[#bef264] px-4 py-2.5 rounded-xl text-xs text-white outline-none font-mono transition"
+                    className="w-full bg-slate-950 border border-white/10 hover:border-white/20 focus:border-[#7fb3d5] px-4 py-2.5 rounded-xl text-xs text-white outline-none font-mono transition"
                   />
                 </div>
               </div>
@@ -180,10 +180,10 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
           </div>
 
           {/* Card 2: Instrument Type Filters */}
-          <div className="bg-[#242f36] border border-white/10 rounded-3xl p-6 shadow-lg space-y-4">
+          <div className="bg-[#222e42] border border-white/10 rounded-3xl p-6 shadow-lg space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-[#bef264]" />
+                <Filter className="w-4 h-4 text-[#7fb3d5]" />
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-200 font-mono">
                   2. Segment Filters (Instrument Type)
                 </h3>
@@ -194,7 +194,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                 <button
                   type="button"
                   onClick={selectAllInstruments}
-                  className="text-[9px] font-bold text-[#bef264] hover:underline uppercase tracking-wide font-mono bg-white/5 border border-white/5 px-2 py-1 rounded"
+                  className="text-[9px] font-bold text-[#7fb3d5] hover:underline uppercase tracking-wide font-mono bg-white/5 border border-white/5 px-2 py-1 rounded"
                 >
                   Select All
                 </button>
@@ -223,12 +223,12 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                     onClick={() => toggleInstrument(inst)}
                     className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-bold transition duration-150 select-none cursor-pointer ${
                       isSelected
-                        ? 'bg-[#bef264]/15 border-[#bef264]/45 text-[#bef264] shadow-md'
+                        ? 'bg-[#7fb3d5]/15 border-[#7fb3d5]/45 text-[#7fb3d5] shadow-md'
                         : 'bg-slate-900/40 border-white/5 text-slate-300 hover:bg-slate-900/80 hover:border-white/10'
                     }`}
                   >
                     <span className="font-mono">{inst}</span>
-                    {isSelected && <Check className="w-3.5 h-3.5 text-[#bef264]" />}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-[#7fb3d5]" />}
                   </button>
                 );
               })}
@@ -238,11 +238,11 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
 
         {/* Right column: Matched preview & export triggers */}
         <div className="space-y-6">
-          <div className="bg-[#242f36] border border-white/10 rounded-3xl p-6 shadow-lg flex flex-col justify-between min-h-[300px]">
+          <div className="bg-[#222e42] border border-white/10 rounded-3xl p-6 shadow-lg flex flex-col justify-between min-h-[300px]">
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#bef264]" />
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#bef264] font-mono">
+                <Sparkles className="w-4 h-4 text-[#7fb3d5]" />
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#7fb3d5] font-mono">
                   Export Matrix Diagnostics
                 </h3>
               </div>
@@ -258,7 +258,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
 
                 <div className="w-full bg-slate-900 h-1 rounded-full overflow-hidden">
                   <div 
-                    className="bg-[#bef264] h-full transition-all duration-300"
+                    className="bg-[#7fb3d5] h-full transition-all duration-300"
                     style={{ width: `${trades.length > 0 ? (matchedTrades.length / trades.length) * 100 : 0}%` }}
                   />
                 </div>
@@ -266,7 +266,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                 <div className="text-[9px] text-slate-400 font-mono space-y-1 bg-black/20 p-2.5 rounded-lg border border-white/5">
                   <div className="flex justify-between">
                     <span>Date Bounds:</span>
-                    <span className="text-[#bef264] font-bold">
+                    <span className="text-[#7fb3d5] font-bold">
                       {useDateRange 
                         ? `${startDate || 'Start'} ➜ ${endDate || 'End'}` 
                         : 'All Historical Bounds'
@@ -293,7 +293,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                 disabled={matchedTrades.length === 0}
                 className={`w-full py-4 rounded-2xl text-xs font-black uppercase tracking-widest font-mono flex items-center justify-center gap-2 transition duration-200 cursor-pointer shadow-lg active:scale-[0.98] ${
                   matchedTrades.length > 0
-                    ? 'bg-[#bef264] hover:bg-[#a9db58] text-slate-950 border border-[#bef264]/40 hover:shadow-[0_0_20px_rgba(190,242,100,0.15)] shadow-[#bef264]/5'
+                    ? 'bg-[#7fb3d5] hover:bg-[#5f9fc8] text-slate-950 border border-[#7fb3d5]/40 hover:shadow-[0_0_20px_rgba(190,242,100,0.15)] shadow-[#7fb3d5]/5'
                     : 'bg-slate-900 border border-white/5 text-slate-500 cursor-not-allowed'
                 }`}
               >
@@ -306,14 +306,14 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
               <button
                 type="button"
                 onClick={() => downloadReconciliationCsv(trades, weekOffsets)}
-                className="w-full py-3 rounded-2xl text-xs font-black uppercase tracking-widest font-mono flex items-center justify-center gap-2 transition duration-200 cursor-pointer shadow-md active:scale-[0.98] bg-[#242f36] border border-[#bef264]/30 text-[#bef264] hover:bg-[#2e3c45]"
+                className="w-full py-3 rounded-2xl text-xs font-black uppercase tracking-widest font-mono flex items-center justify-center gap-2 transition duration-200 cursor-pointer shadow-md active:scale-[0.98] bg-[#222e42] border border-[#7fb3d5]/30 text-[#7fb3d5] hover:bg-[#2a3a52]"
               >
                 <Download className="w-4 h-4" />
                 Export Weekly Reconciliation CSV
               </button>
 
               <div className="flex items-start gap-1.5 text-[8.5px] font-medium leading-relaxed text-slate-400 font-mono bg-slate-950/20 p-3 rounded-xl border border-white/5">
-                <Info className="w-3.5 h-3.5 text-[#bef264] shrink-0 mt-0.5" />
+                <Info className="w-3.5 h-3.5 text-[#7fb3d5] shrink-0 mt-0.5" />
                 <span>
                   The exported document outputs in standard CSV format and is fully compatible with Microsoft Excel, Google Sheets, and Numbers.
                 </span>
@@ -325,7 +325,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
 
       {/* Matched Positions Preview List */}
       {matchedTrades.length > 0 && (
-        <div className="bg-[#242f36] border border-white/10 rounded-3xl p-6 shadow-lg space-y-3">
+        <div className="bg-[#222e42] border border-white/10 rounded-3xl p-6 shadow-lg space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Briefcase className="w-4 h-4 text-slate-300" />
@@ -359,8 +359,8 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                     <td className="py-2 px-4">
                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-black tracking-wider uppercase ${
                         t.direction === 'Long' 
-                          ? 'bg-emerald-500/10 border border-emerald-500/25 text-emerald-400' 
-                          : 'bg-rose-500/10 border border-rose-500/25 text-rose-400'
+                          ? 'bg-[#5dcaa5]/10 border border-[#5dcaa5]/25 text-[#5dcaa5]' 
+                          : 'bg-[#e8a04d]/10 border border-[#e8a04d]/25 text-[#e8a04d]'
                       }`}>
                         {t.direction}
                       </span>
@@ -380,7 +380,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                         type="button"
                         title="Edit / correct this trade"
                         onClick={() => onOpenEditTrade(t)}
-                        className="inline-flex items-center gap-1 bg-slate-800/80 border border-white/10 hover:border-[#bef264]/50 text-slate-300 hover:text-[#bef264] px-2.5 py-1 rounded-lg text-[10px] font-black transition cursor-pointer"
+                        className="inline-flex items-center gap-1 bg-slate-800/80 border border-white/10 hover:border-[#7fb3d5]/50 text-slate-300 hover:text-[#7fb3d5] px-2.5 py-1 rounded-lg text-[10px] font-black transition cursor-pointer"
                       >
                         <Pencil className="w-3 h-3" />
                         Edit

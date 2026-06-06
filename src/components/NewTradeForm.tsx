@@ -17,10 +17,10 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
     new Date().toISOString().split('T')[0]
   );
   const [symbol, setSymbol] = useState('');
-  const [instrument, setInstrument] = useState<Instrument>('Futures');
+  const [instrument, setInstrument] = useState<Instrument>('DOW');
   const [direction, setDirection] = useState<TradeDirection>('Long');
   const [entryPrice, setEntryPrice] = useState<string>('');
-  const [lotSize, setLotSize] = useState<string>('250');
+  const [lotSize, setLotSize] = useState<string>('5');
   const [numberOfLots, setNumberOfLots] = useState<string>('1');
 
 
@@ -58,13 +58,17 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
         setRealizationOption('Full');
         break;
       case 'DOW':
+        setLotSize('5');
+        setCurrency('USD');
+        setRealizationOption('80/20');
+        break;
       case 'Nasdaq':
-        setLotSize('1');
+        setLotSize('20');
         setCurrency('USD');
         setRealizationOption('80/20');
         break;
       case 'SnP':
-        setLotSize('5');
+        setLotSize('50');
         setCurrency('USD');
         setRealizationOption('80/20');
         break;
@@ -124,18 +128,18 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
       <div 
         id="new-trade-form-card"
-        className="bg-[#0b0f19] border border-white/10 rounded-3xl w-full max-w-xl max-h-[92vh] overflow-y-auto shadow-2xl transition-all duration-200"
+        className="bg-[#161f2e] border border-white/10 rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl transition-all duration-200"
       >
         <div className="flex items-center justify-between border-b border-white/5 px-6 py-4.5">
-          <div className="flex items-center gap-3">
-            <span className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 shadow-md">
+          <div className="flex items-center gap-4">
+            <span className="p-2.5 bg-[#5dcaa5]/10 border border-[#5dcaa5]/20 rounded-xl text-[#5dcaa5] shadow-md">
               <Plus className="w-5 h-5" />
             </span>
             <div>
               <h3 className="font-extrabold text-sm text-white font-sans uppercase tracking-widest">
                 Initiate New Contract
               </h3>
-              <p className="text-[9px] text-[#f97316] font-bold font-mono uppercase tracking-widest">
+              <p className="text-[13px] text-[#e8a04d] font-bold font-mono uppercase tracking-widest">
                 Ailaha Phalam Ledger Logistics Engine
               </p>
             </div>
@@ -149,18 +153,18 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Metadata Display */}
-          <div className="bg-slate-950/85 rounded-2xl p-4 border border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2 text-slate-300 font-semibold font-mono text-[10px] uppercase tracking-wider">
-              <Calendar className="w-4 h-4 text-orange-400" />
+          <div className="bg-slate-950/85 rounded-2xl p-4 border border-white/5 flex flex-wrap items-center justify-between gap-4 text-sm">
+            <div className="flex items-center gap-2 text-slate-300 font-semibold font-mono text-[12px] uppercase tracking-wider">
+              <Calendar className="w-4 h-4 text-[#e8a04d]" />
               <span>Initiation Date Week:</span>
             </div>
             <div className="flex items-center gap-2 font-black font-mono">
-              <span className="bg-orange-500/20 border border-orange-500/40 text-orange-400 px-2.5 py-1 rounded-lg text-[10px] uppercase font-mono tracking-widest shadow-sm">
+              <span className="bg-[#e8a04d]/20 border border-[#e8a04d]/40 text-[#e8a04d] px-2.5 py-1 rounded-lg text-[12px] uppercase font-mono tracking-widest shadow-sm">
                 Week {weekInfo.weekNum}
               </span>
-              <span className="text-slate-300 font-mono text-xs">
+              <span className="text-slate-300 font-mono text-sm">
                 {weekInfo.weekRange}
               </span>
             </div>
@@ -169,7 +173,7 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
           <div className="grid grid-cols-2 gap-4">
             {/* Symbol */}
             <div className="space-y-1.5 animate-fade-in">
-              <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono">
+              <label className="block text-[13px] font-black text-slate-400 uppercase tracking-widest font-mono">
                 Symbol / Security Identifier
               </label>
               <input
@@ -179,23 +183,21 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                 placeholder="e.g. NIFTY25S"
                 value={symbol}
                 onChange={e => setSymbol(e.target.value)}
-                className="w-full bg-slate-950 border border-white/10 focus:border-[#f97316] transition rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none font-bold font-mono tracking-wide"
+                className="w-full bg-slate-950 border border-white/10 focus:border-[#e8a04d] transition rounded-xl px-3.5 py-3 text-base text-white placeholder-slate-500 focus:outline-none font-bold font-mono tracking-wide"
               />
             </div>
 
             {/* Instrument dropdown */}
             <div className="space-y-1.5 animate-fade-in">
-              <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono">
+              <label className="block text-[13px] font-black text-slate-400 uppercase tracking-widest font-mono">
                 Instrument Type
               </label>
               <select
                 id="instrument-select"
                 value={instrument}
                 onChange={e => setInstrument(e.target.value as Instrument)}
-                className="w-full bg-slate-950 border border-white/10 focus:border-[#f97316] transition rounded-xl px-3 py-2.5 text-xs text-slate-200 focus:outline-none font-bold cursor-pointer font-mono"
+                className="w-full bg-slate-950 border border-white/10 focus:border-[#e8a04d] transition rounded-xl px-3 py-3 text-base text-slate-200 focus:outline-none font-bold cursor-pointer font-mono"
               >
-                <option value="Futures" className="bg-slate-950 text-slate-100">Futures</option>
-                <option value="Option" className="bg-slate-950 text-slate-100">Option</option>
                 <option value="NSE Futures" className="bg-slate-950 text-slate-100">NSE Futures</option>
                 <option value="NSE Options" className="bg-slate-950 text-slate-100">NSE Options</option>
                 <option value="DOW" className="bg-slate-950 text-slate-100">DOW</option>
@@ -210,43 +212,43 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
 
           {/* Direction toggle */}
           <div className="space-y-2">
-            <label className="block text-[9px] font-black text-slate-350 uppercase tracking-widest font-mono">
+            <label className="block text-[13px] font-black text-slate-350 uppercase tracking-widest font-mono">
               Trade Direction
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <button
                 type="button"
                 id="dir-long-btn"
                 onClick={() => setDirection('Long')}
-                className={`py-2.5 px-4 rounded-xl text-xs font-black transition text-center flex items-center justify-center gap-1.5 cursor-pointer font-mono tracking-widest ${
+                className={`py-3 px-4 rounded-xl text-sm font-black transition text-center flex items-center justify-center gap-1.5 cursor-pointer font-mono tracking-widest ${
                   direction === 'Long'
-                    ? 'bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 shadow-md'
+                    ? 'bg-[#5dcaa5]/15 border border-[#5dcaa5]/40 text-[#5dcaa5] shadow-md'
                     : 'bg-slate-950 border border-white/5 text-slate-400 hover:text-white'
                 }`}
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-ping" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#5dcaa5] inline-block animate-ping" />
                 LONG / BUY FIRST
               </button>
               <button
                 type="button"
                 id="dir-short-btn"
                 onClick={() => setDirection('Short')}
-                className={`py-2.5 px-4 rounded-xl text-xs font-black transition text-center flex items-center justify-center gap-1.5 cursor-pointer font-mono tracking-widest ${
+                className={`py-3 px-4 rounded-xl text-sm font-black transition text-center flex items-center justify-center gap-1.5 cursor-pointer font-mono tracking-widest ${
                   direction === 'Short'
-                    ? 'bg-rose-500/15 border border-rose-500/40 text-rose-455 shadow-md'
+                    ? 'bg-[#e8a04d]/15 border border-[#e8a04d]/40 text-[#e8a04d] shadow-md'
                     : 'bg-slate-950 border border-white/5 text-slate-400 hover:text-white'
                 }`}
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block animate-ping" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#e8a04d] inline-block animate-ping" />
                 SHORT / SELL FIRST
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-4">
             {/* Entry Price */}
             <div className="space-y-1.5">
-              <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono">
+              <label className="block text-[13px] font-black text-slate-400 uppercase tracking-widest font-mono">
                 {direction === 'Long' ? 'Buy Price' : 'Sell Price'}
               </label>
               <input
@@ -257,13 +259,13 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                 placeholder="0.00"
                 value={entryPrice}
                 onChange={e => validateAndSetDecimal(e.target.value, setEntryPrice)}
-                className="w-full bg-slate-950 border border-white/10 focus:border-[#f97316] transition rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-bold font-mono"
+                className="w-full bg-slate-950 border border-white/10 focus:border-[#e8a04d] transition rounded-xl px-3.5 py-3 text-base text-white focus:outline-none font-bold font-mono"
               />
             </div>
 
             {/* Lot Size */}
             <div className="space-y-1.5">
-              <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono">
+              <label className="block text-[13px] font-black text-slate-400 uppercase tracking-widest font-mono">
                 Multiplier Size
               </label>
               <input
@@ -273,13 +275,13 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                 required
                 value={lotSize}
                 onChange={e => validateAndSetDecimal(e.target.value, setLotSize)}
-                className="w-full bg-slate-950 border border-white/10 focus:border-[#f97316] transition rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none font-bold font-mono"
+                className="w-full bg-slate-950 border border-white/10 focus:border-[#e8a04d] transition rounded-xl px-4 py-3 text-base text-white focus:outline-none font-bold font-mono"
               />
             </div>
 
             {/* Lots count */}
             <div className="space-y-1.5">
-              <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono">
+              <label className="block text-[13px] font-black text-slate-400 uppercase tracking-widest font-mono">
                 No. of Lots
               </label>
               <input
@@ -289,15 +291,15 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                 required
                 value={numberOfLots}
                 onChange={e => validateAndSetDecimal(e.target.value, setNumberOfLots)}
-                className="w-full bg-slate-950 border border-white/10 focus:border-[#f97316] transition rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none font-bold font-mono"
+                className="w-full bg-slate-950 border border-white/10 focus:border-[#e8a04d] transition rounded-xl px-4 py-3 text-base text-white focus:outline-none font-bold font-mono"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-4">
             {/* Initiation date */}
             <div className="space-y-1.5">
-              <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono">
+              <label className="block text-[13px] font-black text-slate-400 uppercase tracking-widest font-mono">
                 Initiation Date Form
               </label>
               <input
@@ -306,20 +308,20 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                 required
                 value={dateInitiated}
                 onChange={e => setDateInitiated(e.target.value)}
-                className="w-full bg-slate-950 border border-white/10 focus:border-[#f97316] transition rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-bold font-mono"
+                className="w-full bg-slate-950 border border-white/10 focus:border-[#e8a04d] transition rounded-xl px-3.5 py-3 text-base text-white focus:outline-none font-bold font-mono"
               />
             </div>
           </div>
 
           {/* Currency and Realization Configuration Panel */}
           <div className="border-t border-white/5 pt-4 mt-2 space-y-3">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block font-mono">
+            <span className="text-[13px] font-black text-slate-400 uppercase tracking-widest block font-mono">
               Accounting & Currency Parameters
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950/80 p-4 rounded-2xl border border-white/5">
               {/* Currency Select */}
               <div className="space-y-1.5">
-                <label className="block text-[9px] font-black text-slate-450 uppercase tracking-widest font-mono">
+                <label className="block text-[13px] font-black text-slate-450 uppercase tracking-widest font-mono">
                   Accounting Currency
                 </label>
                 <div className="grid grid-cols-2 gap-1.5 bg-slate-900/65 p-1 rounded-xl border border-white/5">
@@ -331,9 +333,9 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                         setRealizationOption('Full');
                       }
                     }}
-                    className={`px-3 py-1.5 text-xs rounded-lg transition flex items-center justify-center gap-1 font-black font-mono cursor-pointer ${
+                    className={`px-3 py-1.5 text-sm rounded-lg transition flex items-center justify-center gap-1 font-black font-mono cursor-pointer ${
                       currency === 'INR'
-                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold'
+                        ? 'bg-[#5dcaa5]/15 text-[#5dcaa5] border border-[#5dcaa5]/30 font-bold'
                         : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
@@ -345,9 +347,9 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                       setCurrency('USD');
                       setRealizationOption('80/20');
                     }}
-                    className={`px-3 py-1.5 text-xs rounded-lg transition flex items-center justify-center gap-1 font-black font-mono cursor-pointer ${
+                    className={`px-3 py-1.5 text-sm rounded-lg transition flex items-center justify-center gap-1 font-black font-mono cursor-pointer ${
                       currency === 'USD'
-                        ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                        ? 'bg-[#e8a04d]/20 text-[#e8a04d] border border-[#e8a04d]/30'
                         : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
@@ -358,16 +360,16 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
 
               {/* Realization Rate selection */}
               <div className="space-y-1.5">
-                <label className="block text-[9px] font-black text-slate-450 uppercase tracking-widest font-mono" title="USD and Gift Nifty default to 80/20 book profits">
+                <label className="block text-[13px] font-black text-slate-450 uppercase tracking-widest font-mono" title="USD and Gift Nifty default to 80/20 book profits">
                   Realization Rate Multiplier
                 </label>
                 <div className="grid grid-cols-2 gap-1.5 bg-slate-900/65 p-1 rounded-xl border border-white/5">
                   <button
                     type="button"
                     onClick={() => setRealizationOption('Full')}
-                    className={`px-3 py-1.5 text-xs rounded-lg transition font-black font-mono cursor-pointer ${
+                    className={`px-3 py-1.5 text-sm rounded-lg transition font-black font-mono cursor-pointer ${
                       realizationOption === 'Full'
-                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                        ? 'bg-[#5dcaa5]/15 text-[#5dcaa5] border border-[#5dcaa5]/30'
                         : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
@@ -376,9 +378,9 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                   <button
                     type="button"
                     onClick={() => setRealizationOption('80/20')}
-                    className={`px-3 py-1.5 text-xs rounded-lg transition font-black font-mono cursor-pointer ${
+                    className={`px-3 py-1.5 text-sm rounded-lg transition font-black font-mono cursor-pointer ${
                       realizationOption === '80/20'
-                        ? 'bg-[#f97316]/20 text-orange-400 border border-orange-500/30'
+                        ? 'bg-[#e8a04d]/20 text-[#e8a04d] border border-[#e8a04d]/30'
                         : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
@@ -390,8 +392,8 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
               {/* Conditionally ask for USD to INR exchange rate */}
               {currency === 'USD' && (
                 <div className="col-span-1 sm:col-span-2 border-t border-white/5 pt-3 animate-in fade-in space-y-1.5">
-                  <label className="block text-[9px] font-black text-orange-400 uppercase tracking-widest flex items-center gap-1.5 font-mono">
-                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500 inline-block animate-pulse"></span>
+                  <label className="block text-[13px] font-black text-[#e8a04d] uppercase tracking-widest flex items-center gap-1.5 font-mono">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#e8a04d] inline-block animate-pulse"></span>
                     USD to INR Conversion Rate
                   </label>
                   <input
@@ -401,9 +403,9 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                     placeholder="e.g. 83.24"
                     value={usdToInrRate}
                     onChange={e => validateAndSetDecimal(e.target.value, setUsdToInrRate)}
-                    className="w-full bg-slate-950 border border-white/10 focus:border-orange-500 transition rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none"
+                    className="w-full bg-slate-950 border border-white/10 focus:border-[#e8a04d] transition rounded-xl px-4 py-3 text-base text-white font-mono focus:outline-none"
                   />
-                  <span className="text-[10px] text-slate-450 mt-1 block leading-normal font-bold">
+                  <span className="text-[12px] text-slate-450 mt-1 block leading-normal font-bold">
                     * USD base values will translate to INR ledger automatically using this rate.
                   </span>
                 </div>
@@ -413,10 +415,10 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
 
           {/* Info Banner on Rollover */}
           <div className="border-t border-white/5 pt-4 mt-2">
-            <div className="bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/20 flex gap-3 text-emerald-400/90 text-[11px] leading-relaxed font-bold">
-              <AlertOctagon className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5 animate-pulse" />
+            <div className="bg-[#5dcaa5]/5 p-4 rounded-2xl border border-[#5dcaa5]/20 flex gap-4 text-[#5dcaa5]/90 text-[13px] leading-relaxed font-bold">
+              <AlertOctagon className="w-5 h-5 text-[#5dcaa5] shrink-0 mt-0.5 animate-pulse" />
               <div>
-                <span className="font-black text-emerald-400 block mb-1 text-[10px] uppercase tracking-widest font-mono">
+                <span className="font-black text-[#5dcaa5] block mb-1 text-[12px] uppercase tracking-widest font-mono">
                   Active Trade Initiation Modality
                 </span>
                 This contract will initiate as open-trading in the active positions roster. You can close, check current PnL, or carry it forward at any time from the Weekly Reporting view.
@@ -425,18 +427,18 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
           </div>
 
           {/* Action buttons */}
-          <div className="flex gap-3 justify-end pt-4 border-t border-white/5">
+          <div className="flex gap-4 justify-end pt-4 border-t border-white/5">
             <button
               type="button"
               onClick={onClose}
-              className="bg-slate-950 hover:bg-slate-900 border border-white/5 hover:border-white/10 px-5 py-2.5 rounded-xl text-xs font-black text-slate-200 transition cursor-pointer font-mono uppercase tracking-wider"
+              className="bg-slate-950 hover:bg-slate-900 border border-white/5 hover:border-white/10 px-5 py-3 rounded-xl text-sm font-black text-slate-200 transition cursor-pointer font-mono uppercase tracking-wider"
             >
               Cancel
             </button>
             <button
               type="submit"
               id="confirm-btn"
-              className="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-705 text-slate-950 font-extrabold px-6 py-2.5 rounded-xl text-xs transition cursor-pointer font-mono uppercase tracking-wider shadow-lg shadow-emerald-500/10"
+              className="bg-[#5dcaa5] hover:bg-[#4bb592] active:bg-[#4bb592] text-slate-950 font-extrabold px-6 py-3 rounded-xl text-sm transition cursor-pointer font-mono uppercase tracking-wider shadow-lg shadow-[#5dcaa5]/10"
             >
               Confirm & Deploy
             </button>

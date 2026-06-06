@@ -94,8 +94,8 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
     {
       name: "GIFT Nifty",
       match: (t: Trade) => t.instrument === 'Gift Nifty',
-      colorClass: "bg-amber-500/10 border-amber-505/35 text-amber-400 bg-[#3a2c14] hover:bg-[#47371a]",
-      icon: <Target className="w-5 h-5 text-amber-400" />
+      colorClass: "bg-[#e8a04d]/10 border-[#e8a04d]/35 text-[#e8a04d] bg-[#3a2c14] hover:bg-[#47371a]",
+      icon: <Target className="w-5 h-5 text-[#e8a04d]" />
     },
     {
       name: "DOW Conglomerate",
@@ -106,7 +106,7 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
     {
       name: "Global Indices & Commodities",
       match: (t: Trade) => ['Nasdaq', 'Nikkei', 'SnP', 'NG'].includes(t.instrument),
-      colorClass: "bg-slate-500/10 border-slate-505/35 text-slate-300 bg-[#252f36] hover:bg-[#2d3a42]",
+      colorClass: "bg-slate-500/10 border-slate-505/35 text-slate-300 bg-[#222e42] hover:bg-[#2a3a52]",
       icon: <Compass className="w-5 h-5 text-slate-300" />
     }
   ];
@@ -153,8 +153,8 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
     <div className="space-y-6 text-slate-100">
       {/* Visual Title Header */}
       <div className="flex items-center gap-3">
-        <span className="p-2 bg-[#242f36] border border-white/10 rounded-xl text-[#bef264] shadow-xl">
-          <Sparkles className="w-4 h-4 text-[#bef264]" />
+        <span className="p-2 bg-[#222e42] border border-white/10 rounded-xl text-[#7fb3d5] shadow-xl">
+          <Sparkles className="w-4 h-4 text-[#7fb3d5]" />
         </span>
         <div>
           <h2 className="text-xs font-black uppercase tracking-widest text-slate-200 font-mono">
@@ -168,9 +168,9 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
 
       {/* Main overall stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="relative overflow-hidden bg-[#242f36] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm">
-          <div className="absolute right-4 top-4 bg-[#bef264]/10 border border-[#bef264]/20 p-2 rounded-xl text-[#bef264] shadow-md">
-            <Compass className="w-4 h-4 text-[#bef264]" />
+        <div className="relative overflow-hidden bg-[#222e42] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm">
+          <div className="absolute right-4 top-4 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 p-2 rounded-xl text-[#7fb3d5] shadow-md">
+            <Compass className="w-4 h-4 text-[#7fb3d5]" />
           </div>
           <span className="block text-[9px] font-black text-slate-3 w-max uppercase tracking-widest font-mono font-bold">
             Consolidated Trades
@@ -180,24 +180,24 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
           </span>
         </div>
 
-        <div className="relative overflow-hidden bg-[#242f36] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm">
-          <div className="absolute right-4 top-4 bg-[#bef264]/10 border border-[#bef264]/20 p-2 rounded-xl text-[#bef264] shadow-md">
-            <TrendingUp className="w-4 h-4 text-[#bef264]" />
+        <div className="relative overflow-hidden bg-[#222e42] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm">
+          <div className="absolute right-4 top-4 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 p-2 rounded-xl text-[#7fb3d5] shadow-md">
+            <TrendingUp className="w-4 h-4 text-[#7fb3d5]" />
           </div>
           <span className="block text-[9px] font-black text-slate-3 w-max uppercase tracking-widest font-mono font-bold">
             Total realized profit
           </span>
           <span className={`block text-2xl font-black font-mono tracking-tight mt-3 ${
-            totalOverallNetProfit >= 0 ? 'text-[#bef264]' : 'text-rose-455'
+            totalOverallNetProfit >= 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'
           }`}>
             {totalOverallNetProfit >= 0 ? '+' : ''}
             ₹{formatAmount(totalOverallNetProfit)}
           </span>
         </div>
 
-        <div className="relative overflow-hidden bg-[#242f36] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm">
-          <div className="absolute right-4 top-4 bg-[#bef264]/10 border border-[#bef264]/20 p-2 rounded-xl text-[#bef264] shadow-md">
-            <Scale className="w-4 h-4 text-[#bef264]" />
+        <div className="relative overflow-hidden bg-[#222e42] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm">
+          <div className="absolute right-4 top-4 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 p-2 rounded-xl text-[#7fb3d5] shadow-md">
+            <Scale className="w-4 h-4 text-[#7fb3d5]" />
           </div>
           <span className="block text-[9px] font-black text-slate-2 w-max uppercase tracking-widest font-mono font-bold">
             Winning Trades
@@ -238,7 +238,7 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
                     </div>
                   </div>
                   <span className={`text-[9px] font-black font-mono px-2 py-0.5 rounded-md ${
-                    group.totalNetProfit >= 0 ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border border-rose-500/20 text-rose-400'
+                    group.totalNetProfit >= 0 ? 'bg-[#5dcaa5]/10 border border-[#5dcaa5]/20 text-[#5dcaa5]' : 'bg-[#e8a04d]/10 border border-[#e8a04d]/20 text-[#e8a04d]'
                   }`}>
                     {group.totalNetProfit >= 0 ? 'STATUS: GAIN' : 'STATUS: LOSS'}
                   </span>
@@ -250,7 +250,7 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
                     Net Segment accounting Yield
                   </span>
                   <span className={`block text-xl font-black font-mono tracking-tight mt-1 ${
-                    group.totalNetProfit >= 0 ? 'text-[#bef264]' : 'text-rose-400'
+                    group.totalNetProfit >= 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'
                   }`}>
                     {group.totalNetProfit >= 0 ? '+' : ''}
                     ₹{formatPrice(group.totalNetProfit)}
@@ -264,10 +264,10 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
                     <span className="text-white">{formatAmount(grpWinRate, 0)}%</span>
                   </div>
                   <div className="flex gap-1.5">
-                    <span className="bg-emerald-500/15 text-emerald-400 px-1.5 py-0.5 rounded">
+                    <span className="bg-[#5dcaa5]/15 text-[#5dcaa5] px-1.5 py-0.5 rounded">
                       {group.winningTrades} W
                     </span>
-                    <span className="bg-rose-500/15 text-rose-400 px-1.5 py-0.5 rounded">
+                    <span className="bg-[#e8a04d]/15 text-[#e8a04d] px-1.5 py-0.5 rounded">
                       {group.losingTrades} L
                     </span>
                   </div>

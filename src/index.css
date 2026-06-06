@@ -1,10 +1,24 @@
-@import url('https://fonts.googleapis.com/css2?family=Mona+Sans:ital,wght@0,200..900;1,200..900&family=Space+Grotesk:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Mona Sans", "Space Grotesk", "Outfit", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Mona Sans", "Outfit", ui-serif, serif;
+  /* Inter for all text; JetBrains Mono for numbers so columns stay aligned. */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Inter", ui-serif, serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Slate Blue + Amber base palette */
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #1a2332;
+  color: #e8edf4;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /* Custom Trading Ticker Animations and Ambient Glow Overlays */
@@ -33,12 +47,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(249, 115, 22, 0.25);
+  background: rgba(127, 179, 213, 0.3);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(16, 185, 129, 0.4);
+  background: rgba(127, 179, 213, 0.55);
 }
 
 /* Glassmorphism Panel styles for extreme high end dark design */
@@ -56,15 +70,15 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Custom glows */
+/* Custom glows (teal = profit, amber = loss, blue = accent) */
 .glow-emerald {
-  box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+  box-shadow: 0 0 15px rgba(93, 202, 165, 0.15);
 }
 
 .glow-rose {
-  box-shadow: 0 0 15px rgba(244, 63, 94, 0.15);
+  box-shadow: 0 0 15px rgba(232, 160, 77, 0.15);
 }
 
 .glow-orange {
-  box-shadow: 0 0 15px rgba(249, 115, 22, 0.15);
+  box-shadow: 0 0 15px rgba(127, 179, 213, 0.15);
 }

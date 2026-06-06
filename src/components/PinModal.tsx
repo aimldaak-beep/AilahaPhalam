@@ -20,7 +20,7 @@ interface PinModalProps {
 type Screen = 'create' | 'enter' | 'change';
 
 const inputClass =
-  'w-full bg-slate-950 border border-white/10 focus:border-[#bef264] transition rounded-xl px-4 py-3 text-white focus:outline-none font-mono text-lg tracking-[0.5em] text-center';
+  'w-full bg-slate-950 border border-white/10 focus:border-[#7fb3d5] transition rounded-xl px-4 py-3 text-white focus:outline-none font-mono text-lg tracking-[0.5em] text-center';
 
 export default function PinModal({
   userId,
@@ -105,15 +105,15 @@ export default function PinModal({
 
   return (
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-[60] animate-fade-in">
-      <div id="pin-modal" className="bg-[#0b0f19] border border-white/10 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+      <div id="pin-modal" className="bg-[#161f2e] border border-white/10 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between border-b border-white/5 px-6 py-4.5">
           <div className="flex items-center gap-3">
-            <span className="p-2.5 bg-[#bef264]/10 border border-[#bef264]/20 rounded-xl text-[#bef264] shadow-md">
+            <span className="p-2.5 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 rounded-xl text-[#7fb3d5] shadow-md">
               {screen === 'enter' ? <KeyRound className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
             </span>
             <div>
               <h3 className="font-extrabold text-sm text-white font-sans uppercase tracking-widest">{title}</h3>
-              <p className="text-[9px] text-[#bef264] font-bold font-mono uppercase tracking-widest">Protected Action</p>
+              <p className="text-[9px] text-[#7fb3d5] font-bold font-mono uppercase tracking-widest">Protected Action</p>
             </div>
           </div>
           <button
@@ -176,7 +176,7 @@ export default function PinModal({
           )}
 
           {error && (
-            <div className="flex items-center gap-2 text-[11px] text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-xl px-3.5 py-2.5 font-mono font-bold">
+            <div className="flex items-center gap-2 text-[11px] text-[#e8a04d] bg-[#e8a04d]/10 border border-[#e8a04d]/30 rounded-xl px-3.5 py-2.5 font-mono font-bold">
               <AlertCircle className="w-4 h-4 shrink-0" />
               {error}
             </div>
@@ -193,7 +193,7 @@ export default function PinModal({
             <button
               type="submit"
               disabled={busy}
-              className="bg-[#bef264] hover:bg-[#a3e635] disabled:opacity-50 text-[#0b0f19] px-6 py-2.5 rounded-xl text-xs font-black transition cursor-pointer font-mono uppercase tracking-wider shadow-lg shadow-[#bef264]/10"
+              className="bg-[#7fb3d5] hover:bg-[#5f9fc8] disabled:opacity-50 text-[#161f2e] px-6 py-2.5 rounded-xl text-xs font-black transition cursor-pointer font-mono uppercase tracking-wider shadow-lg shadow-[#7fb3d5]/10"
             >
               {busy ? 'Working…' : screen === 'enter' ? 'Confirm' : screen === 'change' ? 'Update PIN' : 'Set PIN'}
             </button>

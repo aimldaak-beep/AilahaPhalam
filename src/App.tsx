@@ -378,7 +378,7 @@ export default function App() {
   // While the initial session check is in flight, hold a minimal splash to avoid flashing the login screen.
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#4d5d6a] text-[#bef264] flex items-center justify-center font-mono text-xs uppercase tracking-widest">
+      <div className="min-h-screen bg-[#1a2332] text-[#7fb3d5] flex items-center justify-center font-mono text-xs uppercase tracking-widest">
         Loading…
       </div>
     );
@@ -387,24 +387,24 @@ export default function App() {
   // Not signed in — show a simple "Sign in with Google" gate instead of the ledger.
   if (!session) {
     return (
-      <div className="min-h-screen bg-[#4d5d6a] text-slate-100 font-sans flex flex-col items-center justify-center relative overflow-hidden px-6">
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#bef264]/4 rounded-full blur-[130px] pointer-events-none animate-pulse-slow" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[550px] h-[550px] bg-[#bef264]/4 rounded-full blur-[150px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '3s' }} />
+      <div className="min-h-screen bg-[#1a2332] text-slate-100 font-sans flex flex-col items-center justify-center relative overflow-hidden px-6">
+        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#7fb3d5]/4 rounded-full blur-[130px] pointer-events-none animate-pulse-slow" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[550px] h-[550px] bg-[#7fb3d5]/4 rounded-full blur-[150px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '3s' }} />
         <div className="relative z-10 text-center space-y-8 max-w-sm w-full">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#bef264]/10 border border-[#bef264]/20 rounded-full text-[9px] text-[#bef264] font-mono tracking-widest uppercase font-black">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 rounded-full text-[9px] text-[#7fb3d5] font-mono tracking-widest uppercase font-black">
               ✦ Celestial Position Ledger ✦
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-[#bef264] tracking-widest uppercase font-sans select-none">
+            <h1 className="text-3xl md:text-4xl font-black text-[#7fb3d5] tracking-widest uppercase font-sans select-none">
               AILAHA PHALAM
             </h1>
           </div>
           <button
             type="button"
             onClick={handleGoogleLogin}
-            className="w-full bg-[#bef264]/10 hover:bg-[#bef264]/20 text-[#bef264] border border-[#bef264]/30 font-bold px-4 py-3 rounded-xl text-sm transition duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-[0.98]"
+            className="w-full bg-[#7fb3d5]/10 hover:bg-[#7fb3d5]/20 text-[#7fb3d5] border border-[#7fb3d5]/30 font-bold px-4 py-3 rounded-xl text-sm transition duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-[0.98]"
           >
-            <LogIn className="w-4 h-4 text-[#bef264]" />
+            <LogIn className="w-4 h-4 text-[#7fb3d5]" />
             Sign in with Google
           </button>
         </div>
@@ -413,30 +413,30 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#4d5d6a] text-slate-100 font-sans selection:bg-[#bef264]/20 selection:text-[#bef264] flex flex-col justify-between relative overflow-hidden">
+    <div className="min-h-screen bg-[#1a2332] text-slate-100 font-sans selection:bg-[#7fb3d5]/20 selection:text-[#7fb3d5] flex flex-col justify-between relative overflow-hidden">
       {/* Immersive Background Glows matching Magi Sans style */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#bef264]/4 rounded-full blur-[130px] pointer-events-none animate-pulse-slow" />
-      <div className="absolute top-[35%] right-[-10%] w-[500px] h-[500px] bg-[#bef264]/3 rounded-full blur-[140px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '2.5s' }} />
-      <div className="absolute bottom-[-10%] left-[10%] w-[550px] h-[550px] bg-[#bef264]/4 rounded-full blur-[150px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '5s' }} />
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#7fb3d5]/4 rounded-full blur-[130px] pointer-events-none animate-pulse-slow" />
+      <div className="absolute top-[35%] right-[-10%] w-[500px] h-[500px] bg-[#7fb3d5]/3 rounded-full blur-[140px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '2.5s' }} />
+      <div className="absolute bottom-[-10%] left-[10%] w-[550px] h-[550px] bg-[#7fb3d5]/4 rounded-full blur-[150px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '5s' }} />
 
       <div className="relative z-10">
         {/* Premium High-Density Navigation/Header with Magi Colors */}
-        <header className="border-b border-white/10 bg-[#35434d] sticky top-0 z-40 px-6 py-4 shadow-xl">
+        <header className="border-b border-white/10 bg-[#1e2a3d] sticky top-0 z-40 px-6 py-4 shadow-xl">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-5">
               <div className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-xl bg-[#232b31] border border-white/10 flex items-center justify-center font-sans text-xs font-black text-[#bef264]">
+                <span className="w-8 h-8 rounded-xl bg-[#1e2a3d] border border-white/10 flex items-center justify-center font-sans text-xs font-black text-[#7fb3d5]">
                   AP
                 </span>
                 <div className="flex flex-col">
                   <h1 
                     onClick={() => setCurrentView('menu')}
                     title="Go to Homepage"
-                    className="text-lg md:text-xl font-black tracking-widest text-[#bef264] hover:opacity-90 transition duration-200 cursor-pointer select-none font-sans uppercase leading-none"
+                    className="text-lg md:text-xl font-black tracking-widest text-[#7fb3d5] hover:opacity-90 transition duration-200 cursor-pointer select-none font-sans uppercase leading-none"
                   >
                     Ailaha Phalam
                   </h1>
-                  <span className="text-[7.5px] uppercase tracking-widest font-mono text-[#bef264]/70 font-black">Celestial Metrics</span>
+                  <span className="text-[7.5px] uppercase tracking-widest font-mono text-[#7fb3d5]/70 font-black">Celestial Metrics</span>
                 </div>
               </div>
               <div className="hidden sm:block h-6 w-px bg-white/10"></div>
@@ -444,8 +444,8 @@ export default function App() {
               <div className="flex items-center gap-6">
                 <div className="flex flex-col">
                   <span className="text-[9px] uppercase tracking-wider text-slate-300 font-bold font-mono">Active Trades</span>
-                  <span className="text-xs font-mono text-[#bef264] font-bold flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#bef264] inline-block animate-ping" />
+                  <span className="text-xs font-mono text-[#7fb3d5] font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#7fb3d5] inline-block animate-ping" />
                     {activeTradesCount.toString().padStart(2, '0')} CF
                   </span>
                 </div>
@@ -457,21 +457,21 @@ export default function App() {
               <button
                 onClick={() => setShowAddForm(true)}
                 id="new-trade-btn"
-                className="bg-[#bef264]/10 hover:bg-[#bef264]/20 text-[#bef264] border border-[#bef264]/30 font-bold px-4 py-2 rounded-xl text-xs transition duration-200 flex items-center gap-1.5 cursor-pointer shadow-lg active:scale-[0.98]"
+                className="bg-[#7fb3d5]/10 hover:bg-[#7fb3d5]/20 text-[#7fb3d5] border border-[#7fb3d5]/30 font-bold px-4 py-2 rounded-xl text-xs transition duration-200 flex items-center gap-1.5 cursor-pointer shadow-lg active:scale-[0.98]"
               >
-                <Plus className="w-4 h-4 text-[#bef264]" />
+                <Plus className="w-4 h-4 text-[#7fb3d5]" />
                 New Trade Action
               </button>
               <button
                 onClick={handleResetDatabase}
-                className="bg-[#232b31] border border-white/5 hover:border-[#bef264]/30 text-slate-300 hover:text-[#bef264] px-3 py-2 rounded-xl text-xs transition duration-200 cursor-pointer"
+                className="bg-[#1e2a3d] border border-white/5 hover:border-[#7fb3d5]/30 text-slate-300 hover:text-[#7fb3d5] px-3 py-2 rounded-xl text-xs transition duration-200 cursor-pointer"
                 title="Reset all data (PIN protected)"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => setPinIntent('change')}
-                className="bg-[#232b31] border border-white/5 hover:border-[#bef264]/30 text-slate-300 hover:text-[#bef264] px-3 py-2 rounded-xl text-xs transition duration-200 cursor-pointer flex items-center gap-1.5"
+                className="bg-[#1e2a3d] border border-white/5 hover:border-[#7fb3d5]/30 text-slate-300 hover:text-[#7fb3d5] px-3 py-2 rounded-xl text-xs transition duration-200 cursor-pointer flex items-center gap-1.5"
                 title={pinHash ? 'Change security PIN' : 'Set security PIN'}
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -479,7 +479,7 @@ export default function App() {
               </button>
               <button
                 onClick={handleSignOut}
-                className="bg-[#232b31] border border-white/5 hover:border-[#bef264]/30 text-slate-300 hover:text-[#bef264] px-3 py-2 rounded-xl text-xs transition duration-200 cursor-pointer flex items-center gap-1.5"
+                className="bg-[#1e2a3d] border border-white/5 hover:border-[#7fb3d5]/30 text-slate-300 hover:text-[#7fb3d5] px-3 py-2 rounded-xl text-xs transition duration-200 cursor-pointer flex items-center gap-1.5"
                 title="Sign out"
               >
                 <LogOut className="w-3.5 h-3.5" />
@@ -500,10 +500,10 @@ export default function App() {
             >
               {/* Minimal Branding Name in clean solid Magi color */}
               <div className="text-center py-6 space-y-2">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#bef264]/10 border border-[#bef264]/20 rounded-full text-[9px] text-[#bef264] font-mono tracking-widest uppercase font-black">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 rounded-full text-[9px] text-[#7fb3d5] font-mono tracking-widest uppercase font-black">
                   ✦ Celestial Position Ledger ✦
                 </div>
-                <h2 className="text-3xl md:text-4xl font-black text-[#bef264] tracking-widest uppercase font-sans select-none">
+                <h2 className="text-3xl md:text-4xl font-black text-[#7fb3d5] tracking-widest uppercase font-sans select-none">
                   AILAHA PHALAM
                 </h2>
               </div>
@@ -515,12 +515,12 @@ export default function App() {
                   type="button"
                   id="action-card-add"
                   onClick={() => setShowAddForm(true)}
-                  className="group relative bg-[#242f36] hover:bg-[#2e3c45] border border-white/5 hover:border-[#bef264]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
+                  className="group relative bg-[#222e42] hover:bg-[#2a3a52] border border-white/5 hover:border-[#7fb3d5]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
                 >
-                  <div className="p-2.5 bg-[#1e272d] text-[#bef264] rounded-xl border border-white/5 shadow-inner mb-2.5">
-                    <BookPlus className="w-5 h-5 text-[#bef264]" />
+                  <div className="p-2.5 bg-[#172234] text-[#7fb3d5] rounded-xl border border-white/5 shadow-inner mb-2.5">
+                    <BookPlus className="w-5 h-5 text-[#7fb3d5]" />
                   </div>
-                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#bef264] font-sans">
+                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#7fb3d5] font-sans">
                     Initiate Trade
                   </h3>
                 </button>
@@ -538,12 +538,12 @@ export default function App() {
                     }
                     setCurrentView('weekly');
                   }}
-                  className="group relative bg-[#242f36] hover:bg-[#2e3c45] border border-white/5 hover:border-[#bef264]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
+                  className="group relative bg-[#222e42] hover:bg-[#2a3a52] border border-white/5 hover:border-[#7fb3d5]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
                 >
-                  <div className="p-2.5 bg-[#1e272d] text-[#bef264] rounded-xl border border-white/5 shadow-inner mb-2.5">
-                    <CandlestickChart className="w-5 h-5 text-[#bef264]" />
+                  <div className="p-2.5 bg-[#172234] text-[#7fb3d5] rounded-xl border border-white/5 shadow-inner mb-2.5">
+                    <CandlestickChart className="w-5 h-5 text-[#7fb3d5]" />
                   </div>
-                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#bef264] font-sans">
+                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#7fb3d5] font-sans">
                     Current Week
                   </h3>
                 </button>
@@ -562,12 +562,12 @@ export default function App() {
                     }
                     setCurrentView('weekly');
                   }}
-                  className="group relative bg-[#242f36] hover:bg-[#2e3c45] border border-white/5 hover:border-[#bef264]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
+                  className="group relative bg-[#222e42] hover:bg-[#2a3a52] border border-white/5 hover:border-[#7fb3d5]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
                 >
-                  <div className="p-2.5 bg-[#1e272d] text-[#bef264] rounded-xl border border-white/5 shadow-inner mb-2.5">
-                    <CalendarClock className="w-5 h-5 text-[#bef264]" />
+                  <div className="p-2.5 bg-[#172234] text-[#7fb3d5] rounded-xl border border-white/5 shadow-inner mb-2.5">
+                    <CalendarClock className="w-5 h-5 text-[#7fb3d5]" />
                   </div>
-                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#bef264] font-sans">
+                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#7fb3d5] font-sans">
                     Last Week
                   </h3>
                 </button>
@@ -577,12 +577,12 @@ export default function App() {
                   type="button"
                   id="action-card-history"
                   onClick={() => setCurrentView('cumulative')}
-                  className="group relative bg-[#242f36] hover:bg-[#2e3c45] border border-white/5 hover:border-[#bef264]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
+                  className="group relative bg-[#222e42] hover:bg-[#2a3a52] border border-white/5 hover:border-[#7fb3d5]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
                 >
-                  <div className="p-2.5 bg-[#1e272d] text-[#bef264] rounded-xl border border-white/5 shadow-inner mb-2.5">
-                    <Calendar className="w-5 h-5 text-[#bef264]" />
+                  <div className="p-2.5 bg-[#172234] text-[#7fb3d5] rounded-xl border border-white/5 shadow-inner mb-2.5">
+                    <Calendar className="w-5 h-5 text-[#7fb3d5]" />
                   </div>
-                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#bef264] font-sans">
+                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#7fb3d5] font-sans">
                     History
                   </h3>
                 </button>
@@ -592,12 +592,12 @@ export default function App() {
                   type="button"
                   id="action-card-summary"
                   onClick={() => setCurrentView('summary')}
-                  className="group relative bg-[#242f36] hover:bg-[#2e3c45] border border-white/5 hover:border-[#bef264]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
+                  className="group relative bg-[#222e42] hover:bg-[#2a3a52] border border-white/5 hover:border-[#7fb3d5]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
                 >
-                  <div className="p-2.5 bg-[#1e272d] text-[#bef264] rounded-xl border border-white/5 shadow-inner mb-2.5">
-                    <Activity className="w-5 h-5 text-[#bef264]" />
+                  <div className="p-2.5 bg-[#172234] text-[#7fb3d5] rounded-xl border border-white/5 shadow-inner mb-2.5">
+                    <Activity className="w-5 h-5 text-[#7fb3d5]" />
                   </div>
-                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#bef264] font-sans">
+                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#7fb3d5] font-sans">
                     Summary
                   </h3>
                 </button>
@@ -607,12 +607,12 @@ export default function App() {
                   type="button"
                   id="action-card-export"
                   onClick={() => setCurrentView('export')}
-                  className="group relative bg-[#242f36] hover:bg-[#2e3c45] border border-[#bef264]/20 hover:border-[#bef264]/40 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
+                  className="group relative bg-[#222e42] hover:bg-[#2a3a52] border border-[#7fb3d5]/20 hover:border-[#7fb3d5]/40 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
                 >
-                  <div className="p-2.5 bg-[#1e272d] text-[#bef264] rounded-xl border-[#bef264]/20 shadow-inner mb-2.5">
-                    <Download className="w-5 h-5 text-[#bef264]" />
+                  <div className="p-2.5 bg-[#172234] text-[#7fb3d5] rounded-xl border-[#7fb3d5]/20 shadow-inner mb-2.5">
+                    <Download className="w-5 h-5 text-[#7fb3d5]" />
                   </div>
-                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#bef264] font-sans">
+                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#7fb3d5] font-sans">
                     Export CSV
                   </h3>
                 </button>
@@ -621,34 +621,34 @@ export default function App() {
           ) : (
             <div className="space-y-5">
               {/* Back navigation strip */}
-              <div className="flex items-center justify-between bg-[#35434d] border border-white/10 px-4 py-3 rounded-2xl backdrop-blur-sm">
+              <div className="flex items-center justify-between bg-[#1e2a3d] border border-white/10 px-4 py-3 rounded-2xl backdrop-blur-sm">
                 <button
                   type="button"
                   id="back-to-menu-btn"
                   onClick={() => setCurrentView('menu')}
-                  className="flex items-center gap-2 text-xs font-bold text-slate-100 hover:text-[#bef264] transition bg-[#232b31] px-4 py-2 rounded-xl border border-white/10 cursor-pointer active:scale-95 shadow-md"
+                  className="flex items-center gap-2 text-xs font-bold text-slate-100 hover:text-[#7fb3d5] transition bg-[#1e2a3d] px-4 py-2 rounded-xl border border-white/10 cursor-pointer active:scale-95 shadow-md"
                 >
-                  <ArrowLeft className="w-3.5 h-3.5 text-[#bef264]" />
+                  <ArrowLeft className="w-3.5 h-3.5 text-[#7fb3d5]" />
                   Back to Hub Menu
                 </button>
 
                 {currentView === 'weekly' && (
-                  <span className="text-[10px] bg-[#232b31] border border-white/10 text-[#bef264] px-3.5 py-1.5 rounded-xl font-bold font-mono uppercase tracking-widest">
+                  <span className="text-[10px] bg-[#1e2a3d] border border-white/10 text-[#7fb3d5] px-3.5 py-1.5 rounded-xl font-bold font-mono uppercase tracking-widest">
                     Weekly Ledger Active View
                   </span>
                 )}
                 {currentView === 'cumulative' && (
-                  <span className="text-[10px] bg-[#232b31] border border-white/10 text-[#bef264] px-3.5 py-1.5 rounded-xl font-bold font-mono uppercase tracking-widest">
+                  <span className="text-[10px] bg-[#1e2a3d] border border-white/10 text-[#7fb3d5] px-3.5 py-1.5 rounded-xl font-bold font-mono uppercase tracking-widest">
                     Cumulative Core Analytics View
                   </span>
                 )}
                 {currentView === 'summary' && (
-                  <span className="text-[10px] bg-[#232b31] border border-white/10 text-[#bef264] px-3.5 py-1.5 rounded-xl font-bold font-mono uppercase tracking-widest">
+                  <span className="text-[10px] bg-[#1e2a3d] border border-white/10 text-[#7fb3d5] px-3.5 py-1.5 rounded-xl font-bold font-mono uppercase tracking-widest">
                     Portfolio Segmented Summary
                   </span>
                 )}
                 {currentView === 'export' && (
-                  <span className="text-[10px] bg-[#232b31] border border-[#bef264]/20 text-[#bef264] px-3.5 py-1.5 rounded-xl font-bold font-mono uppercase tracking-widest">
+                  <span className="text-[10px] bg-[#1e2a3d] border border-[#7fb3d5]/20 text-[#7fb3d5] px-3.5 py-1.5 rounded-xl font-bold font-mono uppercase tracking-widest">
                     Export Configuration Workspace
                   </span>
                 )}

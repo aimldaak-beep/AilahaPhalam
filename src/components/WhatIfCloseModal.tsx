@@ -110,18 +110,18 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
       <div
         id="whatif-close-modal"
-        className="bg-[#0b0f19] border border-white/10 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-[#161f2e] border border-white/10 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
         <div className="flex items-center justify-between border-b border-white/5 px-6 py-4.5 shrink-0">
           <div className="flex items-center gap-3">
-            <span className="p-2.5 bg-[#bef264]/10 border border-[#bef264]/20 rounded-xl text-[#bef264] shadow-md">
+            <span className="p-2.5 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 rounded-xl text-[#7fb3d5] shadow-md">
               <Calculator className="w-5 h-5" />
             </span>
             <div>
               <h3 className="font-extrabold text-sm text-white font-sans uppercase tracking-widest">
                 What-If Close
               </h3>
-              <p className="text-[9px] text-[#bef264] font-bold font-mono uppercase tracking-widest">
+              <p className="text-[9px] text-[#7fb3d5] font-bold font-mono uppercase tracking-widest">
                 {trade.symbol} • {trade.instrument} • Preview only
               </p>
             </div>
@@ -137,7 +137,7 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
 
         <div className="p-6 space-y-4 overflow-y-auto">
           {/* Preview-only banner */}
-          <div className="bg-[#bef264]/5 border border-[#bef264]/20 text-[#bef264] text-[10px] font-black font-mono uppercase tracking-widest px-4 py-2.5 rounded-xl text-center">
+          <div className="bg-[#7fb3d5]/5 border border-[#7fb3d5]/20 text-[#7fb3d5] text-[10px] font-black font-mono uppercase tracking-widest px-4 py-2.5 rounded-xl text-center">
             Preview only — does not close the trade
           </div>
 
@@ -176,9 +176,9 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
                 value={priceVal}
                 onChange={(e) => validateAndSetDecimal(e.target.value, setPriceVal)}
                 autoFocus
-                className="w-full bg-slate-950 border border-white/10 focus:border-[#bef264] transition rounded-xl px-4 py-3 text-white focus:outline-none font-mono text-sm"
+                className="w-full bg-slate-950 border border-white/10 focus:border-[#7fb3d5] transition rounded-xl px-4 py-3 text-white focus:outline-none font-mono text-sm"
               />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-orange-400/80 text-[10px] font-black font-mono select-none uppercase tracking-widest">
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[#e8a04d]/80 text-[10px] font-black font-mono select-none uppercase tracking-widest">
                 {trade.currency}
               </div>
             </div>
@@ -193,12 +193,12 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
                 type="date"
                 value={dateVal}
                 onChange={(e) => setDateVal(e.target.value)}
-                className="w-full bg-slate-950 border border-white/10 focus:border-[#bef264] transition rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-bold font-mono"
+                className="w-full bg-slate-950 border border-white/10 focus:border-[#7fb3d5] transition rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-bold font-mono"
               />
             </div>
             {trade.currency === 'USD' && (
               <div className="space-y-1.5">
-                <label className="block text-[9px] font-black text-orange-400 uppercase tracking-widest font-mono">
+                <label className="block text-[9px] font-black text-[#e8a04d] uppercase tracking-widest font-mono">
                   Close USD/INR Rate
                 </label>
                 <input
@@ -207,7 +207,7 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
                   placeholder="e.g. 83.24"
                   value={rateVal}
                   onChange={(e) => validateAndSetDecimal(e.target.value, setRateVal)}
-                  className="w-full bg-slate-950 border border-white/10 focus:border-orange-500 transition rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-bold font-mono"
+                  className="w-full bg-slate-950 border border-white/10 focus:border-[#e8a04d] transition rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-bold font-mono"
                 />
               </div>
             )}
@@ -218,16 +218,16 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
             <div
               className={`p-4 rounded-2xl border transition-all duration-200 shadow-sm ${
                 preview.net >= 0
-                  ? 'bg-emerald-500/10 border-emerald-500/30'
-                  : 'bg-rose-500/10 border-rose-500/30'
+                  ? 'bg-[#5dcaa5]/10 border-[#5dcaa5]/30'
+                  : 'bg-[#e8a04d]/10 border-[#e8a04d]/30'
               }`}
             >
               <div className="flex items-center justify-between border-b border-white/5 pb-2.5 mb-3">
                 <div className="flex items-center gap-1.5">
                   {preview.net >= 0 ? (
-                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                    <TrendingUp className="w-4 h-4 text-[#5dcaa5]" />
                   ) : (
-                    <TrendingDown className="w-4 h-4 text-rose-400" />
+                    <TrendingDown className="w-4 h-4 text-[#e8a04d]" />
                   )}
                   <span className="text-[10px] font-black tracking-widest uppercase font-mono text-slate-200">
                     If closed: {preview.net >= 0 ? 'Net Gain' : 'Net Loss'}
@@ -246,7 +246,7 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
                       <span className="text-slate-400">
                         {r.week} <span className="text-slate-500">· {r.role}</span>
                       </span>
-                      <span className={r.net >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                      <span className={r.net >= 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'}>
                         {r.net >= 0 ? '+' : ''}₹{formatAmount(r.net)}
                       </span>
                     </div>
@@ -267,7 +267,7 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
                   <span className="block text-[9px] text-slate-400 font-extrabold tracking-widest uppercase mb-1.5 font-mono">
                     Brokerage (INR)
                   </span>
-                  <span className="font-mono text-rose-400 text-xs font-black">
+                  <span className="font-mono text-[#e8a04d] text-xs font-black">
                     -₹{formatAmount(preview.brokerage)}
                   </span>
                 </div>
@@ -277,7 +277,7 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
                   </span>
                   <span
                     className={`font-mono font-black text-lg block ${
-                      preview.net >= 0 ? 'text-[#10b981]' : 'text-[#f43f5e]'
+                      preview.net >= 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'
                     }`}
                   >
                     {preview.net >= 0 ? '+' : ''}₹{formatAmount(preview.net)}
@@ -291,7 +291,7 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
             </div>
           ) : (
             <div className="bg-slate-950/60 p-6 rounded-2xl border border-dashed border-white/5 text-center text-slate-400 text-xs font-medium leading-relaxed font-mono">
-              <Layers className="w-8 h-8 text-[#bef264] mx-auto mb-2.5 stroke-1" />
+              <Layers className="w-8 h-8 text-[#7fb3d5] mx-auto mb-2.5 stroke-1" />
               Enter a hypothetical closing price to preview the net PnL a real close would book.
             </div>
           )}
