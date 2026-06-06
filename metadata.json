@@ -1,0 +1,6 @@
+{
+  "name": "Ailaha Phalam",
+  "description": "A comprehensive trade and PnL tracker that analyzes weekly and cumulative performance. It supports Futures, Options, and global indices (DOW, Nasdaq, SnP, Nikkei, Gift Nifty) with specific brokerage logic, carry forward status tracking, and current position evaluation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
