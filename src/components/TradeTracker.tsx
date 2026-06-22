@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Trade Tracker — ISOLATED signal-outcome tracker. Self-contained: owns its own
- * state, talks only to the `trade_tracker` table via src/lib/tracker.ts. It does
- * NOT touch the main trades ledger, types.ts, or the PnL engine.
+ * state, talks only to the `trade_tracker` / `daily_ohlc` tables. It does NOT
+ * touch the main trades ledger, types.ts, or the PnL engine.
  */
 
 import { useState, useEffect } from 'react';
@@ -13,15 +13,13 @@ import {
   addTrackerTrade,
   updateTrackerTrade,
   deleteTrackerTrade,
-  autoFillOHLC,
   type TrackerTrade,
-  type DailyOHLC,
 } from '../lib/tracker';
+import { supabase } from '../lib/supabase';
 import { formatPrice } from '../lib/format';
 import {
   ArrowLeft,
   Plus,
-  Lock,
   Trash2,
   TrendingUp,
   CheckCircle,
@@ -52,15 +50,6 @@ function fmtPct(p: number): string {
 
 const pctColor = (p: number) => (p >= 0 ? '#5dcaa5' : '#e8a04d');
 
-/** Next Monday–Friday date after `dateStr` (YYYY-MM-DD). */
-function nextWorkingDay(dateStr: string): string {
-  const d = new Date(dateStr + 'T00:00:00');
-  do {
-    d.setDate(d.getDate() + 1);
-  } while (d.getDay() === 0 || d.getDay() === 6);
-  return d.toISOString().split('T')[0];
-}
-
 /** Count of Mon–Fri days strictly after `start`, up to and including `end`. */
 function workingDaysBetween(start: string, end: string): number {
   if (!start || !end) return 0;
@@ -78,17 +67,34 @@ function workingDaysBetween(start: string, end: string): number {
   return count;
 }
 
-// --- small presentational bits ----------------------------------------------
+// Get next N trading days after entry date (skip weekends)
+function getNextTradingDates(entryDate: string, n: number = 7): string[] {
+  const dates: string[] = [];
+  const current = new Date(entryDate);
+  while (dates.length < n) {
+    current.setDate(current.getDate() + 1);
+    const day = current.getDay();
+    if (day !== 0 && day !== 6) { // skip Sunday=0, Saturday=6
+      dates.push(current.toISOString().split('T')[0]);
+    }
+  }
+  return dates;
+}
 
-function PctLine({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex items-center justify-between gap-1 leading-tight">
-      <span className="text-[8px] text-[#8a9bb3] font-mono">{label}</span>
-      <span className="text-[10px] font-mono font-bold" style={{ color: pctColor(value) }}>
-        {fmtPct(value)}
-      </span>
-    </div>
-  );
+// Format date for display: "Jun 19"
+function formatDateShort(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+}
+
+// Group trades by entry_date
+function groupByEntryDate(trades: any[]): Record<string, any[]> {
+  return trades.reduce((acc, trade) => {
+    const key = trade.entry_date;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(trade);
+    return acc;
+  }, {} as Record<string, any[]>);
 }
 
 const inputCls =
@@ -108,17 +114,14 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
   const [nDate, setNDate] = useState(todayStr());
   const [nPrice, setNPrice] = useState('');
 
-  // Inline OHLC entry form: which trade is being appended to.
-  const [ohlcFor, setOhlcFor] = useState<string | null>(null);
-  const [ohlc, setOhlc] = useState({ o: '', h: '', l: '', c: '' });
-
   // Close modal
   const [closeFor, setCloseFor] = useState<TrackerTrade | null>(null);
   const [closeDate, setCloseDate] = useState(todayStr());
   const [closePrice, setClosePrice] = useState('');
 
-  // How many day columns to show (extendable via the "+" column).
-  const [visibleDays, setVisibleDays] = useState(7);
+  // Bulk OHLC fill
+  const [lastAvailableDate, setLastAvailableDate] = useState<string>('');
+  const [fillingColumn, setFillingColumn] = useState<string>('');
 
   const load = async () => {
     try {
@@ -132,6 +135,21 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
     }
   };
 
+  const fetchLastAvailableDate = async () => {
+    try {
+      const { data } = await supabase
+        .from('daily_ohlc')
+        .select('date')
+        .order('date', { ascending: false })
+        .limit(1);
+      if (data && data.length > 0) {
+        setLastAvailableDate(data[0].date);
+      }
+    } catch (e) {
+      console.error('Error fetching last date:', e);
+    }
+  };
+
   useEffect(() => {
     if (!session) {
       setTrades([]);
@@ -139,16 +157,12 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
       return;
     }
     void load();
+    void fetchLastAvailableDate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   const openTrades = trades.filter((t) => t.status === 'Open');
   const closedTrades = trades.filter((t) => t.status === 'Closed');
-
-  const dayCount = Math.max(
-    visibleDays,
-    openTrades.reduce((m, t) => Math.max(m, t.daily_data.length), 0)
-  );
 
   // --- actions --------------------------------------------------------------
 
@@ -178,47 +192,72 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
     }
   };
 
-  const openOhlcForm = (trade: TrackerTrade) => {
-    setOhlcFor(trade.id);
-    setOhlc({ o: '', h: '', l: '', c: '' });
-  };
+  // Bulk-fill one date column for every trade in an entry-date group.
+  const fillColumnForGroup = async (targetDate: string, trades: any[]) => {
+    // Don't fill if beyond last available date
+    if (!lastAvailableDate || targetDate > lastAvailableDate) return;
 
-  const ohlcDateFor = (trade: TrackerTrade): string => {
-    const last = trade.daily_data[trade.daily_data.length - 1];
-    return nextWorkingDay(last ? last.date : trade.entry_date);
-  };
+    const key = `${targetDate}`;
+    setFillingColumn(key);
 
-  // Pull the day's OHLC from Supabase daily_ohlc and fill the inline inputs.
-  const handleAutoFill = async (trade: TrackerTrade) => {
-    const d = ohlcDateFor(trade);
     try {
-      const o = await autoFillOHLC(trade.symbol, d);
-      if (!o) {
-        alert(`No daily OHLC found for ${trade.symbol} on ${d}.`);
+      const symbols = trades.map((t) => t.symbol);
+      const { data: ohlcData } = await supabase
+        .from('daily_ohlc')
+        .select('*')
+        .in('symbol', symbols)
+        .eq('date', targetDate);
+
+      if (!ohlcData || ohlcData.length === 0) {
+        alert(`No OHLC data available for ${formatDateShort(targetDate)}`);
         return;
       }
-      setOhlc({ o: String(o.open), h: String(o.high), l: String(o.low), c: String(o.close) });
-    } catch (e: any) {
-      alert('Auto-fill failed: ' + (e?.message ?? 'unknown error'));
-    }
-  };
 
-  const submitOhlc = async (trade: TrackerTrade) => {
-    const o = parseFloat(ohlc.o);
-    const h = parseFloat(ohlc.h);
-    const l = parseFloat(ohlc.l);
-    const c = parseFloat(ohlc.c);
-    if ([o, h, l, c].some((v) => isNaN(v) || v <= 0)) {
-      alert('Enter valid O / H / L / C values.');
-      return;
-    }
-    const entry: DailyOHLC = { date: ohlcDateFor(trade), open: o, high: h, low: l, close: c };
-    try {
-      await updateTrackerTrade(trade.id, { daily_data: [...trade.daily_data, entry] });
-      setOhlcFor(null);
+      // Build a map symbol -> ohlc
+      const ohlcMap: Record<string, any> = {};
+      ohlcData.forEach((row) => { ohlcMap[row.symbol] = row; });
+
+      // Update each trade
+      for (const trade of trades) {
+        const ohlc = ohlcMap[trade.symbol];
+        if (!ohlc) continue;
+
+        // Get existing daily_data or create empty array
+        const dailyData = trade.daily_data || [];
+
+        // Check if entry for this date exists
+        const existingIdx = dailyData.findIndex((d: any) => d.date === targetDate);
+
+        const entry = {
+          date: targetDate,
+          open: ohlc.open,
+          high: ohlc.high,
+          low: ohlc.low,
+          close: ohlc.close,
+        };
+
+        if (existingIdx >= 0) {
+          dailyData[existingIdx] = entry;
+        } else {
+          dailyData.push(entry);
+        }
+
+        // Sort by date
+        dailyData.sort((a: any, b: any) => a.date.localeCompare(b.date));
+
+        // Save to Supabase
+        await supabase
+          .from('trade_tracker')
+          .update({ daily_data: dailyData })
+          .eq('id', trade.id);
+      }
+
+      // Refresh trades
       await load();
-    } catch (e: any) {
-      alert('Failed to save day: ' + (e?.message ?? 'unknown error'));
+    } catch (e) {
+      console.error('Error filling column:', e);
+    } finally {
+      setFillingColumn('');
     }
   };
 
@@ -362,146 +401,227 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
             <p className="text-[#8a9bb3] text-sm font-bold font-mono">No open tracker trades.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-[#7fb3d5]/25 bg-[#222e42] shadow-lg">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#172234] text-[#8a9bb3] uppercase text-[10px] font-mono tracking-widest border-b border-white/10">
-                  <th className="py-2.5 px-3 font-black">Symbol</th>
-                  <th className="py-2.5 px-2 font-black">Dir</th>
-                  <th className="py-2.5 px-2 font-black">Entry Date</th>
-                  <th className="py-2.5 px-2 font-black text-right">Entry ₹</th>
-                  <th className="py-2.5 px-2 font-black text-right">Days</th>
-                  {Array.from({ length: dayCount }, (_, i) => (
-                    <th key={i} className="py-2.5 px-2 font-black text-center min-w-[70px]">D{i + 1}</th>
-                  ))}
-                  <th className="py-2.5 px-2 font-black text-center">
-                    <button
-                      type="button"
-                      title="Add another day column"
-                      onClick={() => setVisibleDays((v) => v + 1)}
-                      className="p-1 rounded-md bg-[#7fb3d5]/10 border border-[#7fb3d5]/30 text-[#7fb3d5] hover:bg-[#7fb3d5]/20 transition cursor-pointer"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
-                  </th>
-                  <th className="py-2.5 px-3 font-black text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {openTrades.map((trade) => {
-                  const nextSlot = trade.daily_data.length;
-                  return (
-                    <tr key={trade.id} className="hover:bg-white/5 transition align-top">
-                      <td className="py-2.5 px-3 font-mono font-extrabold text-[#e8edf4] text-sm">{trade.symbol}</td>
-                      <td className="py-2.5 px-2">
-                        <span
-                          className="text-[10px] font-black font-mono uppercase px-1.5 py-0.5 rounded border"
-                          style={{
-                            color: trade.direction === 'Long' ? '#5dcaa5' : '#e8a04d',
-                            borderColor: (trade.direction === 'Long' ? '#5dcaa5' : '#e8a04d') + '40',
-                          }}
-                        >
-                          {trade.direction}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-2 font-mono text-[#8a9bb3] text-xs whitespace-nowrap">{trade.entry_date}</td>
-                      <td className="py-2.5 px-2 font-mono text-[#e8edf4] text-sm text-right font-bold whitespace-nowrap">₹{formatPrice(trade.entry_price)}</td>
-                      <td className="py-2.5 px-2 font-mono text-[#8a9bb3] text-xs text-right">{workingDaysBetween(trade.entry_date, todayStr())}</td>
+          <div className="overflow-x-auto">
+            {/* Group trades by entry date */}
+            {(() => {
+              const grouped = groupByEntryDate(openTrades);
+              const sortedEntryDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
-                      {Array.from({ length: dayCount }, (_, dIdx) => {
-                        const od = trade.daily_data[dIdx];
-                        if (od) {
-                          return (
-                            <td key={dIdx} className="py-2 px-2 align-top">
-                              <div className="space-y-0.5 min-w-[60px]">
-                                <PctLine label="H" value={pct(od.high, trade.entry_price, trade.direction)} />
-                                <PctLine label="L" value={pct(od.low, trade.entry_price, trade.direction)} />
-                                <PctLine label="O" value={pct(od.open, trade.entry_price, trade.direction)} />
-                                <PctLine label="C" value={pct(od.close, trade.entry_price, trade.direction)} />
-                              </div>
-                            </td>
-                          );
-                        }
-                        if (dIdx === nextSlot) {
-                          const isOpen = ohlcFor === trade.id;
-                          return (
-                            <td key={dIdx} className="py-2 px-2 align-top text-center">
-                              {isOpen ? (
-                                <div className="space-y-1 min-w-[120px] bg-[#172234] border border-[#7fb3d5]/30 rounded-lg p-2 text-left">
-                                  <div className="text-[8px] text-[#8a9bb3] font-mono mb-1">{ohlcDateFor(trade)}</div>
-                                  <div className="grid grid-cols-2 gap-1">
-                                    {(['o', 'h', 'l', 'c'] as const).map((k) => (
-                                      <input
-                                        key={k}
-                                        type="text"
-                                        inputMode="decimal"
-                                        placeholder={k.toUpperCase()}
-                                        value={ohlc[k]}
-                                        onChange={(e) => setOhlc((p) => ({ ...p, [k]: e.target.value }))}
-                                        className="w-full bg-[#1a2332] border border-white/10 focus:border-[#7fb3d5] rounded px-1.5 py-1 text-[10px] text-[#e8edf4] focus:outline-none font-mono"
-                                      />
-                                    ))}
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleAutoFill(trade)}
-                                    className="w-full bg-[#5dcaa5]/15 border border-[#5dcaa5]/40 text-[#5dcaa5] rounded px-1 py-1 text-[9px] font-black font-mono uppercase cursor-pointer hover:bg-[#5dcaa5]/25 transition"
-                                  >
-                                    Auto-fill OHLC
-                                  </button>
-                                  <div className="flex gap-1 pt-0.5">
-                                    <button type="button" onClick={() => submitOhlc(trade)} className="flex-1 bg-[#7fb3d5] text-[#161f2e] rounded px-1 py-1 text-[9px] font-black font-mono uppercase cursor-pointer">Save</button>
-                                    <button type="button" onClick={() => setOhlcFor(null)} className="flex-1 bg-[#1e2a3d] border border-white/10 text-[#8a9bb3] rounded px-1 py-1 text-[9px] font-black font-mono uppercase cursor-pointer">Cancel</button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <button
-                                  type="button"
-                                  title="Add this day's OHLC"
-                                  onClick={() => openOhlcForm(trade)}
-                                  className="p-1 rounded-md bg-[#172234] border border-white/10 text-[#8a9bb3] hover:text-[#7fb3d5] hover:border-[#7fb3d5]/40 transition cursor-pointer"
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </button>
-                              )}
-                            </td>
-                          );
-                        }
+              return sortedEntryDates.map((entryDate) => {
+                const groupTrades = grouped[entryDate];
+                const tradingDates = getNextTradingDates(entryDate, 7);
+
+                return (
+                  <div key={entryDate} style={{ marginBottom: 32, minWidth: 1000 }}>
+
+                    {/* Group Header */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '8px 16px',
+                      background: 'rgba(127,179,213,0.08)',
+                      borderRadius: 8,
+                      marginBottom: 12,
+                      borderLeft: '3px solid #7fb3d5'
+                    }}>
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: '#7fb3d5',
+                        letterSpacing: '1px',
+                        textTransform: 'uppercase'
+                      }}>
+                        Entry: {formatDateShort(entryDate)}
+                      </span>
+                      <span style={{ fontSize: 10, color: '#4a6080' }}>
+                        {groupTrades.length} trade{groupTrades.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+
+                    {/* Column Header Row */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '140px 80px 120px 100px 60px repeat(7, 1fr) 80px',
+                      padding: '6px 16px',
+                      marginBottom: 4
+                    }}>
+                      <div style={{ fontSize: 9, color: '#4a6080', letterSpacing: '1px', textTransform: 'uppercase' }}>Symbol</div>
+                      <div style={{ fontSize: 9, color: '#4a6080', letterSpacing: '1px', textTransform: 'uppercase' }}>Dir</div>
+                      <div style={{ fontSize: 9, color: '#4a6080', letterSpacing: '1px', textTransform: 'uppercase' }}>Entry ₹</div>
+                      <div style={{ fontSize: 9, color: '#4a6080', letterSpacing: '1px', textTransform: 'uppercase' }}>Days</div>
+                      <div></div>
+                      {tradingDates.map((d) => {
+                        const hasData = !!lastAvailableDate && d <= lastAvailableDate;
+                        const isLoading = fillingColumn === d;
                         return (
-                          <td key={dIdx} className="py-2 px-2 text-center text-[#8a9bb3]/40 font-mono text-xs">·</td>
+                          <div key={d} style={{ textAlign: 'center' }}>
+                            <div style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              color: hasData ? '#7fb3d5' : '#2a3a4a',
+                              marginBottom: 3
+                            }}>
+                              {formatDateShort(d)}
+                            </div>
+                            {/* Bulk fill button for column */}
+                            <button
+                              onClick={() => hasData && fillColumnForGroup(d, groupTrades)}
+                              disabled={!hasData || isLoading}
+                              title={hasData ? `Auto-fill all ${formatDateShort(d)}` : 'No data available'}
+                              style={{
+                                background: hasData ? 'rgba(127,179,213,0.15)' : 'transparent',
+                                border: `1px solid ${hasData ? 'rgba(127,179,213,0.3)' : 'rgba(255,255,255,0.05)'}`,
+                                borderRadius: 4,
+                                padding: '2px 6px',
+                                fontSize: 10,
+                                color: hasData ? '#7fb3d5' : '#2a3a4a',
+                                cursor: hasData ? 'pointer' : 'not-allowed',
+                                width: '100%'
+                              }}
+                            >
+                              {isLoading ? '...' : hasData ? '↓ fill' : '—'}
+                            </button>
+                          </div>
                         );
                       })}
+                      <div></div>
+                    </div>
 
-                      <td className="py-2 px-2" />
-                      <td className="py-2.5 px-3">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            title="Close trade"
-                            onClick={() => {
-                              setCloseFor(trade);
-                              setCloseDate(todayStr());
-                              setClosePrice('');
-                            }}
-                            className="p-1.5 rounded-lg bg-[#e8a04d]/10 border border-[#e8a04d]/30 text-[#e8a04d] hover:bg-[#e8a04d] hover:text-white transition cursor-pointer active:scale-95"
-                          >
-                            <Lock className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            title="Delete"
-                            onClick={() => remove(trade.id)}
-                            className="p-1.5 rounded-lg bg-[#e8a04d]/10 border border-[#e8a04d]/30 text-[#e8a04d] hover:bg-[#e8a04d] hover:text-white transition cursor-pointer active:scale-95"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                    {/* Trade Rows */}
+                    {groupTrades.map((trade) => (
+                      <div
+                        key={trade.id}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '140px 80px 120px 100px 60px repeat(7, 1fr) 80px',
+                          padding: '8px 16px',
+                          marginBottom: 4,
+                          background: 'rgba(255,255,255,0.02)',
+                          borderRadius: 8,
+                          alignItems: 'center',
+                          border: '1px solid rgba(255,255,255,0.04)'
+                        }}
+                      >
+                        {/* Symbol */}
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#e8edf4' }}>
+                          {trade.symbol}
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+
+                        {/* Direction */}
+                        <div>
+                          <span style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            padding: '3px 8px',
+                            borderRadius: 4,
+                            background: trade.direction === 'Long'
+                              ? 'rgba(93,202,165,0.15)'
+                              : 'rgba(232,160,77,0.15)',
+                            color: trade.direction === 'Long' ? '#5dcaa5' : '#e8a04d',
+                            border: `1px solid ${trade.direction === 'Long'
+                              ? 'rgba(93,202,165,0.3)'
+                              : 'rgba(232,160,77,0.3)'}`
+                          }}>
+                            {trade.direction?.toUpperCase()}
+                          </span>
+                        </div>
+
+                        {/* Entry Price */}
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#e8edf4' }}>
+                          ₹{trade.entry_price?.toLocaleString('en-IN')}
+                        </div>
+
+                        {/* Days held */}
+                        <div style={{ fontSize: 12, color: '#4a6080' }}>
+                          {Math.floor((new Date().getTime() - new Date(trade.entry_date).getTime()) / 86400000)}d
+                        </div>
+
+                        {/* Spacer */}
+                        <div></div>
+
+                        {/* OHLC per trading date */}
+                        {tradingDates.map((d) => {
+                          const hasData = !!lastAvailableDate && d <= lastAvailableDate;
+                          const dayData = (trade.daily_data || []).find((dd: any) => dd.date === d);
+
+                          if (!hasData) {
+                            return (
+                              <div key={d} style={{ textAlign: 'center' }}>
+                                <span style={{ color: '#1a2a3a', fontSize: 11 }}>—</span>
+                              </div>
+                            );
+                          }
+
+                          if (!dayData) {
+                            return (
+                              <div key={d} style={{ textAlign: 'center' }}>
+                                <span style={{ fontSize: 10, color: '#4a6080', cursor: 'pointer' }}>·</span>
+                              </div>
+                            );
+                          }
+
+                          // Calculate % moves vs entry
+                          const entry = trade.entry_price;
+                          const isLong = trade.direction === 'Long';
+
+                          const pctVal = (price: number) => {
+                            const p = isLong
+                              ? ((price - entry) / entry * 100)
+                              : ((entry - price) / entry * 100);
+                            return p.toFixed(2);
+                          };
+
+                          const hPct = parseFloat(pctVal(dayData.high));
+                          const lPct = parseFloat(pctVal(dayData.low));
+                          const oPct = parseFloat(pctVal(dayData.open));
+                          const cPct = parseFloat(pctVal(dayData.close));
+
+                          const color = (v: number) => (v >= 0 ? '#5dcaa5' : '#e8a04d');
+
+                          return (
+                            <div key={d} style={{ textAlign: 'center', fontSize: 10 }}>
+                              <div style={{ color: color(hPct) }}>H {hPct > 0 ? '+' : ''}{hPct}%</div>
+                              <div style={{ color: color(lPct) }}>L {lPct > 0 ? '+' : ''}{lPct}%</div>
+                              <div style={{ color: color(oPct) }}>O {oPct > 0 ? '+' : ''}{oPct}%</div>
+                              <div style={{ color: color(cPct), fontWeight: 700 }}>C {cPct > 0 ? '+' : ''}{cPct}%</div>
+                            </div>
+                          );
+                        })}
+
+                        {/* Actions */}
+                        <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                          <button
+                            onClick={() => { setCloseFor(trade); setCloseDate(todayStr()); setClosePrice(''); }}
+                            style={{
+                              background: 'rgba(127,179,213,0.1)',
+                              border: '1px solid rgba(127,179,213,0.2)',
+                              borderRadius: 6,
+                              padding: '4px 8px',
+                              color: '#7fb3d5',
+                              fontSize: 10,
+                              cursor: 'pointer'
+                            }}
+                          >Close</button>
+                          <button
+                            onClick={() => remove(trade.id)}
+                            style={{
+                              background: 'rgba(232,160,77,0.1)',
+                              border: '1px solid rgba(232,160,77,0.2)',
+                              borderRadius: 6,
+                              padding: '4px 8px',
+                              color: '#e8a04d',
+                              fontSize: 10,
+                              cursor: 'pointer'
+                            }}
+                          >Del</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              });
+            })()}
           </div>
         )}
       </div>
