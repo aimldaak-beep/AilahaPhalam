@@ -579,7 +579,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                 const groupColor = PALETTE.groupColors[groupIndex % 3];
 
                 return (
-                  <div key={entryDate} style={{ marginBottom: 32, minWidth: 1900 }}>
+                  <div key={entryDate} style={{ marginBottom: 32, minWidth: 2300 }}>
 
                     {/* Group Header */}
                     <div style={{
@@ -594,7 +594,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                     }}>
                       <span style={{
                         fontFamily: "'DM Serif Display', serif",
-                        fontSize: 15,
+                        fontSize: 17,
                         fontWeight: 400,
                         color: groupColor,
                       }}>
@@ -629,8 +629,8 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                         return (
                           <div key={d} style={{ textAlign: 'center' }}>
                             <div style={{
-                              fontSize: 11,
-                              fontWeight: 700,
+                              fontSize: 13,
+                              fontWeight: 800,
                               color: hasData ? PALETTE.text : PALETTE.muted,
                               fontFamily: "'DM Sans', sans-serif",
                               marginBottom: 3
@@ -678,7 +678,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                         }}
                       >
                         {/* Symbol */}
-                        <div style={{ fontSize: 14, fontWeight: 800, color: PALETTE.text, fontFamily: "'DM Sans', sans-serif" }}>
+                        <div style={{ fontSize: 15, fontWeight: 900, color: PALETTE.text, fontFamily: "'DM Sans', sans-serif" }}>
                           {trade.symbol}
                         </div>
 
@@ -698,7 +698,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                         </div>
 
                         {/* Entry Price */}
-                        <div style={{ fontSize: 14, fontWeight: 700, color: PALETTE.text, fontFamily: 'monospace' }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: PALETTE.text, fontFamily: 'monospace' }}>
                           ₹{trade.entry_price?.toLocaleString('en-IN')}
                         </div>
 
@@ -752,7 +752,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                                       gap: 4,
                                       color: col,
                                       fontFamily: "'DM Sans', monospace",
-                                      fontSize: isClose ? 12 : 11,
+                                      fontSize: isClose ? 14 : 13,
                                       fontWeight: isClose ? 800 : 400,
                                       marginBottom: 2,
                                     }}
