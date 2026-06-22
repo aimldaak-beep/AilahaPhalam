@@ -4,6 +4,7 @@
  */
 
 import { supabase } from './supabase';
+import { getDailyOHLC } from './signals';
 
 export interface TrackerTrade {
   id: string;
@@ -65,4 +66,19 @@ export async function deleteTrackerTrade(id: string): Promise<void> {
     .delete()
     .eq('id', id);
   if (error) throw error;
+}
+
+export async function autoFillOHLC(
+  symbol: string,
+  date: string
+): Promise<{ open: number; high: number; low: number; close: number } | null> {
+  const data = await getDailyOHLC([symbol], date);
+  if (!data.length) return null;
+  const d = data[0];
+  return {
+    open: d.open,
+    high: d.high,
+    low: d.low,
+    close: d.close
+  };
 }

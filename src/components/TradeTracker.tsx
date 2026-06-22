@@ -13,6 +13,7 @@ import {
   addTrackerTrade,
   updateTrackerTrade,
   deleteTrackerTrade,
+  autoFillOHLC,
   type TrackerTrade,
   type DailyOHLC,
 } from '../lib/tracker';
@@ -185,6 +186,21 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
   const ohlcDateFor = (trade: TrackerTrade): string => {
     const last = trade.daily_data[trade.daily_data.length - 1];
     return nextWorkingDay(last ? last.date : trade.entry_date);
+  };
+
+  // Pull the day's OHLC from Supabase daily_ohlc and fill the inline inputs.
+  const handleAutoFill = async (trade: TrackerTrade) => {
+    const d = ohlcDateFor(trade);
+    try {
+      const o = await autoFillOHLC(trade.symbol, d);
+      if (!o) {
+        alert(`No daily OHLC found for ${trade.symbol} on ${d}.`);
+        return;
+      }
+      setOhlc({ o: String(o.open), h: String(o.high), l: String(o.low), c: String(o.close) });
+    } catch (e: any) {
+      alert('Auto-fill failed: ' + (e?.message ?? 'unknown error'));
+    }
   };
 
   const submitOhlc = async (trade: TrackerTrade) => {
@@ -426,6 +442,13 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                                       />
                                     ))}
                                   </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAutoFill(trade)}
+                                    className="w-full bg-[#5dcaa5]/15 border border-[#5dcaa5]/40 text-[#5dcaa5] rounded px-1 py-1 text-[9px] font-black font-mono uppercase cursor-pointer hover:bg-[#5dcaa5]/25 transition"
+                                  >
+                                    Auto-fill OHLC
+                                  </button>
                                   <div className="flex gap-1 pt-0.5">
                                     <button type="button" onClick={() => submitOhlc(trade)} className="flex-1 bg-[#7fb3d5] text-[#161f2e] rounded px-1 py-1 text-[9px] font-black font-mono uppercase cursor-pointer">Save</button>
                                     <button type="button" onClick={() => setOhlcFor(null)} className="flex-1 bg-[#1e2a3d] border border-white/10 text-[#8a9bb3] rounded px-1 py-1 text-[9px] font-black font-mono uppercase cursor-pointer">Cancel</button>

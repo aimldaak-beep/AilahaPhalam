@@ -24,6 +24,7 @@ import CarryForwardModal from './components/CarryForwardModal';
 import EditTradeModal from './components/EditTradeModal';
 import WhatIfCloseModal from './components/WhatIfCloseModal';
 import TradeTracker from './components/TradeTracker';
+import SignalIntelligence from './components/SignalIntelligence';
 import { motion } from 'motion/react';
 import {
   Sparkles,
@@ -60,7 +61,7 @@ import PinModal from './components/PinModal';
 export default function App() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [selectedWeekKey, setSelectedWeekKey] = useState<string>('');
-  const [currentView, setCurrentView] = useState<'menu' | 'weekly' | 'cumulative' | 'summary' | 'export' | 'tracker'>('menu');
+  const [currentView, setCurrentView] = useState<'menu' | 'weekly' | 'cumulative' | 'summary' | 'export' | 'tracker' | 'signals'>('menu');
   const [weekKeysList, setWeekKeysList] = useState<string[]>([]);
 
   // Modal Triggers
@@ -635,10 +636,30 @@ export default function App() {
                     Signal outcome tracking
                   </span>
                 </button>
+
+                {/* 8. Signal Intelligence card */}
+                <button
+                  type="button"
+                  id="action-card-signals"
+                  onClick={() => setCurrentView('signals')}
+                  className="group relative bg-[#222e42] hover:bg-[#2a3a52] border border-white/5 hover:border-[#7fb3d5]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
+                >
+                  <div className="p-2.5 bg-[#172234] text-[#7fb3d5] rounded-xl border border-white/5 shadow-inner mb-2.5">
+                    <Activity className="w-5 h-5 text-[#7fb3d5]" />
+                  </div>
+                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#7fb3d5] font-sans">
+                    Signal Intelligence
+                  </h3>
+                  <span className="text-[8px] uppercase tracking-widest font-mono text-[#7fb3d5]/60 font-bold mt-1">
+                    Live multi-TF signals
+                  </span>
+                </button>
               </div>
             </motion.div>
           ) : currentView === 'tracker' ? (
             <TradeTracker session={session} setCurrentView={setCurrentView} />
+          ) : currentView === 'signals' ? (
+            <SignalIntelligence setCurrentView={setCurrentView} />
           ) : (
             <div className="space-y-5">
               {/* Back navigation strip */}
