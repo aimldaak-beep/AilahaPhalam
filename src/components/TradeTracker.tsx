@@ -31,6 +31,20 @@ interface Props {
   setCurrentView: (view: 'menu') => void;
 }
 
+// Mapped Blue palette
+const PALETTE = {
+  bg: '#E4EDEE',
+  text: '#43484D',
+  muted: '#87A7AC',
+  card: '#fff',
+  border: 'rgba(67,72,77,0.12)',
+  groupColors: ['#87A7AC', '#E7B97F', '#677A67'],
+  long: '#677A67',
+  short: '#E7B97F',
+  profit: '#677A67',
+  loss: '#87A7AC',
+};
+
 // --- pure helpers -----------------------------------------------------------
 
 const todayStr = () => new Date().toISOString().split('T')[0];
@@ -48,7 +62,7 @@ function fmtPct(p: number): string {
   return `${p >= 0 ? '+' : '-'}${Math.abs(p).toFixed(2)}%`;
 }
 
-const pctColor = (p: number) => (p >= 0 ? '#5dcaa5' : '#e8a04d');
+const pctColor = (p: number) => (p >= 0 ? '#677A67' : '#C8943A');
 
 /** Direction-aware points + percent move of `price` vs `entry`. */
 function calcPnl(price: number, entry: number, direction: string): { pts: number; pct: number } {
@@ -116,6 +130,10 @@ function groupByEntryDate(trades: any[]): Record<string, any[]> {
 
 const inputCls =
   'w-full bg-[#172234] border border-white/10 focus:border-[#7fb3d5] transition rounded-lg px-2.5 py-1.5 text-xs text-[#e8edf4] focus:outline-none font-mono';
+
+// Light-palette input for the (re-themed) new-trade form.
+const formInputCls =
+  'w-full bg-[#E4EDEE] border border-[rgba(67,72,77,0.12)] focus:border-[#87A7AC] transition rounded-lg px-2.5 py-1.5 text-xs text-[#43484D] focus:outline-none font-mono';
 
 // ---------------------------------------------------------------------------
 
@@ -378,7 +396,16 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
   // --- render ---------------------------------------------------------------
 
   return (
-    <div className="space-y-6 text-[#e8edf4]">
+    <div
+      className="space-y-6"
+      style={{
+        background: PALETTE.bg,
+        minHeight: '100vh',
+        fontFamily: "'DM Sans', sans-serif",
+        color: PALETTE.text,
+        padding: '20px 24px',
+      }}
+    >
       {/* Header + back */}
       <div className="flex items-center justify-between bg-[#1e2a3d] border border-white/10 px-4 py-3 rounded-2xl">
         <button
@@ -396,24 +423,34 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
 
       {/* SECTION 1 — OPEN TRADES */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 bg-[#7fb3d5]/10 border border-[#7fb3d5]/30 rounded-lg text-[#7fb3d5]">
-              <TrendingUp className="w-4 h-4 text-[#7fb3d5]" />
+        <div
+          className="flex items-center justify-between"
+          style={{
+            background: PALETTE.card,
+            borderBottom: `1px solid ${PALETTE.border}`,
+            borderRadius: 10,
+            padding: '12px 16px',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <span style={{ padding: 6, background: `${PALETTE.muted}20`, borderRadius: 8, color: PALETTE.muted, display: 'inline-flex' }}>
+              <TrendingUp className="w-4 h-4" />
             </span>
-            <h2 className="text-base font-black text-[#7fb3d5] tracking-widest uppercase font-sans">Trade Tracker</h2>
-            <span className="text-[10px] text-[#8a9bb3] font-mono">({openTrades.length} open)</span>
+            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, fontWeight: 400, color: PALETTE.text, lineHeight: 1 }}>
+              Trade Tracker
+            </h2>
+            <span style={{ fontSize: 12, color: PALETTE.muted }}>({openTrades.length} open)</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onClick={downloadCSV}
               style={{
-                background: 'rgba(93,202,165,0.1)',
-                border: '1px solid rgba(93,202,165,0.3)',
+                background: '#677A6715',
+                border: '1px solid #677A6740',
                 borderRadius: 8,
-                padding: '6px 14px',
-                color: '#5dcaa5',
-                fontSize: 11,
+                padding: '7px 16px',
+                color: '#677A67',
+                fontSize: 12,
                 fontWeight: 700,
                 cursor: 'pointer',
                 display: 'flex',
@@ -426,7 +463,19 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
             <button
               type="button"
               onClick={() => setShowNew((v) => !v)}
-              className="bg-[#7fb3d5]/10 hover:bg-[#7fb3d5]/20 text-[#7fb3d5] border border-[#7fb3d5]/30 font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+              style={{
+                background: '#87A7AC',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                padding: '7px 16px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
             >
               <Plus className="w-4 h-4" />
               New Trade
@@ -435,54 +484,69 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
         </div>
 
         {showNew && (
-          <div className="bg-[#222e42] border border-white/10 rounded-2xl p-4 space-y-3">
+          <div
+            className="space-y-3"
+            style={{ background: PALETTE.card, border: `1px solid ${PALETTE.border}`, borderRadius: 12, padding: 16 }}
+          >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input
                 value={nSymbol}
                 onChange={(e) => setNSymbol(e.target.value.toUpperCase())}
                 placeholder="Symbol"
-                className={inputCls + ' uppercase'}
+                className={formInputCls + ' uppercase'}
               />
               <div className="flex gap-2">
-                {(['Long', 'Short'] as const).map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setNDir(d)}
-                    className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold font-mono border transition cursor-pointer ${
-                      nDir === d
-                        ? d === 'Long'
-                          ? 'bg-[#5dcaa5]/15 border-[#5dcaa5]/40 text-[#5dcaa5]'
-                          : 'bg-[#e8a04d]/15 border-[#e8a04d]/40 text-[#e8a04d]'
-                        : 'bg-[#172234] border-white/10 text-[#8a9bb3] hover:text-[#e8edf4]'
-                    }`}
-                  >
-                    {d}
-                  </button>
-                ))}
+                {(['Long', 'Short'] as const).map((d) => {
+                  const active = nDir === d;
+                  const activeStyle =
+                    d === 'Long'
+                      ? { background: '#677A6720', color: '#677A67', border: '1px solid #677A6740' }
+                      : { background: '#E7B97F20', color: '#C8943A', border: '1px solid #E7B97F60' };
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setNDir(d)}
+                      style={{
+                        flex: 1,
+                        padding: '6px 12px',
+                        borderRadius: 8,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'all .15s',
+                        ...(active
+                          ? activeStyle
+                          : { background: PALETTE.bg, color: PALETTE.muted, border: `1px solid ${PALETTE.border}` }),
+                      }}
+                    >
+                      {d}
+                    </button>
+                  );
+                })}
               </div>
-              <input type="date" value={nDate} onChange={(e) => setNDate(e.target.value)} className={inputCls} />
+              <input type="date" value={nDate} onChange={(e) => setNDate(e.target.value)} className={formInputCls} />
               <input
                 type="text"
                 inputMode="decimal"
                 value={nPrice}
                 onChange={(e) => setNPrice(e.target.value)}
                 placeholder="Entry price"
-                className={inputCls}
+                className={formInputCls}
               />
             </div>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={submitNew}
-                className="bg-[#7fb3d5] hover:bg-[#5f9fc8] text-[#161f2e] px-5 py-2 rounded-lg text-xs font-black font-mono uppercase tracking-wider transition cursor-pointer active:scale-[0.98]"
+                style={{ background: '#87A7AC', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
               >
                 Submit
               </button>
               <button
                 type="button"
                 onClick={() => setShowNew(false)}
-                className="bg-[#1e2a3d] border border-white/10 hover:border-[#e8a04d]/40 text-[#8a9bb3] hover:text-[#e8a04d] px-4 py-2 rounded-lg text-xs font-black font-mono uppercase tracking-wider transition cursor-pointer"
+                style={{ background: PALETTE.bg, color: PALETTE.muted, border: `1px solid ${PALETTE.border}`, borderRadius: 8, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
               >
                 Cancel
               </button>
@@ -509,9 +573,10 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
               const grouped = groupByEntryDate(openTrades);
               const sortedEntryDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
-              return sortedEntryDates.map((entryDate) => {
+              return sortedEntryDates.map((entryDate, groupIndex) => {
                 const groupTrades = grouped[entryDate];
                 const tradingDates = getNextTradingDates(entryDate, 7);
+                const groupColor = PALETTE.groupColors[groupIndex % 3];
 
                 return (
                   <div key={entryDate} style={{ marginBottom: 32, minWidth: 1900 }}>
@@ -521,22 +586,28 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                       display: 'flex',
                       alignItems: 'center',
                       gap: 12,
-                      padding: '8px 16px',
-                      background: 'rgba(127,179,213,0.08)',
-                      borderRadius: 8,
+                      padding: '10px 16px',
+                      background: `${groupColor}15`,
+                      borderRadius: 10,
                       marginBottom: 12,
-                      borderLeft: '3px solid #7fb3d5'
+                      borderLeft: `4px solid ${groupColor}`
                     }}>
                       <span style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: '#7fb3d5',
-                        letterSpacing: '1px',
-                        textTransform: 'uppercase'
+                        fontFamily: "'DM Serif Display', serif",
+                        fontSize: 15,
+                        fontWeight: 400,
+                        color: groupColor,
                       }}>
                         Entry: {formatDateShort(entryDate)}
                       </span>
-                      <span style={{ fontSize: 10, color: '#4a6080' }}>
+                      <span style={{
+                        background: `${groupColor}20`,
+                        color: groupColor,
+                        borderRadius: 20,
+                        padding: '2px 10px',
+                        fontSize: 10,
+                        fontWeight: 700,
+                      }}>
                         {groupTrades.length} trade{groupTrades.length > 1 ? 's' : ''}
                       </span>
                     </div>
@@ -548,10 +619,9 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                       padding: '6px 16px',
                       marginBottom: 4
                     }}>
-                      <div style={{ fontSize: 9, color: '#4a6080', letterSpacing: '1px', textTransform: 'uppercase' }}>Symbol</div>
-                      <div style={{ fontSize: 9, color: '#4a6080', letterSpacing: '1px', textTransform: 'uppercase' }}>Dir</div>
-                      <div style={{ fontSize: 9, color: '#4a6080', letterSpacing: '1px', textTransform: 'uppercase' }}>Entry ₹</div>
-                      <div style={{ fontSize: 9, color: '#4a6080', letterSpacing: '1px', textTransform: 'uppercase' }}>Days</div>
+                      {['Symbol', 'Dir', 'Entry ₹', 'Days'].map((lbl) => (
+                        <div key={lbl} style={{ fontSize: 10, fontWeight: 700, color: PALETTE.muted, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'DM Sans', sans-serif" }}>{lbl}</div>
+                      ))}
                       <div></div>
                       {tradingDates.map((d) => {
                         const hasData = !!lastAvailableDate && d <= lastAvailableDate;
@@ -559,9 +629,10 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                         return (
                           <div key={d} style={{ textAlign: 'center' }}>
                             <div style={{
-                              fontSize: 10,
+                              fontSize: 11,
                               fontWeight: 700,
-                              color: hasData ? '#7fb3d5' : '#2a3a4a',
+                              color: hasData ? PALETTE.text : PALETTE.muted,
+                              fontFamily: "'DM Sans', sans-serif",
                               marginBottom: 3
                             }}>
                               {formatDateShort(d)}
@@ -572,12 +643,13 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                               disabled={!hasData || isLoading}
                               title={hasData ? `Auto-fill all ${formatDateShort(d)}` : 'No data available'}
                               style={{
-                                background: hasData ? 'rgba(127,179,213,0.15)' : 'transparent',
-                                border: `1px solid ${hasData ? 'rgba(127,179,213,0.3)' : 'rgba(255,255,255,0.05)'}`,
+                                background: hasData ? `${groupColor}20` : 'transparent',
+                                border: `1px solid ${hasData ? `${groupColor}50` : 'transparent'}`,
                                 borderRadius: 4,
                                 padding: '2px 6px',
                                 fontSize: 10,
-                                color: hasData ? '#7fb3d5' : '#2a3a4a',
+                                fontWeight: 700,
+                                color: hasData ? groupColor : PALETTE.border,
                                 cursor: hasData ? 'pointer' : 'not-allowed',
                                 width: '100%'
                               }}
@@ -597,16 +669,16 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                         style={{
                           display: 'grid',
                           gridTemplateColumns: '140px 80px 120px 100px 60px repeat(7, 1fr) 80px',
-                          padding: '8px 16px',
-                          marginBottom: 4,
-                          background: 'rgba(255,255,255,0.02)',
-                          borderRadius: 8,
+                          padding: '10px 16px',
+                          marginBottom: 6,
+                          background: PALETTE.card,
+                          borderRadius: 10,
                           alignItems: 'center',
-                          border: '1px solid rgba(255,255,255,0.04)'
+                          border: `1px solid ${PALETTE.border}`
                         }}
                       >
                         {/* Symbol */}
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#e8edf4' }}>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: PALETTE.text, fontFamily: "'DM Sans', sans-serif" }}>
                           {trade.symbol}
                         </div>
 
@@ -617,25 +689,21 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                             fontWeight: 700,
                             padding: '3px 8px',
                             borderRadius: 4,
-                            background: trade.direction === 'Long'
-                              ? 'rgba(93,202,165,0.15)'
-                              : 'rgba(232,160,77,0.15)',
-                            color: trade.direction === 'Long' ? '#5dcaa5' : '#e8a04d',
-                            border: `1px solid ${trade.direction === 'Long'
-                              ? 'rgba(93,202,165,0.3)'
-                              : 'rgba(232,160,77,0.3)'}`
+                            background: trade.direction === 'Long' ? '#677A6720' : '#E7B97F20',
+                            color: trade.direction === 'Long' ? '#677A67' : '#C8943A',
+                            border: `1px solid ${trade.direction === 'Long' ? '#677A6740' : '#E7B97F60'}`
                           }}>
                             {trade.direction?.toUpperCase()}
                           </span>
                         </div>
 
                         {/* Entry Price */}
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#e8edf4' }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: PALETTE.text, fontFamily: 'monospace' }}>
                           ₹{trade.entry_price?.toLocaleString('en-IN')}
                         </div>
 
                         {/* Days held */}
-                        <div style={{ fontSize: 12, color: '#4a6080' }}>
+                        <div style={{ fontSize: 12, color: PALETTE.muted }}>
                           {Math.floor((new Date().getTime() - new Date(trade.entry_date).getTime()) / 86400000)}d
                         </div>
 
@@ -650,7 +718,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                           if (!hasData) {
                             return (
                               <div key={d} style={{ textAlign: 'center' }}>
-                                <span style={{ color: '#1a2a3a', fontSize: 11 }}>—</span>
+                                <span style={{ color: PALETTE.border, fontSize: 11 }}>—</span>
                               </div>
                             );
                           }
@@ -658,7 +726,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                           if (!dayData) {
                             return (
                               <div key={d} style={{ textAlign: 'center' }}>
-                                <span style={{ fontSize: 10, color: '#4a6080', cursor: 'pointer' }}>·</span>
+                                <span style={{ fontSize: 10, color: PALETTE.muted, cursor: 'pointer' }}>·</span>
                               </div>
                             );
                           }
@@ -673,8 +741,8 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                                   : key === 'O' ? dayData.open
                                   : dayData.close;
                                 const { pts, pct } = calcPnl(price, trade.entry_price, trade.direction);
-                                const col = pts >= 0 ? '#5dcaa5' : '#e8a04d';
-                                const isBold = key === 'C';
+                                const col = pts >= 0 ? '#677A67' : '#C8943A';
+                                const isClose = key === 'C';
                                 return (
                                   <div
                                     key={key}
@@ -683,8 +751,9 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                                       alignItems: 'center',
                                       gap: 4,
                                       color: col,
-                                      fontSize: 10,
-                                      fontWeight: isBold ? 700 : 400,
+                                      fontFamily: "'DM Sans', monospace",
+                                      fontSize: isClose ? 12 : 11,
+                                      fontWeight: isClose ? 800 : 400,
                                       marginBottom: 2,
                                     }}
                                   >
@@ -738,11 +807,11 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
 
       {/* SECTION 2 — CLOSED TRADES */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2 border-b border-white/10 pb-3">
-          <span className="p-1.5 bg-[#172234] border border-white/10 rounded-lg text-[#5dcaa5]">
-            <CheckCircle className="w-4 h-4 text-[#5dcaa5]" />
+        <div className="flex items-center gap-2 pb-3" style={{ borderBottom: `1px solid ${PALETTE.border}` }}>
+          <span style={{ padding: 6, background: `${PALETTE.profit}15`, border: `1px solid ${PALETTE.profit}30`, borderRadius: 8, color: PALETTE.profit, display: 'inline-flex' }}>
+            <CheckCircle className="w-4 h-4" />
           </span>
-          <span className="text-xs font-black text-[#e8edf4] uppercase tracking-widest font-mono">
+          <span style={{ color: PALETTE.muted, fontSize: 12, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'DM Sans', sans-serif" }}>
             Closed Trades ({closedTrades.length})
           </span>
         </div>
