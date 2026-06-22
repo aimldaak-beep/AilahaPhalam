@@ -50,6 +50,23 @@ function fmtPct(p: number): string {
 
 const pctColor = (p: number) => (p >= 0 ? '#5dcaa5' : '#e8a04d');
 
+/** Direction-aware points + percent move of `price` vs `entry`. */
+function calcPnl(price: number, entry: number, direction: string): { pts: number; pct: number } {
+  const pts = direction === 'Long' ? price - entry : entry - price;
+  const pct = entry ? (pts / entry) * 100 : 0;
+  return { pts, pct };
+}
+
+/** "+2.75pts" / "-38.20pts" — always 2 dp, explicit sign. */
+function fmtPts(n: number): string {
+  return (n >= 0 ? '+' : '-') + Math.abs(n).toFixed(2) + 'pts';
+}
+
+/** "1,530.05" — en-IN grouping, always 2 dp. */
+function fmtPrice(n: number): string {
+  return n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 /** Count of Mon–Fri days strictly after `start`, up to and including `end`. */
 function workingDaysBetween(start: string, end: string): number {
   if (!start || !end) return 0;
@@ -192,6 +209,71 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
     }
   };
 
+  // Export all trades (one row per daily_data entry) to CSV.
+  const downloadCSV = () => {
+    const rows: string[] = [];
+
+    rows.push([
+      'Symbol', 'Direction', 'Entry Date', 'Entry Price',
+      'Status', 'Days Held',
+      'Day', 'Date',
+      'Open', 'High', 'Low', 'Close',
+      'O_pts', 'H_pts', 'L_pts', 'C_pts',
+      'O_pct', 'H_pct', 'L_pct', 'C_pct',
+    ].join(','));
+
+    trades.forEach((trade) => {
+      const isLong = trade.direction === 'Long';
+      const daysHeld = Math.floor(
+        (new Date().getTime() - new Date(trade.entry_date).getTime()) / 86400000
+      );
+
+      if (!trade.daily_data || trade.daily_data.length === 0) {
+        rows.push([
+          trade.symbol, trade.direction, trade.entry_date, trade.entry_price,
+          trade.status, daysHeld,
+          '', '', '', '', '', '',
+          '', '', '', '',
+          '', '', '', '',
+        ].join(','));
+        return;
+      }
+
+      trade.daily_data.forEach((dd: any, idx: number) => {
+        const calcP = (price: number) =>
+          isLong ? price - trade.entry_price : trade.entry_price - price;
+        const calcPct = (price: number) => (calcP(price) / trade.entry_price) * 100;
+
+        rows.push([
+          trade.symbol, trade.direction, trade.entry_date, trade.entry_price,
+          trade.status, daysHeld,
+          `D${idx + 1}`, dd.date,
+          dd.open?.toFixed(2) ?? '',
+          dd.high?.toFixed(2) ?? '',
+          dd.low?.toFixed(2) ?? '',
+          dd.close?.toFixed(2) ?? '',
+          calcP(dd.open).toFixed(2),
+          calcP(dd.high).toFixed(2),
+          calcP(dd.low).toFixed(2),
+          calcP(dd.close).toFixed(2),
+          calcPct(dd.open).toFixed(2),
+          calcPct(dd.high).toFixed(2),
+          calcPct(dd.low).toFixed(2),
+          calcPct(dd.close).toFixed(2),
+        ].join(','));
+      });
+    });
+
+    const csv = rows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `trade_tracker_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // Bulk-fill one date column for every trade in an entry-date group.
   const fillColumnForGroup = async (targetDate: string, trades: any[]) => {
     // Don't fill if beyond last available date
@@ -322,14 +404,34 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
             <h2 className="text-base font-black text-[#7fb3d5] tracking-widest uppercase font-sans">Trade Tracker</h2>
             <span className="text-[10px] text-[#8a9bb3] font-mono">({openTrades.length} open)</span>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowNew((v) => !v)}
-            className="bg-[#7fb3d5]/10 hover:bg-[#7fb3d5]/20 text-[#7fb3d5] border border-[#7fb3d5]/30 font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
-          >
-            <Plus className="w-4 h-4" />
-            New Trade
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              onClick={downloadCSV}
+              style={{
+                background: 'rgba(93,202,165,0.1)',
+                border: '1px solid rgba(93,202,165,0.3)',
+                borderRadius: 8,
+                padding: '6px 14px',
+                color: '#5dcaa5',
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              ↓ CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowNew((v) => !v)}
+              className="bg-[#7fb3d5]/10 hover:bg-[#7fb3d5]/20 text-[#7fb3d5] border border-[#7fb3d5]/30 font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+            >
+              <Plus className="w-4 h-4" />
+              New Trade
+            </button>
+          </div>
         </div>
 
         {showNew && (
@@ -412,7 +514,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                 const tradingDates = getNextTradingDates(entryDate, 7);
 
                 return (
-                  <div key={entryDate} style={{ marginBottom: 32, minWidth: 1000 }}>
+                  <div key={entryDate} style={{ marginBottom: 32, minWidth: 1900 }}>
 
                     {/* Group Header */}
                     <div style={{
@@ -561,30 +663,38 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                             );
                           }
 
-                          // Calculate % moves vs entry
-                          const entry = trade.entry_price;
-                          const isLong = trade.direction === 'Long';
-
-                          const pctVal = (price: number) => {
-                            const p = isLong
-                              ? ((price - entry) / entry * 100)
-                              : ((entry - price) / entry * 100);
-                            return p.toFixed(2);
-                          };
-
-                          const hPct = parseFloat(pctVal(dayData.high));
-                          const lPct = parseFloat(pctVal(dayData.low));
-                          const oPct = parseFloat(pctVal(dayData.open));
-                          const cPct = parseFloat(pctVal(dayData.close));
-
-                          const color = (v: number) => (v >= 0 ? '#5dcaa5' : '#e8a04d');
-
+                          // Price | Points | % per OHLC value, direction-aware
                           return (
-                            <div key={d} style={{ textAlign: 'center', fontSize: 10 }}>
-                              <div style={{ color: color(hPct) }}>H {hPct > 0 ? '+' : ''}{hPct}%</div>
-                              <div style={{ color: color(lPct) }}>L {lPct > 0 ? '+' : ''}{lPct}%</div>
-                              <div style={{ color: color(oPct) }}>O {oPct > 0 ? '+' : ''}{oPct}%</div>
-                              <div style={{ color: color(cPct), fontWeight: 700 }}>C {cPct > 0 ? '+' : ''}{cPct}%</div>
+                            <div key={d}>
+                              {(['H', 'L', 'O', 'C'] as const).map((key) => {
+                                const price =
+                                  key === 'H' ? dayData.high
+                                  : key === 'L' ? dayData.low
+                                  : key === 'O' ? dayData.open
+                                  : dayData.close;
+                                const { pts, pct } = calcPnl(price, trade.entry_price, trade.direction);
+                                const col = pts >= 0 ? '#5dcaa5' : '#e8a04d';
+                                const isBold = key === 'C';
+                                return (
+                                  <div
+                                    key={key}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 4,
+                                      color: col,
+                                      fontSize: 10,
+                                      fontWeight: isBold ? 700 : 400,
+                                      marginBottom: 2,
+                                    }}
+                                  >
+                                    <span style={{ width: 8 }}>{key}</span>
+                                    <span style={{ minWidth: 60, fontFamily: 'monospace' }}>{fmtPrice(price)}</span>
+                                    <span style={{ minWidth: 52, fontFamily: 'monospace' }}>{fmtPts(pts)}</span>
+                                    <span style={{ fontFamily: 'monospace' }}>{fmtPct(pct)}</span>
+                                  </div>
+                                );
+                              })}
                             </div>
                           );
                         })}
