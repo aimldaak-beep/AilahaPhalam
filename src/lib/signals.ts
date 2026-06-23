@@ -20,13 +20,43 @@ export interface DailyOHLC {
   volume: number;
 }
 
-/** Distinct scan dates present in the signals table, newest first. */
+/**
+ * Distinct scan dates, newest first.
+ *
+ * Fast path: a `signal_dates` view (one cheap query, no row cap). Create it with:
+ *   create or replace view signal_dates as
+ *   select distinct scan_date from signals order by scan_date desc;
+ *
+ * Fallback (used until the view exists): walk distinct dates with a cursor —
+ * one row per date — so a single day exceeding PostgREST's 1000-row cap can't
+ * crowd out older dates the way a plain `.limit(1000)` would.
+ */
 export async function getAvailableDates(): Promise<string[]> {
-  const { data } = await supabase
-    .from('signals')
+  const view = await supabase
+    .from('signal_dates')
     .select('scan_date')
     .order('scan_date', { ascending: false });
-  return [...new Set((data || []).map((r) => r.scan_date))];
+  if (!view.error && view.data) {
+    return view.data.map((r) => r.scan_date);
+  }
+
+  const dates: string[] = [];
+  let cursor: string | undefined;
+  for (let i = 0; i < 1000; i++) {
+    let q = supabase
+      .from('signals')
+      .select('scan_date')
+      .order('scan_date', { ascending: false })
+      .limit(1);
+    if (cursor) q = q.lt('scan_date', cursor);
+    const { data, error } = await q;
+    if (error) throw error;
+    const d = data?.[0]?.scan_date;
+    if (!d) break;
+    dates.push(d);
+    cursor = d;
+  }
+  return dates;
 }
 
 export async function getLatestSignals(targetDate?: string):
