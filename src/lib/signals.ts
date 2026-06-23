@@ -20,35 +20,46 @@ export interface DailyOHLC {
   volume: number;
 }
 
-export async function getLatestSignals():
-  Promise<{ signals: SignalRow[]; date: string }> {
-  // Find the most recent date that actually has signals (not "today",
-  // which may have no rows yet if the scanner hasn't synced).
-  const { data: latest } = await supabase
+/** Distinct scan dates present in the signals table, newest first. */
+export async function getAvailableDates(): Promise<string[]> {
+  const { data } = await supabase
     .from('signals')
     .select('scan_date')
-    .order('scan_date', { ascending: false })
-    .limit(1);
+    .order('scan_date', { ascending: false });
+  return [...new Set((data || []).map((r) => r.scan_date))];
+}
 
-  const latestDate = latest?.[0]?.scan_date;
-  if (!latestDate) return { signals: [], date: '' };
+export async function getLatestSignals(targetDate?: string):
+  Promise<{ signals: SignalRow[]; date: string }> {
+  // Use the requested date if given; otherwise find the most recent date that
+  // actually has signals (not "today", which may have no rows yet).
+  let date = targetDate;
+  if (!date) {
+    const { data: latest } = await supabase
+      .from('signals')
+      .select('scan_date')
+      .order('scan_date', { ascending: false })
+      .limit(1);
+    date = latest?.[0]?.scan_date;
+  }
+  if (!date) return { signals: [], date: '' };
 
   const { data, error } = await supabase
     .from('signals')
     .select('*')
-    .eq('scan_date', latestDate)
+    .eq('scan_date', date)
     .order('scan_time', { ascending: false });
 
   if (error) throw error;
-  return { signals: data || [], date: latestDate };
+  return { signals: data || [], date };
 }
 
-export async function getLatestSignalPerTF():
+export async function getLatestSignalPerTF(targetDate?: string):
   Promise<{
     matrix: Record<string, Record<string, SignalRow>>;
     date: string;
   }> {
-  const { signals, date } = await getLatestSignals();
+  const { signals, date } = await getLatestSignals(targetDate);
   // Group by symbol, keep latest per TF
   const matrix: Record<string, Record<string, SignalRow>> = {};
   for (const row of signals) {

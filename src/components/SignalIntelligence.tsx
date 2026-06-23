@@ -8,7 +8,7 @@
  * Self-contained — does not touch the trades ledger or PnL math.
  */
 import { useState, useEffect, useMemo, type CSSProperties } from 'react';
-import { getLatestSignals, getLatestSignalPerTF, type SignalRow } from '../lib/signals';
+import { getLatestSignals, getLatestSignalPerTF, getAvailableDates, type SignalRow } from '../lib/signals';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 
 interface Props {
@@ -91,15 +91,17 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
   const [err, setErr] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [dataDate, setDataDate] = useState<string>('');
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>('');
   const [filter, setFilter] = useState<'ALL' | 'LONG' | 'SHORT' | 'CONFLICT'>('ALL');
   const [search, setSearch] = useState('');
 
   const todayStr = new Date().toISOString().split('T')[0];
 
-  const load = async () => {
+  const load = async (date?: string) => {
     setLoading(true); setErr(null);
     try {
-      const [perTFRes, all] = await Promise.all([getLatestSignalPerTF(), getLatestSignals()]);
+      const [perTFRes, all] = await Promise.all([getLatestSignalPerTF(date), getLatestSignals(date)]);
       setPerTF(perTFRes.matrix);
       setAllSignals(all.signals);
       setDataDate(all.date);
@@ -111,11 +113,28 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
     }
   };
 
+  // On mount: discover available dates and default to the newest.
   useEffect(() => {
-    void load();
-    const id = setInterval(() => { void load(); }, 15 * 60 * 1000); // 15 min
-    return () => clearInterval(id);
+    (async () => {
+      try {
+        const dates = await getAvailableDates();
+        setAvailableDates(dates);
+        if (dates.length > 0) setSelectedDate(dates[0]);
+        else { setDataDate(''); setLoading(false); }
+      } catch (e: any) {
+        setErr(e?.message ?? 'Failed to load dates.');
+        setLoading(false);
+      }
+    })();
   }, []);
+
+  // Reload signals whenever the selected date changes; refresh it every 15 min.
+  useEffect(() => {
+    if (!selectedDate) return;
+    void load(selectedDate);
+    const id = setInterval(() => { void load(selectedDate); }, 15 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [selectedDate]);
 
   // Top 5 per timeframe, sorted by signal priority (then most recent).
   const topByTF = useMemo(() => {
@@ -202,7 +221,7 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
           </span>
           <button
             type="button"
-            onClick={() => { void load(); }}
+            onClick={() => { void load(selectedDate || undefined); }}
             title="Refresh now"
             style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#864A4F', border: 'none', color: '#EFEBE0', borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
           >
@@ -210,6 +229,38 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
           </button>
         </div>
       </div>
+
+      {/* Date navigation — pick any day that has signals */}
+      {availableDates.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#838368', marginRight: 4 }}>
+            History
+          </span>
+          {availableDates.map((d) => {
+            const isSel = d === selectedDate;
+            const isToday = d === todayStr;
+            return (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setSelectedDate(d)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  background: isSel ? '#7fb3d5' : '#fff',
+                  color: isSel ? '#fff' : '#5C534D',
+                  border: `1.5px solid ${isSel ? '#7fb3d5' : '#D4CABA'}`,
+                  borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer'
+                }}
+              >
+                {isToday && (
+                  <span style={{ color: isSel ? '#fff' : '#838368', fontSize: 13, lineHeight: 1 }}>•</span>
+                )}
+                {new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Summary stat cards (computed from live data) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 22 }}>
