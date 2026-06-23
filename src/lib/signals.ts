@@ -20,29 +20,44 @@ export interface DailyOHLC {
   volume: number;
 }
 
-export async function getLatestSignals(): Promise<SignalRow[]> {
-  const today = new Date().toISOString().split('T')[0];
+export async function getLatestSignals():
+  Promise<{ signals: SignalRow[]; date: string }> {
+  // Find the most recent date that actually has signals (not "today",
+  // which may have no rows yet if the scanner hasn't synced).
+  const { data: latest } = await supabase
+    .from('signals')
+    .select('scan_date')
+    .order('scan_date', { ascending: false })
+    .limit(1);
+
+  const latestDate = latest?.[0]?.scan_date;
+  if (!latestDate) return { signals: [], date: '' };
+
   const { data, error } = await supabase
     .from('signals')
     .select('*')
-    .eq('scan_date', today)
+    .eq('scan_date', latestDate)
     .order('scan_time', { ascending: false });
+
   if (error) throw error;
-  return data || [];
+  return { signals: data || [], date: latestDate };
 }
 
 export async function getLatestSignalPerTF():
-  Promise<Record<string, Record<string, SignalRow>>> {
-  const rows = await getLatestSignals();
+  Promise<{
+    matrix: Record<string, Record<string, SignalRow>>;
+    date: string;
+  }> {
+  const { signals, date } = await getLatestSignals();
   // Group by symbol, keep latest per TF
-  const result: Record<string, Record<string, SignalRow>> = {};
-  for (const row of rows) {
-    if (!result[row.symbol]) result[row.symbol] = {};
-    if (!result[row.symbol][row.timeframe]) {
-      result[row.symbol][row.timeframe] = row;
+  const matrix: Record<string, Record<string, SignalRow>> = {};
+  for (const row of signals) {
+    if (!matrix[row.symbol]) matrix[row.symbol] = {};
+    if (!matrix[row.symbol][row.timeframe]) {
+      matrix[row.symbol][row.timeframe] = row;
     }
   }
-  return result;
+  return { matrix, date };
 }
 
 export async function getDailyOHLC(

@@ -90,15 +90,19 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [dataDate, setDataDate] = useState<string>('');
   const [filter, setFilter] = useState<'ALL' | 'LONG' | 'SHORT' | 'CONFLICT'>('ALL');
   const [search, setSearch] = useState('');
+
+  const todayStr = new Date().toISOString().split('T')[0];
 
   const load = async () => {
     setLoading(true); setErr(null);
     try {
-      const [matrix, all] = await Promise.all([getLatestSignalPerTF(), getLatestSignals()]);
-      setPerTF(matrix);
-      setAllSignals(all);
+      const [perTFRes, all] = await Promise.all([getLatestSignalPerTF(), getLatestSignals()]);
+      setPerTF(perTFRes.matrix);
+      setAllSignals(all.signals);
+      setDataDate(all.date);
       setLastUpdated(new Date());
     } catch (e: any) {
       setErr(e?.message ?? 'Failed to load signals.');
@@ -166,6 +170,33 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
           <ArrowLeft style={{ width: 14, height: 14 }} /> Back to Hub Menu
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {dataDate && dataDate !== todayStr && (
+            <div style={{
+              background: 'rgba(232,160,77,0.15)',
+              border: '1px solid rgba(232,160,77,0.3)',
+              borderRadius: 8,
+              padding: '4px 12px',
+              fontSize: 11,
+              color: '#e8a04d',
+              fontWeight: 600
+            }}>
+              ⚠️ Data as of {new Date(dataDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+              {' '}— today's scan not yet synced
+            </div>
+          )}
+          {dataDate && dataDate === todayStr && (
+            <div style={{
+              background: 'rgba(131,131,104,0.15)',
+              border: '1px solid rgba(131,131,104,0.4)',
+              borderRadius: 8,
+              padding: '4px 12px',
+              fontSize: 11,
+              color: '#838368',
+              fontWeight: 700
+            }}>
+              ● LIVE
+            </div>
+          )}
           <span style={{ fontSize: 11, color: '#A09080', fontFamily: 'monospace' }}>
             {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : '—'}
           </span>
