@@ -11,9 +11,9 @@ import { formatNumber, formatAmount, formatPrice } from '../lib/format';
 interface CloseTradeModalProps {
   trade: Trade;
   onConfirmClose: (
-    tradeId: string, 
-    exitPrice: number, 
-    exitDate: string, 
+    tradeId: string,
+    exitPrice: number,
+    exitDate: string,
     updatedStatus: TradeStatus,
     closedUsdToInrRate?: number
   ) => void;
@@ -73,29 +73,31 @@ export default function CloseTradeModal({ trade, onConfirmClose, onClose }: Clos
     onConfirmClose(trade.id, parsedPrice, exitDate, finalStatus, manualExchangeRate);
     onClose();
   };  return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div 
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)'}}>
+      <div
         id="close-trade-modal"
-        className="bg-[#161f2e] border border-white/10 rounded-3xl w-full max-w-lg shadow-2xl transition-all overflow-hidden"
+        className="w-full max-w-lg shadow-2xl transition-all overflow-hidden rounded-3xl"
+        style={{background:'rgba(8,5,2,0.92)',backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:24}}
       >
-        <div className="flex items-center justify-between border-b border-white/5 px-6 py-4.5">
+        <div className="flex items-center justify-between px-6 py-4.5" style={{borderBottom:'1px solid rgba(201,168,76,0.08)'}}>
           <div className="flex items-center gap-4">
-            <span className="p-2.5 bg-[#e8a04d]/10 border border-[#e8a04d]/20 rounded-xl text-[#e8a04d] shadow-md animate-pulse">
+            <span className="p-2.5 rounded-xl shadow-md animate-pulse" style={{background:'rgba(201,150,12,0.1)',border:'1px solid rgba(201,150,12,0.2)',color:'#C9960C'}}>
               <CheckCircle className="w-5 h-5" />
             </span>
             <div>
-              <h3 className="font-extrabold text-sm text-white font-sans uppercase tracking-widest">
+              <h3 className="font-extrabold text-sm font-sans uppercase tracking-widest" style={{color:'#F0E6C8'}}>
                 Close Position
               </h3>
-              <p className="text-[13px] text-[#e8a04d] font-bold font-mono uppercase tracking-widest">
+              <p className="text-[13px] font-bold font-mono uppercase tracking-widest" style={{color:'#C9960C'}}>
                 {trade.symbol} • {trade.instrument}
               </p>
             </div>
           </div>
-          <button 
+          <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition p-2 hover:bg-slate-900 rounded-xl cursor-pointer"
+            className="transition p-2 rounded-xl cursor-pointer"
+            style={{color:'rgba(240,230,200,0.5)'}}
           >
             <X className="w-4 h-4" />
           </button>
@@ -103,20 +105,20 @@ export default function CloseTradeModal({ trade, onConfirmClose, onClose }: Clos
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Reference Card */}
-          <div className="bg-slate-950/80 border border-white/5 p-4 rounded-2xl grid grid-cols-2 gap-4 text-sm">
+          <div className="p-4 rounded-2xl grid grid-cols-2 gap-4 text-sm" style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.1)',borderRadius:16}}>
             <div>
-              <span className="block text-[13px] uppercase font-black tracking-widest text-slate-400 mb-1 font-mono">
+              <span className="block text-[13px] uppercase font-black tracking-widest mb-1 font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
                 {trade.direction === 'Long' ? 'Initiated Long At' : 'Initiated Short At'}
               </span>
-              <span className="font-mono text-white font-black text-sm">
+              <span className="font-mono font-black text-sm" style={{color:'#F0E6C8'}}>
                 {currencySymbol}{formatPrice(entryPrice)}
               </span>
             </div>
             <div>
-              <span className="block text-[13px] uppercase font-black tracking-widest text-slate-400 mb-1 font-mono">
+              <span className="block text-[13px] uppercase font-black tracking-widest mb-1 font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
                 Initiated Date
               </span>
-              <span className="font-mono text-slate-305 font-bold text-sm">
+              <span className="font-mono font-bold text-sm" style={{color:'rgba(240,230,200,0.7)'}}>
                 {entryDate}
               </span>
             </div>
@@ -124,7 +126,7 @@ export default function CloseTradeModal({ trade, onConfirmClose, onClose }: Clos
 
           {/* Exit price input */}
           <div className="space-y-1.5">
-            <label className="block text-[13px] font-black text-slate-400 uppercase tracking-widest font-mono">
+            <label className="block text-[13px] font-black uppercase tracking-widest font-mono" style={{color:'rgba(240,230,200,0.55)'}}>
               {priceLabel}
             </label>
             <input
@@ -135,19 +137,22 @@ export default function CloseTradeModal({ trade, onConfirmClose, onClose }: Clos
               placeholder="0.00"
               value={exitPrice}
               onChange={e => validateAndSetDecimal(e.target.value, setExitPrice)}
-              className="w-full bg-slate-950 border border-white/10 focus:border-[#e8a04d] transition rounded-xl px-3.5 py-3 text-base text-white focus:outline-none font-bold font-mono"
+              className="w-full transition rounded-xl px-3.5 py-3 text-base focus:outline-none font-bold font-mono"
+              style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,color:'#F0E6C8'}}
+              onFocus={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.5)'}
+              onBlur={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.15)'}
               autoFocus
             />
-            <p className="text-[12px] text-slate-400 leading-snug font-medium">
+            <p className="text-[12px] leading-snug font-medium" style={{color:'rgba(240,230,200,0.5)'}}>
               * Input Sell rate for Long position closing, or Buy rate for Short position closing.
             </p>
           </div>
 
           {/* Conditional Exchange Rate selector */}
           {trade.currency === 'USD' && (
-            <div className="bg-slate-950/90 border border-white/5 p-4 rounded-2xl space-y-2">
-              <label className="block text-[13px] font-black text-[#e8a04d] uppercase tracking-widest flex items-center gap-1.5 font-mono">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#e8a04d] inline-block animate-pulse"></span>
+            <div className="p-4 rounded-2xl space-y-2" style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.1)',borderRadius:16}}>
+              <label className="block text-[13px] font-black uppercase tracking-widest flex items-center gap-1.5 font-mono" style={{color:'#C9960C'}}>
+                <span className="w-1.5 h-1.5 rounded-full inline-block animate-pulse" style={{background:'#C9960C'}}></span>
                 Closed USD/INR Exchange Rate
               </label>
               <input
@@ -157,9 +162,12 @@ export default function CloseTradeModal({ trade, onConfirmClose, onClose }: Clos
                 placeholder="e.g. 83.24"
                 value={closedUsdToInrRate}
                 onChange={e => validateAndSetDecimal(e.target.value, setClosedUsdToInrRate)}
-                className="w-full bg-slate-900 border border-white/10 focus:border-[#e8a04d] transition rounded-xl px-4 py-3 text-base text-white focus:outline-none font-mono"
+                className="w-full transition rounded-xl px-4 py-3 text-base focus:outline-none font-mono"
+                style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,color:'#F0E6C8'}}
+                onFocus={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.5)'}
+                onBlur={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.15)'}
               />
-              <p className="text-[12px] text-slate-450 leading-normal font-bold">
+              <p className="text-[12px] leading-normal font-bold" style={{color:'rgba(240,230,200,0.5)'}}>
                 * Input USD to INR conversion rate to book the profit/loss in INR books.
               </p>
             </div>
@@ -167,7 +175,7 @@ export default function CloseTradeModal({ trade, onConfirmClose, onClose }: Clos
 
           {/* Exit Date input */}
           <div className="space-y-1.5">
-            <label className="block text-[13px] font-black text-slate-400 uppercase tracking-widest font-mono">
+            <label className="block text-[13px] font-black uppercase tracking-widest font-mono" style={{color:'rgba(240,230,200,0.55)'}}>
               Execution/Exit Date
             </label>
             <input
@@ -176,27 +184,32 @@ export default function CloseTradeModal({ trade, onConfirmClose, onClose }: Clos
               required
               value={exitDate}
               onChange={e => setExitDate(e.target.value)}
-              className="w-full bg-slate-950 border border-white/10 focus:border-[#e8a04d] transition rounded-xl px-3.5 py-3 text-base text-white focus:outline-none font-bold font-mono"
+              className="w-full transition rounded-xl px-3.5 py-3 text-base focus:outline-none font-bold font-mono"
+              style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,color:'#F0E6C8'}}
+              onFocus={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.5)'}
+              onBlur={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.15)'}
             />
           </div>
 
-          <div className="bg-slate-950/40 p-4 rounded-2xl border border-white/5 text-slate-400 text-[12px] leading-relaxed font-mono font-bold uppercase tracking-wider">
+          <div className="p-4 rounded-2xl text-[12px] leading-relaxed font-mono font-bold uppercase tracking-wider" style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.08)',borderRadius:16,color:'rgba(240,230,200,0.35)'}}>
             💡 System matches initiation date ({trade.dateInitiated}) and executes weekly roll-over lifecycles.
           </div>
 
           {/* Action buttons */}
-          <div className="flex gap-4 justify-end pt-4 border-t border-white/5">
+          <div className="flex gap-4 justify-end pt-4" style={{borderTop:'1px solid rgba(201,168,76,0.08)'}}>
             <button
               type="button"
               onClick={onClose}
-              className="bg-slate-950 hover:bg-slate-900 border border-white/5 hover:border-white/10 px-5 py-3 rounded-xl text-sm font-black text-slate-200 transition cursor-pointer font-mono uppercase tracking-wider"
+              className="px-5 py-3 rounded-xl text-sm font-black transition cursor-pointer font-mono uppercase tracking-wider"
+              style={{background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}
             >
               Cancel
             </button>
             <button
               type="submit"
               id="confirm-close-btn"
-              className="bg-[#e8a04d] hover:bg-[#cf8b3a] text-white px-6 py-3 rounded-xl text-sm font-black transition cursor-pointer font-mono uppercase tracking-wider shadow-lg shadow-[#e8a04d]/10"
+              className="px-6 py-3 rounded-xl text-sm font-black transition cursor-pointer font-mono uppercase tracking-wider shadow-lg"
+              style={{background:'#C9A84C',color:'#1A1200',fontWeight:800}}
             >
               Mark Closed
             </button>

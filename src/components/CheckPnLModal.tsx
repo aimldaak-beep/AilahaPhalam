@@ -25,7 +25,7 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
     }
     setter(parts.join('.'));
   };
-  
+
   // Determine standard reference price
   const initiatorPrice = trade.direction === 'Long' ? trade.buyPrice : trade.sellPrice;
   const entryLabel = trade.direction === 'Long' ? 'Buy Entry Price' : 'Sell Entry Price';
@@ -34,29 +34,31 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
 
   const userPrice = parseFloat(currentVal);
   const evaluation = !isNaN(userPrice) && userPrice > 0 ? estimateInstantPnL(trade, userPrice) : null;  return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div 
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)'}}>
+      <div
         id="check-pnl-modal"
-        className="bg-[#161f2e] border border-white/10 rounded-3xl w-full max-w-md shadow-2xl transition-all overflow-hidden"
+        className="w-full max-w-md shadow-2xl transition-all overflow-hidden rounded-3xl"
+        style={{background:'rgba(8,5,2,0.92)',backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:24}}
       >
-        <div className="flex items-center justify-between border-b border-white/5 px-6 py-4.5">
+        <div className="flex items-center justify-between px-6 py-4.5" style={{borderBottom:'1px solid rgba(201,168,76,0.08)'}}>
           <div className="flex items-center gap-3">
-            <span className="p-2.5 bg-[#e8a04d]/10 border border-[#e8a04d]/20 rounded-xl text-[#e8a04d] shadow-md">
-              <RefreshCw className="w-5 h-5 animate-spin text-[#cf8b3a]" />
+            <span className="p-2.5 rounded-xl shadow-md" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
+              <RefreshCw className="w-5 h-5 animate-spin" />
             </span>
             <div>
-              <h3 className="font-extrabold text-sm text-white font-sans uppercase tracking-widest">
+              <h3 className="font-extrabold text-sm font-sans uppercase tracking-widest" style={{color:'#F0E6C8'}}>
                 Check Current PnL
               </h3>
-              <p className="text-[9px] text-slate-400 font-bold font-mono uppercase tracking-widest">
+              <p className="text-[9px] font-bold font-mono uppercase tracking-widest" style={{color:'rgba(240,230,200,0.5)'}}>
                 {trade.symbol} • {trade.instrument}
               </p>
             </div>
           </div>
-          <button 
+          <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition p-2 hover:bg-slate-900 rounded-xl cursor-pointer"
+            className="transition p-2 rounded-xl cursor-pointer"
+            style={{color:'rgba(240,230,200,0.5)'}}
           >
             <X className="w-4 h-4" />
           </button>
@@ -64,20 +66,20 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
 
         <div className="p-6 space-y-4">
           {/* Reference Info */}
-          <div className="grid grid-cols-2 gap-4 bg-slate-950/80 p-4 rounded-2xl border border-white/5 text-slate-100">
+          <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl" style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.1)',borderRadius:16}}>
             <div>
-              <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 font-mono">
+              <span className="block text-[9px] font-black uppercase tracking-widest mb-1 font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
                 {entryLabel}
               </span>
-              <span className="text-white font-black font-mono text-xs">
+              <span className="font-black font-mono text-xs" style={{color:'#F0E6C8'}}>
                 {currencySymbol}{formatPrice(initiatorPrice)}
               </span>
             </div>
             <div>
-              <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 font-mono">
+              <span className="block text-[9px] font-black uppercase tracking-widest mb-1 font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
                 Lots & Multiplier
               </span>
-              <span className="text-slate-300 font-bold font-mono text-xs block">
+              <span className="font-bold font-mono text-xs block" style={{color:'rgba(240,230,200,0.7)'}}>
                 {trade.numberOfLots} Lots x {trade.lotSize}
               </span>
             </div>
@@ -85,7 +87,7 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
 
           {/* Current Trading Price Input */}
           <div className="space-y-1.5 animate-fade-in">
-            <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono">
+            <label className="block text-[9px] font-black uppercase tracking-widest font-mono" style={{color:'rgba(240,230,200,0.55)'}}>
               {trade.direction === 'Long' ? 'Enter temporary Sell value (to check current situation)' : 'Enter temporary Buy value (to check current situation)'}
             </label>
             <div className="relative">
@@ -98,9 +100,12 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
                 value={currentVal}
                 onChange={e => validateAndSetDecimal(e.target.value, setCurrentVal)}
                 autoFocus
-                className="w-full bg-slate-950 border border-white/10 focus:border-[#7fb3d5] transition rounded-xl px-4 py-3 text-white focus:outline-none font-mono text-sm"
+                className="w-full transition rounded-xl px-4 py-3 focus:outline-none font-mono text-sm"
+                style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,color:'#F0E6C8'}}
+                onFocus={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.5)'}
+                onBlur={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.15)'}
               />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[#e8a04d]/80 text-[10px] font-black font-mono select-none uppercase tracking-widest">
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black font-mono select-none uppercase tracking-widest" style={{color:'rgba(201,168,76,0.6)'}}>
                 {trade.currency}
               </div>
             </div>
@@ -108,16 +113,19 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
 
           {/* Evaluation Block */}
           {evaluation ? (
-            <div className={`p-4 rounded-2xl border transition-all duration-200 shadow-sm ${
-              evaluation.points >= 0
-                ? 'bg-[#5dcaa5]/10 border-[#5dcaa5]/30 text-[#5dcaa5]'
-                : 'bg-[#e8a04d]/10 border-[#e8a04d]/30 text-[#e8a04d]'
-            }`}>
-              <div className="flex items-center gap-1.5 border-b border-white/5 pb-2.5 mb-3">
+            <div
+              className="p-4 rounded-2xl border transition-all duration-200 shadow-sm"
+              style={
+                evaluation.points >= 0
+                  ? {background:'rgba(103,122,103,0.1)',border:'1px solid rgba(103,122,103,0.3)',color:'#677A67'}
+                  : {background:'rgba(201,150,12,0.1)',border:'1px solid rgba(201,150,12,0.3)',color:'#C9960C'}
+              }
+            >
+              <div className="flex items-center gap-1.5 pb-2.5 mb-3" style={{borderBottom:'1px solid rgba(201,168,76,0.08)'}}>
                 {evaluation.points >= 0 ? (
-                  <TrendingUp className="w-4 h-4 text-[#5dcaa5] animate-pulse" />
+                  <TrendingUp className="w-4 h-4 animate-pulse" style={{color:'#677A67'}} />
                 ) : (
-                  <TrendingDown className="w-4 h-4 text-[#e8a04d] animate-pulse" />
+                  <TrendingDown className="w-4 h-4 animate-pulse" style={{color:'#C9960C'}} />
                 )}
                 <span className="text-[10px] font-black tracking-widest uppercase font-mono">
                   {evaluation.points >= 0 ? 'Estimated Advantage' : 'Estimated Deficit'}
@@ -126,7 +134,7 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
 
               <div className="grid grid-cols-2 gap-y-3.5 gap-x-2 text-xs">
                 <div>
-                  <span className="block text-[9px] text-slate-400 font-extrabold tracking-widest uppercase mb-1.5 font-mono">
+                  <span className="block text-[9px] font-extrabold tracking-widest uppercase mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
                     PnL Points
                   </span>
                   <span className="font-mono font-black text-xs">
@@ -135,52 +143,54 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
                   </span>
                 </div>
                 <div>
-                  <span className="block text-[9px] text-slate-400 font-extrabold tracking-widest uppercase mb-1.5 font-mono">
+                  <span className="block text-[9px] font-extrabold tracking-widest uppercase mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
                     Gross PnL (INR)
                   </span>
-                  <span className="font-mono font-black text-xs text-white">
+                  <span className="font-mono font-black text-xs" style={{color:'#F0E6C8'}}>
                     {evaluation.grossProfit >= 0 ? '+' : ''}
                     ₹{formatAmount(evaluation.grossProfit)}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-[9px] text-slate-400 font-extrabold tracking-widest uppercase mb-1.5 font-mono">
+                  <span className="block text-[9px] font-extrabold tracking-widest uppercase mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
                     Double Brokerages
                   </span>
-                  <span className="font-mono text-[#e8a04d] text-xs font-black">
+                  <span className="font-mono text-xs font-black" style={{color:'#C9960C'}}>
                     -₹{formatAmount(evaluation.estimatedBrokerage)}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-[9px] text-slate-400 font-extrabold tracking-widest uppercase mb-1.5 font-mono">
+                  <span className="block text-[9px] font-extrabold tracking-widest uppercase mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
                     Net Yield (INR Estimate)
                   </span>
-                  <span className={`font-mono font-black text-sm block ${
-                    evaluation.netProfit >= 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'
-                  }`}>
+                  <span
+                    className="font-mono font-black text-sm block"
+                    style={{color: evaluation.netProfit >= 0 ? '#677A67' : '#C9960C'}}
+                  >
                     {evaluation.netProfit >= 0 ? '+' : ''}
                     ₹{formatAmount(evaluation.netProfit)}
                   </span>
                 </div>
               </div>
 
-              <div className="text-[9px] text-slate-400 font-bold font-mono mt-3.5 leading-relaxed bg-slate-950/40 p-3 rounded-xl border border-white/5 uppercase tracking-wider">
+              <div className="text-[9px] font-bold font-mono mt-3.5 leading-relaxed p-3 rounded-xl uppercase tracking-wider" style={{color:'rgba(240,230,200,0.35)',background:'rgba(4,2,0,0.95)',border:'1px solid rgba(201,168,76,0.08)'}}>
                 ⚠️ Transients simulation block. Realized outcomes do not modify permanent ledgers.
               </div>
             </div>
           ) : (
-            <div className="bg-slate-950/60 p-6 rounded-2xl border border-dashed border-white/5 text-center text-slate-400 text-xs font-medium leading-relaxed font-mono">
-              <Layers className="w-8 h-8 text-[#e8a04d] mx-auto mb-2.5 stroke-1" />
+            <div className="p-6 rounded-2xl border border-dashed text-center text-xs font-medium leading-relaxed font-mono" style={{background:'rgba(4,2,0,0.6)',borderColor:'rgba(201,168,76,0.08)',color:'rgba(240,230,200,0.35)'}}>
+              <Layers className="w-8 h-8 mx-auto mb-2.5 stroke-1" style={{color:'#C9A84C'}} />
               Enter current trade rate above to generate instant real-time profit and loss calculations.
             </div>
           )}
 
           {/* Close button */}
-          <div className="flex justify-end pt-2 border-t border-white/5">
+          <div className="flex justify-end pt-2" style={{borderTop:'1px solid rgba(201,168,76,0.08)'}}>
             <button
               type="button"
               onClick={onClose}
-              className="bg-slate-950 hover:bg-slate-900 border border-white/5 hover:border-white/10 text-slate-200 px-5 py-2.5 rounded-xl text-xs font-black transition cursor-pointer font-mono uppercase tracking-wider"
+              className="px-5 py-2.5 rounded-xl text-xs font-black transition cursor-pointer font-mono uppercase tracking-wider"
+              style={{background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}
             >
               Done Checking
             </button>

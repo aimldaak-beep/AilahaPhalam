@@ -40,7 +40,7 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
       : todayStr;
 
     const activeWeeks = getWeeksBetween(trade.dateInitiated, endLimitStr);
-    
+
     let tradeGrossSum = 0;
     let tradeBrokerageSum = 0;
 
@@ -53,7 +53,7 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
     });
 
     const netTradePnL = tradeGrossSum - tradeBrokerageSum;
-    
+
     return {
       trade,
       netPnL: netTradePnL,
@@ -82,31 +82,31 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
     {
       name: "NSE Futures",
       match: (t: Trade) => t.instrument === 'Futures' || t.instrument === 'NSE Futures',
-      colorClass: "bg-teal-500/10 border-teal-505/35 text-teal-400 bg-[#143235] hover:bg-[#1a3d41]",
+      colorClass: "border rounded-3xl",
       icon: <TrendingUp className="w-5 h-5 text-teal-400" />
     },
     {
       name: "NSE & Global Options",
       match: (t: Trade) => t.instrument === 'Option' || t.instrument === 'NSE Options',
-      colorClass: "bg-fuchsia-500/10 border-fuchsia-505/35 text-fuchsia-400 bg-[#351a3a] hover:bg-[#422149]",
+      colorClass: "border rounded-3xl",
       icon: <Award className="w-5 h-5 text-fuchsia-400" />
     },
     {
       name: "GIFT Nifty",
       match: (t: Trade) => t.instrument === 'Gift Nifty',
-      colorClass: "bg-[#e8a04d]/10 border-[#e8a04d]/35 text-[#e8a04d] bg-[#3a2c14] hover:bg-[#47371a]",
+      colorClass: "border rounded-3xl",
       icon: <Target className="w-5 h-5 text-[#e8a04d]" />
     },
     {
       name: "DOW Conglomerate",
       match: (t: Trade) => t.instrument === 'DOW',
-      colorClass: "bg-blue-500/10 border-blue-505/35 text-blue-400 bg-[#162744] hover:bg-[#1b2f51]",
+      colorClass: "border rounded-3xl",
       icon: <Landmark className="w-5 h-5 text-blue-400" />
     },
     {
       name: "Global Indices & Commodities",
       match: (t: Trade) => ['Nasdaq', 'Nikkei', 'SnP', 'NG'].includes(t.instrument),
-      colorClass: "bg-slate-500/10 border-slate-505/35 text-slate-300 bg-[#222e42] hover:bg-[#2a3a52]",
+      colorClass: "border rounded-3xl",
       icon: <Compass className="w-5 h-5 text-slate-300" />
     }
   ];
@@ -126,7 +126,7 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
       totalNetProfit += item.netPnL;
       totalGrossProfit += item.grossPnL;
       totalBrokerage += item.brokerage;
-      
+
       if (item.netPnL > 0) {
         winningTrades++;
       } else if (item.netPnL < 0) {
@@ -150,17 +150,17 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
   });
 
   return (
-    <div className="space-y-6 text-slate-100">
+    <div className="space-y-6" style={{ color: '#F0E6C8' }}>
       {/* Visual Title Header */}
       <div className="flex items-center gap-3">
-        <span className="p-2 bg-[#222e42] border border-white/10 rounded-xl text-[#7fb3d5] shadow-xl">
-          <Sparkles className="w-4 h-4 text-[#7fb3d5]" />
+        <span className="p-2 rounded-xl shadow-xl" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)', color: '#C9A84C' }}>
+          <Sparkles className="w-4 h-4" style={{ color: '#C9A84C' }} />
         </span>
         <div>
-          <h2 className="text-xs font-black uppercase tracking-widest text-slate-200 font-mono">
+          <h2 className="text-xs font-black uppercase tracking-widest font-mono" style={{ color: '#F0E6C8' }}>
             Instrument Ledger Analytics Matrix
           </h2>
-          <p className="text-[10px] text-slate-400 font-mono">
+          <p className="text-[10px] font-mono" style={{ color: 'rgba(240,230,200,0.5)' }}>
             Grouped contract statistics segmented by portfolio indices
           </p>
         </div>
@@ -168,41 +168,39 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
 
       {/* Main overall stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="relative overflow-hidden bg-[#222e42] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm">
-          <div className="absolute right-4 top-4 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 p-2 rounded-xl text-[#7fb3d5] shadow-md">
-            <Compass className="w-4 h-4 text-[#7fb3d5]" />
+        <div className="relative overflow-hidden rounded-3xl p-5 shadow-lg backdrop-blur-sm" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+          <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}>
+            <Compass className="w-4 h-4" style={{ color: '#C9A84C' }} />
           </div>
-          <span className="block text-[9px] font-black text-slate-3 w-max uppercase tracking-widest font-mono font-bold">
+          <span className="block text-[9px] font-black w-max uppercase tracking-widest font-mono font-bold" style={{ color: '#F0E6C8' }}>
             Consolidated Trades
           </span>
-          <span className="block text-2xl font-black font-mono tracking-tight mt-3 text-white">
+          <span className="block text-2xl font-black font-mono tracking-tight mt-3" style={{ color: '#F0E6C8' }}>
             {totalOverallTrades.toString().padStart(2, '0')} contracts
           </span>
         </div>
 
-        <div className="relative overflow-hidden bg-[#222e42] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm">
-          <div className="absolute right-4 top-4 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 p-2 rounded-xl text-[#7fb3d5] shadow-md">
-            <TrendingUp className="w-4 h-4 text-[#7fb3d5]" />
+        <div className="relative overflow-hidden rounded-3xl p-5 shadow-lg backdrop-blur-sm" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+          <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}>
+            <TrendingUp className="w-4 h-4" style={{ color: '#C9A84C' }} />
           </div>
-          <span className="block text-[9px] font-black text-slate-3 w-max uppercase tracking-widest font-mono font-bold">
+          <span className="block text-[9px] font-black w-max uppercase tracking-widest font-mono font-bold" style={{ color: '#F0E6C8' }}>
             Total realized profit
           </span>
-          <span className={`block text-2xl font-black font-mono tracking-tight mt-3 ${
-            totalOverallNetProfit >= 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'
-          }`}>
+          <span className="block text-2xl font-black font-mono tracking-tight mt-3" style={{ color: totalOverallNetProfit >= 0 ? '#677A67' : '#C9960C' }}>
             {totalOverallNetProfit >= 0 ? '+' : ''}
             ₹{formatAmount(totalOverallNetProfit)}
           </span>
         </div>
 
-        <div className="relative overflow-hidden bg-[#222e42] border border-white/10 rounded-3xl p-5 shadow-lg backdrop-blur-sm">
-          <div className="absolute right-4 top-4 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 p-2 rounded-xl text-[#7fb3d5] shadow-md">
-            <Scale className="w-4 h-4 text-[#7fb3d5]" />
+        <div className="relative overflow-hidden rounded-3xl p-5 shadow-lg backdrop-blur-sm" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+          <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}>
+            <Scale className="w-4 h-4" style={{ color: '#C9A84C' }} />
           </div>
-          <span className="block text-[9px] font-black text-slate-2 w-max uppercase tracking-widest font-mono font-bold">
+          <span className="block text-[9px] font-black w-max uppercase tracking-widest font-mono font-bold" style={{ color: '#F0E6C8' }}>
             Winning Trades
           </span>
-          <span className="block text-2xl font-black font-mono tracking-tight mt-3 text-white">
+          <span className="block text-2xl font-black font-mono tracking-tight mt-3" style={{ color: '#F0E6C8' }}>
             {overallWinningTradesCount} WON ({formatAmount(overallWinRate, 1)}%)
           </span>
         </div>
@@ -210,26 +208,27 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
 
       {/* Group segmentation grid */}
       <div className="space-y-4">
-        <h3 className="text-[10px] font-black uppercase text-slate-450 tracking-widest font-mono">
+        <h3 className="text-[10px] font-black uppercase tracking-widest font-mono" style={{ color: 'rgba(240,230,200,0.5)' }}>
           System Integrated Portfolios
         </h3>
-        
+
         <div id="summary-groups-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {groupStatsList.map((group, idx) => {
             const grpWinRate = group.totalTrades > 0 ? (group.winningTrades / group.totalTrades) * 100 : 0;
             return (
-              <div 
+              <div
                 key={idx}
-                className={`relative overflow-hidden border p-5 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-200 flex flex-col justify-between min-h-[190px] ${group.colorClass}`}
+                className={`relative overflow-hidden p-5 shadow-lg backdrop-blur-sm transition-all duration-200 flex flex-col justify-between min-h-[190px] ${group.colorClass}`}
+                style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}
               >
                 {/* Header detail */}
                 <div className="flex items-start justify-between w-full">
                   <div className="flex items-center gap-2">
-                    <span className="p-2 bg-slate-950/40 border border-white/10 rounded-xl">
+                    <span className="p-2 rounded-xl" style={{ background: 'rgba(4,2,0,0.95)', border: '1px solid rgba(201,168,76,0.08)' }}>
                       {group.icon}
                     </span>
                     <div>
-                      <h4 className="font-extrabold text-sm uppercase tracking-wider text-white font-sans">
+                      <h4 className="font-extrabold text-sm uppercase tracking-wider font-sans" style={{ color: '#F0E6C8' }}>
                         {group.name}
                       </h4>
                       <p className="text-[8px] font-bold font-mono tracking-widest opacity-60">
@@ -237,9 +236,11 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
                       </p>
                     </div>
                   </div>
-                  <span className={`text-[9px] font-black font-mono px-2 py-0.5 rounded-md ${
-                    group.totalNetProfit >= 0 ? 'bg-[#5dcaa5]/10 border border-[#5dcaa5]/20 text-[#5dcaa5]' : 'bg-[#e8a04d]/10 border border-[#e8a04d]/20 text-[#e8a04d]'
-                  }`}>
+                  <span className={`text-[9px] font-black font-mono px-2 py-0.5 rounded-md`} style={
+                    group.totalNetProfit >= 0
+                      ? { background: 'rgba(103,122,103,0.1)', border: '1px solid rgba(103,122,103,0.2)', color: '#677A67' }
+                      : { background: 'rgba(201,150,12,0.1)', border: '1px solid rgba(201,150,12,0.2)', color: '#C9960C' }
+                  }>
                     {group.totalNetProfit >= 0 ? 'STATUS: GAIN' : 'STATUS: LOSS'}
                   </span>
                 </div>
@@ -249,25 +250,23 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
                   <span className="block text-[8px] font-black uppercase tracking-widest opacity-60 font-mono">
                     Net Segment accounting Yield
                   </span>
-                  <span className={`block text-xl font-black font-mono tracking-tight mt-1 ${
-                    group.totalNetProfit >= 0 ? 'text-[#5dcaa5]' : 'text-[#e8a04d]'
-                  }`}>
+                  <span className="block text-xl font-black font-mono tracking-tight mt-1" style={{ color: group.totalNetProfit >= 0 ? '#677A67' : '#C9960C' }}>
                     {group.totalNetProfit >= 0 ? '+' : ''}
                     ₹{formatPrice(group.totalNetProfit)}
                   </span>
                 </div>
 
                 {/* Micro breakdowns */}
-                <div className="border-t border-white/5 pt-2.5 flex items-center justify-between text-[9px] font-bold font-mono leading-none tracking-wider text-slate-300">
+                <div className="pt-2.5 flex items-center justify-between text-[9px] font-bold font-mono leading-none tracking-wider" style={{ borderTop: '1px solid rgba(201,168,76,0.08)', color: 'rgba(240,230,200,0.7)' }}>
                   <div>
                     <span>WINRATE: </span>
-                    <span className="text-white">{formatAmount(grpWinRate, 0)}%</span>
+                    <span style={{ color: '#F0E6C8' }}>{formatAmount(grpWinRate, 0)}%</span>
                   </div>
                   <div className="flex gap-1.5">
-                    <span className="bg-[#5dcaa5]/15 text-[#5dcaa5] px-1.5 py-0.5 rounded">
+                    <span className="px-1.5 py-0.5 rounded" style={{ background: 'rgba(103,122,103,0.15)', color: '#677A67' }}>
                       {group.winningTrades} W
                     </span>
-                    <span className="bg-[#e8a04d]/15 text-[#e8a04d] px-1.5 py-0.5 rounded">
+                    <span className="px-1.5 py-0.5 rounded" style={{ background: 'rgba(201,150,12,0.15)', color: '#C9960C' }}>
                       {group.losingTrades} L
                     </span>
                   </div>
@@ -275,7 +274,7 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
 
                 {/* Symbols tags */}
                 {group.symbols.length > 0 && (
-                  <div className="mt-2 text-[8px] text-slate-400 uppercase font-mono overflow-hidden text-ellipsis whitespace-nowrap">
+                  <div className="mt-2 text-[8px] uppercase font-mono overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: 'rgba(240,230,200,0.5)' }}>
                     Active: {group.symbols.join(', ')}
                   </div>
                 )}

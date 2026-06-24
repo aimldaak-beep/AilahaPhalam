@@ -20,7 +20,14 @@ interface PinModalProps {
 type Screen = 'create' | 'enter' | 'change';
 
 const inputClass =
-  'w-full bg-slate-950 border border-white/10 focus:border-[#7fb3d5] transition rounded-xl px-4 py-3 text-white focus:outline-none font-mono text-lg tracking-[0.5em] text-center';
+  'w-full rounded-xl px-4 py-3 focus:outline-none font-mono text-lg tracking-[0.5em] text-center';
+
+const inputStyle = {
+  background: 'rgba(201,168,76,0.04)',
+  border: '1px solid rgba(201,168,76,0.15)',
+  borderRadius: 12,
+  color: '#F0E6C8',
+} as React.CSSProperties;
 
 export default function PinModal({
   userId,
@@ -104,35 +111,73 @@ export default function PinModal({
         : (actionLabel ?? 'Confirm this action');
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-[60] animate-fade-in">
-      <div id="pin-modal" className="bg-[#161f2e] border border-white/10 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between border-b border-white/5 px-6 py-4.5">
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-fade-in"
+      style={{ background: 'rgba(0,0,0,0.70)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
+    >
+      <div
+        id="pin-modal"
+        className="w-full max-w-sm shadow-2xl overflow-hidden"
+        style={{
+          background: 'rgba(8,5,2,0.92)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(201,168,76,0.2)',
+          borderRadius: 24,
+        }}
+      >
+        <div
+          className="flex items-center justify-between px-6 py-4.5"
+          style={{ borderBottom: '1px solid rgba(201,168,76,0.08)' }}
+        >
           <div className="flex items-center gap-3">
-            <span className="p-2.5 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 rounded-xl text-[#7fb3d5] shadow-md">
+            <span
+              className="p-2.5 rounded-xl shadow-md"
+              style={{
+                background: 'rgba(201,168,76,0.10)',
+                border: '1px solid rgba(201,168,76,0.20)',
+                color: '#C9A84C',
+              }}
+            >
               {screen === 'enter' ? <KeyRound className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
             </span>
             <div>
-              <h3 className="font-extrabold text-sm text-white font-sans uppercase tracking-widest">{title}</h3>
-              <p className="text-[9px] text-[#7fb3d5] font-bold font-mono uppercase tracking-widest">Protected Action</p>
+              <h3
+                className="font-extrabold text-sm font-sans uppercase tracking-widest"
+                style={{ color: '#C9A84C' }}
+              >
+                {title}
+              </h3>
+              <p className="text-[9px] font-bold font-mono uppercase tracking-widest" style={{ color: 'rgba(240,230,200,0.55)' }}>
+                Protected Action
+              </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition p-2 hover:bg-slate-900 rounded-xl cursor-pointer"
+            className="transition p-2 rounded-xl cursor-pointer"
+            style={{ color: 'rgba(240,230,200,0.5)' }}
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <p className="text-[11px] text-slate-300 font-mono leading-relaxed bg-slate-950/40 border border-white/5 rounded-xl px-3.5 py-2.5">
+          <p
+            className="text-[11px] font-mono leading-relaxed rounded-xl px-3.5 py-2.5"
+            style={{
+              color: 'rgba(240,230,200,0.7)',
+              background: 'rgba(201,168,76,0.04)',
+              border: '1px solid rgba(201,168,76,0.08)',
+            }}
+          >
             {subtitle}
           </p>
 
           {screen === 'change' && (
             <div className="space-y-1.5">
-              <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono">Current PIN</label>
+              <label className="block text-[9px] font-black uppercase tracking-widest font-mono" style={{ color: 'rgba(240,230,200,0.5)' }}>Current PIN</label>
               <input
                 type="password"
                 inputMode="numeric"
@@ -141,12 +186,13 @@ export default function PinModal({
                 value={currentPin}
                 onChange={(e) => setCurrentPin(onlyDigits(e.target.value))}
                 className={inputClass}
+                style={inputStyle}
               />
             </div>
           )}
 
           <div className="space-y-1.5">
-            <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono">
+            <label className="block text-[9px] font-black uppercase tracking-widest font-mono" style={{ color: 'rgba(240,230,200,0.5)' }}>
               {screen === 'enter' ? 'PIN' : 'New PIN'}
             </label>
             <input
@@ -158,12 +204,13 @@ export default function PinModal({
               value={pin}
               onChange={(e) => setPin(onlyDigits(e.target.value))}
               className={inputClass}
+              style={inputStyle}
             />
           </div>
 
           {screen !== 'enter' && (
             <div className="space-y-1.5">
-              <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono">Confirm PIN</label>
+              <label className="block text-[9px] font-black uppercase tracking-widest font-mono" style={{ color: 'rgba(240,230,200,0.5)' }}>Confirm PIN</label>
               <input
                 type="password"
                 inputMode="numeric"
@@ -171,29 +218,47 @@ export default function PinModal({
                 value={confirmPin}
                 onChange={(e) => setConfirmPin(onlyDigits(e.target.value))}
                 className={inputClass}
+                style={inputStyle}
               />
             </div>
           )}
 
           {error && (
-            <div className="flex items-center gap-2 text-[11px] text-[#e8a04d] bg-[#e8a04d]/10 border border-[#e8a04d]/30 rounded-xl px-3.5 py-2.5 font-mono font-bold">
+            <div
+              className="flex items-center gap-2 text-[11px] rounded-xl px-3.5 py-2.5 font-mono font-bold"
+              style={{
+                color: '#FF8080',
+                background: 'rgba(255,80,80,0.08)',
+                border: '1px solid rgba(255,80,80,0.2)',
+              }}
+            >
               <AlertCircle className="w-4 h-4 shrink-0" />
               {error}
             </div>
           )}
 
-          <div className="flex gap-3 justify-end pt-2 border-t border-white/5">
+          <div className="flex gap-3 justify-end pt-2" style={{ borderTop: '1px solid rgba(201,168,76,0.08)' }}>
             <button
               type="button"
               onClick={onClose}
-              className="bg-slate-950 hover:bg-slate-900 border border-white/5 hover:border-white/10 px-5 py-2.5 rounded-xl text-xs font-black text-slate-200 transition cursor-pointer font-mono uppercase tracking-wider"
+              className="px-5 py-2.5 rounded-xl text-xs font-black transition cursor-pointer font-mono uppercase tracking-wider"
+              style={{
+                background: 'rgba(4,2,0,0.95)',
+                border: '1px solid rgba(201,168,76,0.15)',
+                color: '#F0E6C8',
+              }}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={busy}
-              className="bg-[#7fb3d5] hover:bg-[#5f9fc8] disabled:opacity-50 text-[#161f2e] px-6 py-2.5 rounded-xl text-xs font-black transition cursor-pointer font-mono uppercase tracking-wider shadow-lg shadow-[#7fb3d5]/10"
+              className="disabled:opacity-50 px-6 py-2.5 rounded-xl text-xs transition cursor-pointer font-mono uppercase tracking-wider shadow-lg"
+              style={{
+                background: '#C9A84C',
+                color: '#1A1200',
+                fontWeight: 800,
+              }}
             >
               {busy ? 'Working…' : screen === 'enter' ? 'Confirm' : screen === 'change' ? 'Update PIN' : 'Set PIN'}
             </button>
