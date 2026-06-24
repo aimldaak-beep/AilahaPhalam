@@ -172,19 +172,19 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
   }, [rows]);
 
   const sectionTitle: CSSProperties = {
-    fontSize: 10, fontWeight: 700, letterSpacing: '2.5px', color: '#838368',
+    fontSize: 10, fontWeight: 700, letterSpacing: '2.5px', color: '#8888AA',
     textTransform: 'uppercase', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10
   };
 
   return (
-    <div style={{ background: 'transparent', borderRadius: 16, padding: '20px 22px', fontFamily: "'DM Sans', 'Inter', sans-serif", color: '#5C534D' }}>
+    <div style={{ background: 'transparent', borderRadius: 16, padding: '20px 22px', fontFamily: "'DM Sans', 'Inter', sans-serif", color: '#E8E8F0' }}>
 
       {/* Local bar (Ailaha Phalam has its own header — this is just back + status) */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
         <button
           type="button"
           onClick={() => setCurrentView('menu')}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1.5px solid #D4CABA', color: '#5C534D', borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(10,10,25,0.8)', border: '1.5px solid rgba(255,255,255,0.1)', color: '#E8E8F0', borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
         >
           <ArrowLeft style={{ width: 14, height: 14 }} /> Back to Hub Menu
         </button>
@@ -216,7 +216,7 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
               ● LIVE
             </div>
           )}
-          <span style={{ fontSize: 11, color: '#A09080', fontFamily: 'monospace' }}>
+          <span style={{ fontSize: 11, color: '#8888AA', fontFamily: 'monospace' }}>
             {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : '—'}
           </span>
           <button
@@ -233,7 +233,7 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
       {/* Date navigation — pick any day that has signals */}
       {availableDates.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#838368', marginRight: 4 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#8888AA', marginRight: 4 }}>
             History
           </span>
           {availableDates.map((d) => {
@@ -246,14 +246,14 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
                 onClick={() => setSelectedDate(d)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 5,
-                  background: isSel ? '#7fb3d5' : '#fff',
-                  color: isSel ? '#fff' : '#5C534D',
-                  border: `1.5px solid ${isSel ? '#7fb3d5' : '#D4CABA'}`,
+                  background: isSel ? '#7fb3d5' : 'rgba(10,10,25,0.8)',
+                  color: isSel ? '#fff' : '#E8E8F0',
+                  border: `1.5px solid ${isSel ? '#7fb3d5' : 'rgba(255,255,255,0.1)'}`,
                   borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer'
                 }}
               >
                 {isToday && (
-                  <span style={{ color: isSel ? '#fff' : '#838368', fontSize: 13, lineHeight: 1 }}>•</span>
+                  <span style={{ color: isSel ? '#fff' : '#8888AA', fontSize: 13, lineHeight: 1 }}>•</span>
                 )}
                 {new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
               </button>
@@ -277,11 +277,11 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
       </div>
 
       {loading && symbols.length === 0 ? (
-        <div style={{ background: '#fff', borderRadius: 16, padding: 40, textAlign: 'center', color: '#A09080', fontWeight: 700, fontSize: 13 }}>Loading signals…</div>
+        <div style={{ background: 'rgba(10,10,25,0.8)', borderRadius: 16, padding: 40, textAlign: 'center', color: '#8888AA', fontWeight: 700, fontSize: 13 }}>Loading signals…</div>
       ) : err ? (
-        <div style={{ background: '#fff', border: '1.5px solid #E8D090', borderRadius: 16, padding: 24, textAlign: 'center', color: '#7a6020', fontWeight: 700, fontSize: 12 }}>
+        <div style={{ background: 'rgba(10,10,25,0.8)', border: '1.5px solid #E8D090', borderRadius: 16, padding: 24, textAlign: 'center', color: '#7a6020', fontWeight: 700, fontSize: 12 }}>
           {err}
-          <div style={{ fontSize: 11, color: '#A09080', marginTop: 8, fontWeight: 400 }}>
+          <div style={{ fontSize: 11, color: '#8888AA', marginTop: 8, fontWeight: 400 }}>
             (If the `signals` table doesn't exist yet or has no rows for today, this will be empty.)
           </div>
         </div>
@@ -299,7 +299,7 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
                   <span style={{ fontSize: 14, fontWeight: 800, color: TF_TEXT[tf], letterSpacing: '0.5px' }}>{tf === 'D' ? 'Daily' : tf + 'm'}</span>
                   <span style={{ fontSize: 9, color: TF_TEXT[tf], opacity: 0.6, background: 'rgba(255,255,255,0.18)', padding: '2px 7px', borderRadius: 7, fontWeight: 600 }}>TOP 5</span>
                 </div>
-                <div style={{ background: '#fff', padding: 8, minHeight: 60 }}>
+                <div style={{ background: 'rgba(10,10,25,0.8)', padding: 8, minHeight: 60 }}>
                   {topByTF[tf] && topByTF[tf].length > 0 ? topByTF[tf].map((s, i) => {
                     const st = getSignalStyle(s.signal);
                     return (
@@ -312,7 +312,7 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
                       </div>
                     );
                   }) : (
-                    <div style={{ padding: 14, textAlign: 'center', color: '#A09080', fontSize: 11, fontWeight: 600 }}>No signals</div>
+                    <div style={{ padding: 14, textAlign: 'center', color: '#8888AA', fontSize: 11, fontWeight: 600 }}>No signals</div>
                   )}
                 </div>
               </div>
@@ -326,37 +326,37 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
             <span style={{ background: '#fdf5f5', color: '#864A4F', border: '1.5px solid #e8c8ca', borderRadius: 10, padding: '2px 9px', fontSize: 9, fontWeight: 700 }}>{filtered.length} shown</span>
           </div>
 
-          <div style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(92,83,77,0.1)' }}>
-            <div style={{ padding: '14px 18px', borderBottom: '1.5px solid #EFEBE0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-              <span style={{ fontSize: 9, fontWeight: 700, color: '#D4CABA', letterSpacing: '2px', textTransform: 'uppercase' }}>{symbols.length} symbols</span>
+          <div style={{ background: 'rgba(10,10,25,0.8)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(92,83,77,0.1)' }}>
+            <div style={{ padding: '14px 18px', borderBottom: '1.5px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#8888AA', letterSpacing: '2px', textTransform: 'uppercase' }}>{symbols.length} symbols</span>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                 <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search symbol..."
-                  style={{ background: '#EFEBE0', border: '1.5px solid #D4CABA', borderRadius: 8, padding: '5px 10px', color: '#5C534D', fontSize: 11, outline: 'none', width: 130, fontFamily: "'DM Sans', 'Inter', sans-serif" }} />
+                  style={{ background: 'transparent', border: '1.5px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '5px 10px', color: '#E8E8F0', fontSize: 11, outline: 'none', width: 130, fontFamily: "'DM Sans', 'Inter', sans-serif" }} />
                 {(['ALL', 'LONG', 'SHORT', 'CONFLICT'] as const).map((f) => (
                   <button key={f} onClick={() => setFilter(f)}
                     style={{ padding: '5px 12px', borderRadius: 8, fontSize: 10, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.3px',
-                      border: `1.5px solid ${filter === f ? '#864A4F' : '#D4CABA'}`, background: filter === f ? '#864A4F' : '#fff', color: filter === f ? '#EFEBE0' : '#838368', fontFamily: "'DM Sans', 'Inter', sans-serif" }}>{f}</button>
+                      border: `1.5px solid ${filter === f ? '#864A4F' : 'rgba(255,255,255,0.1)'}`, background: filter === f ? '#864A4F' : 'rgba(10,10,25,0.8)', color: filter === f ? '#EFEBE0' : '#8888AA', fontFamily: "'DM Sans', 'Inter', sans-serif" }}>{f}</button>
                 ))}
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '150px repeat(5,1fr) 155px', padding: '10px 18px', background: '#EFEBE0', borderBottom: '1px solid #D4CABA' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '150px repeat(5,1fr) 155px', padding: '10px 18px', background: 'transparent', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
               {['SYMBOL', '15m', '44m', '60m', '75m', 'Daily', 'STATUS'].map((h, i) => (
                 <div key={h} style={{
                   fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase',
                   textAlign: i === 0 || i === 6 ? 'left' : 'center',
-                  color: i === 0 || i === 6 ? '#D4CABA' : i === 1 ? '#2D5283' : i === 2 ? '#B0785D' : i === 3 ? '#748794' : i === 4 ? '#5C534D' : '#A09080'
+                  color: i === 0 || i === 6 ? '#8888AA' : i === 1 ? '#2D5283' : i === 2 ? '#B0785D' : i === 3 ? '#748794' : i === 4 ? '#5C534D' : '#A09080'
                 }}>{h}</div>
               ))}
             </div>
 
             {filtered.length === 0 ? (
-              <div style={{ padding: 30, textAlign: 'center', color: '#A09080', fontSize: 12, fontWeight: 600 }}>No symbols match.</div>
+              <div style={{ padding: 30, textAlign: 'center', color: '#8888AA', fontSize: 12, fontWeight: 600 }}>No symbols match.</div>
             ) : filtered.map((row, i) => {
               const st = getStatusStyle(row.status);
               return (
-                <div key={row.symbol} style={{ display: 'grid', gridTemplateColumns: '150px repeat(5,1fr) 155px', padding: '10px 18px', alignItems: 'center', borderBottom: i < filtered.length - 1 ? '1px solid #EFEBE0' : 'none' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#5C534D' }}>{row.symbol}</div>
+                <div key={row.symbol} style={{ display: 'grid', gridTemplateColumns: '150px repeat(5,1fr) 155px', padding: '10px 18px', alignItems: 'center', borderBottom: i < filtered.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#E8E8F0' }}>{row.symbol}</div>
                   {TF_LABELS.map((tf) => {
                     const sig = perTF[row.symbol]?.[tf]?.signal || 'NEUTRAL';
                     return (

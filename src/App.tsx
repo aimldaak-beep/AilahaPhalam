@@ -499,6 +499,7 @@ export default function App() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.2 }}
               className="max-w-4xl mx-auto py-10 px-2 space-y-12"
+              style={{ background: 'rgba(5,5,15,0.95)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderRadius: 24 }}
             >
               {/* Minimal Branding Name in clean solid Magi color */}
               <div className="text-center py-6 space-y-2">
