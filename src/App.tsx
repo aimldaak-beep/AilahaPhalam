@@ -380,7 +380,7 @@ export default function App() {
   // While the initial session check is in flight, hold a minimal splash to avoid flashing the login screen.
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#1a2332] text-[#7fb3d5] flex items-center justify-center font-mono text-xs uppercase tracking-widest">
+      <div className="min-h-screen bg-transparent text-[#9B5DE5] flex items-center justify-center font-mono text-xs uppercase tracking-widest">
         Loading…
       </div>
     );
@@ -389,7 +389,7 @@ export default function App() {
   // Not signed in — show a simple "Sign in with Google" gate instead of the ledger.
   if (!session) {
     return (
-      <div className="min-h-screen bg-[#1a2332] text-slate-100 font-sans flex flex-col items-center justify-center relative overflow-hidden px-6">
+      <div className="min-h-screen bg-transparent text-slate-100 font-sans flex flex-col items-center justify-center relative overflow-hidden px-6">
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#7fb3d5]/4 rounded-full blur-[130px] pointer-events-none animate-pulse-slow" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[550px] h-[550px] bg-[#7fb3d5]/4 rounded-full blur-[150px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '3s' }} />
         <div className="relative z-10 text-center space-y-8 max-w-sm w-full">
@@ -415,7 +415,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1a2332] text-slate-100 font-sans selection:bg-[#7fb3d5]/20 selection:text-[#7fb3d5] flex flex-col justify-between relative overflow-hidden">
+    <div className="min-h-screen bg-transparent text-slate-100 font-sans selection:bg-[#9B5DE5]/20 selection:text-[#9B5DE5] flex flex-col justify-between relative overflow-hidden">
       {/* Immersive Background Glows matching Magi Sans style */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#7fb3d5]/4 rounded-full blur-[130px] pointer-events-none animate-pulse-slow" />
       <div className="absolute top-[35%] right-[-10%] w-[500px] h-[500px] bg-[#7fb3d5]/3 rounded-full blur-[140px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '2.5s' }} />
@@ -423,7 +423,7 @@ export default function App() {
 
       <div className="relative z-10">
         {/* Premium High-Density Navigation/Header with Magi Colors */}
-        <header className="border-b border-white/10 bg-[#1e2a3d] sticky top-0 z-40 px-6 py-4 shadow-xl">
+        <header className="border-b border-[#9B5DE5]/20 bg-[#05050F]/90 backdrop-blur-md sticky top-0 z-40 px-6 py-4 shadow-xl">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-5">
               <div className="flex items-center gap-3">

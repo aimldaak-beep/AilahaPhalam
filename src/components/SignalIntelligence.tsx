@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Signal Intelligence — reads the Supabase `signals` table (populated by the
- * sync daemon), renders the Rumors-palette dashboard: per-timeframe top-5 cards
+ * sync daemon), renders the Dark Aurora dashboard: per-timeframe top-5 cards
  * + an all-symbols signal matrix. Read-only; auto-refreshes every 15 minutes.
  * Self-contained — does not touch the trades ledger or PnL math.
  */
@@ -16,8 +16,8 @@ interface Props {
 }
 
 const TF_LABELS = ['15', '44', '60', '75', 'D'];
-const TF_COLORS: Record<string, string> = { '15': '#2D5283', '44': '#B0785D', '60': '#748794', '75': '#5C534D', 'D': '#A09080' };
-const TF_TEXT: Record<string, string>   = { '15': '#EFEBE0', '44': '#EFEBE0', '60': '#EFEBE0', '75': '#EFEBE0', 'D': '#EFEBE0' };
+const TF_COLORS: Record<string, string> = { '15': '#9B5DE5', '44': '#F72585', '60': '#00B4D8', '75': '#FB8500', 'D': '#FFD60A' };
+const TF_TEXT: Record<string, string>   = { '15': '#05050F', '44': '#05050F', '60': '#05050F', '75': '#05050F', 'D': '#05050F' };
 
 const SIGNAL_PRIORITY: Record<string, number> = { JACKPOT: 1, EXTREME: 2, HATRICK: 3, GOLDILOCKS: 4, Q1: 5, NEUTRAL: 99 };
 function prioOf(signal: string): number {
@@ -31,10 +31,10 @@ function prioOf(signal: string): number {
 }
 
 function getSignalStyle(signal: string) {
-  if (!signal || signal === 'NEUTRAL') return { bg: '#F5F3F0', border: '#D4CABA', color: '#A09080', badgeBg: '#D4CABA', badgeColor: '#5C534D' };
-  if (signal.includes('LONG'))  return { bg: '#F2F3EE', border: '#B8C0A8', color: '#838368', badgeBg: '#838368', badgeColor: '#fff' };
-  if (signal.includes('SHORT')) return { bg: '#FDF8EE', border: '#E8D090', color: '#C9960C', badgeBg: '#C9960C', badgeColor: '#fff' };
-  return { bg: '#F5F3F0', border: '#D4CABA', color: '#A09080', badgeBg: '#D4CABA', badgeColor: '#5C534D' };
+  if (!signal || signal === 'NEUTRAL') return { bg: 'rgba(15,15,30,0.5)', border: 'rgba(155,93,229,0.2)', color: '#8888AA', badgeBg: 'rgba(136,136,170,0.25)', badgeColor: '#8888AA' };
+  if (signal.includes('LONG'))  return { bg: 'rgba(131,131,104,0.15)', border: 'rgba(131,131,104,0.4)', color: '#838368', badgeBg: '#838368', badgeColor: '#fff' };
+  if (signal.includes('SHORT')) return { bg: 'rgba(201,150,12,0.15)', border: 'rgba(201,150,12,0.4)', color: '#C9960C', badgeBg: '#C9960C', badgeColor: '#fff' };
+  return { bg: 'rgba(15,15,30,0.5)', border: 'rgba(155,93,229,0.2)', color: '#8888AA', badgeBg: 'rgba(136,136,170,0.25)', badgeColor: '#8888AA' };
 }
 
 function getSignalType(signal: string) {
@@ -75,12 +75,12 @@ function computeStatus(perTf: Record<string, SignalRow>): Status {
 }
 function getStatusStyle(status: Status) {
   switch (status) {
-    case 'ALIGNED_LONG':  return { bg: '#F2F3EE', color: '#838368', border: '#B8C0A8', label: '✅ LONG' };
-    case 'ALIGNED_SHORT': return { bg: '#FDF8EE', color: '#C9960C', border: '#E8D090', label: '✅ SHORT' };
-    case 'CONFLICT':      return { bg: '#FDF9F5', color: '#7a6020', border: '#E8D090', label: '⚡ CONFLICT' };
-    case 'MOSTLY_LONG':   return { bg: '#F2F3EE', color: '#838368', border: '#B8C0A8', label: '↗ MOSTLY LONG' };
-    case 'MOSTLY_SHORT':  return { bg: '#FDF8EE', color: '#C9960C', border: '#E8D090', label: '↘ MOSTLY SHORT' };
-    default:              return { bg: '#EFEBE0', color: '#A09080', border: '#D4CABA', label: '— NEUTRAL' };
+    case 'ALIGNED_LONG':  return { bg: 'rgba(131,131,104,0.15)', color: '#838368', border: 'rgba(131,131,104,0.4)', label: '✅ LONG' };
+    case 'ALIGNED_SHORT': return { bg: 'rgba(201,150,12,0.15)', color: '#C9960C', border: 'rgba(201,150,12,0.4)', label: '✅ SHORT' };
+    case 'CONFLICT':      return { bg: 'rgba(247,37,133,0.12)', color: '#F72585', border: 'rgba(247,37,133,0.4)', label: '⚡ CONFLICT' };
+    case 'MOSTLY_LONG':   return { bg: 'rgba(131,131,104,0.15)', color: '#838368', border: 'rgba(131,131,104,0.4)', label: '↗ MOSTLY LONG' };
+    case 'MOSTLY_SHORT':  return { bg: 'rgba(201,150,12,0.15)', color: '#C9960C', border: 'rgba(201,150,12,0.4)', label: '↘ MOSTLY SHORT' };
+    default:              return { bg: 'rgba(15,15,30,0.5)', color: '#8888AA', border: 'rgba(155,93,229,0.2)', label: '— NEUTRAL' };
   }
 }
 
@@ -177,14 +177,14 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
   };
 
   return (
-    <div style={{ background: '#EFEBE0', borderRadius: 16, padding: '20px 22px', fontFamily: "'DM Sans', 'Inter', sans-serif", color: '#5C534D' }}>
+    <div style={{ background: 'transparent', borderRadius: 16, padding: '20px 22px', fontFamily: "'DM Sans', 'Inter', sans-serif", color: '#F0F0FF' }}>
 
       {/* Local bar (Ailaha Phalam has its own header — this is just back + status) */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
         <button
           type="button"
           onClick={() => setCurrentView('menu')}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1.5px solid #D4CABA', color: '#5C534D', borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(15,15,30,0.7)', border: '1.5px solid rgba(155,93,229,0.2)', color: '#F0F0FF', borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
         >
           <ArrowLeft style={{ width: 14, height: 14 }} /> Back to Hub Menu
         </button>
@@ -216,7 +216,7 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
               ● LIVE
             </div>
           )}
-          <span style={{ fontSize: 11, color: '#A09080', fontFamily: 'monospace' }}>
+          <span style={{ fontSize: 11, color: '#8888AA', fontFamily: 'monospace' }}>
             {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : '—'}
           </span>
           <button
@@ -246,9 +246,9 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
                 onClick={() => setSelectedDate(d)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 5,
-                  background: isSel ? '#7fb3d5' : '#fff',
-                  color: isSel ? '#fff' : '#5C534D',
-                  border: `1.5px solid ${isSel ? '#7fb3d5' : '#D4CABA'}`,
+                  background: isSel ? '#9B5DE5' : 'rgba(15,15,30,0.7)',
+                  color: isSel ? '#fff' : '#F0F0FF',
+                  border: `1.5px solid ${isSel ? '#9B5DE5' : 'rgba(155,93,229,0.2)'}`,
                   borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer'
                 }}
               >
@@ -265,11 +265,11 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
       {/* Summary stat cards (computed from live data) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 22 }}>
         {[
-          { bg: '#838368', label: 'Aligned / mostly long', val: counts.long, textColor: '#EFEBE0', sub: 'rgba(239,235,224,0.65)' },
-          { bg: '#C9960C', label: 'Aligned / mostly short', val: counts.short, textColor: '#fff', sub: 'rgba(255,255,255,0.7)' },
-          { bg: '#864A4F', label: 'Conflicting', val: counts.conflict, textColor: '#EFEBE0', sub: 'rgba(239,235,224,0.65)' }
+          { bg: 'rgba(155,93,229,0.2)', border: 'rgba(155,93,229,0.4)', label: 'Aligned / mostly long', val: counts.long, textColor: '#F0F0FF', sub: 'rgba(240,240,255,0.6)' },
+          { bg: 'rgba(0,180,216,0.15)', border: 'rgba(0,180,216,0.3)', label: 'Aligned / mostly short', val: counts.short, textColor: '#F0F0FF', sub: 'rgba(240,240,255,0.6)' },
+          { bg: 'rgba(251,133,0,0.15)', border: 'rgba(251,133,0,0.3)', label: 'Conflicting', val: counts.conflict, textColor: '#F0F0FF', sub: 'rgba(240,240,255,0.6)' }
         ].map((h, i) => (
-          <div key={i} style={{ background: h.bg, borderRadius: 16, padding: '18px 22px' }}>
+          <div key={i} style={{ background: h.bg, border: `1px solid ${h.border}`, borderRadius: 16, padding: '18px 22px' }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: h.sub, marginBottom: 8 }}>{h.label}</div>
             <div style={{ fontSize: 40, fontWeight: 800, lineHeight: 1, color: h.textColor }}>{h.val}</div>
           </div>
@@ -277,11 +277,11 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
       </div>
 
       {loading && symbols.length === 0 ? (
-        <div style={{ background: '#fff', borderRadius: 16, padding: 40, textAlign: 'center', color: '#A09080', fontWeight: 700, fontSize: 13 }}>Loading signals…</div>
+        <div style={{ background: 'rgba(15,15,30,0.7)', borderRadius: 16, padding: 40, textAlign: 'center', color: '#8888AA', fontWeight: 700, fontSize: 13 }}>Loading signals…</div>
       ) : err ? (
-        <div style={{ background: '#fff', border: '1.5px solid #E8D090', borderRadius: 16, padding: 24, textAlign: 'center', color: '#7a6020', fontWeight: 700, fontSize: 12 }}>
+        <div style={{ background: 'rgba(15,15,30,0.7)', border: '1.5px solid rgba(247,37,133,0.4)', borderRadius: 16, padding: 24, textAlign: 'center', color: '#F72585', fontWeight: 700, fontSize: 12 }}>
           {err}
-          <div style={{ fontSize: 11, color: '#A09080', marginTop: 8, fontWeight: 400 }}>
+          <div style={{ fontSize: 11, color: '#8888AA', marginTop: 8, fontWeight: 400 }}>
             (If the `signals` table doesn't exist yet or has no rows for today, this will be empty.)
           </div>
         </div>
@@ -289,17 +289,17 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
         <>
           {/* TOP SIGNALS PER TF */}
           <div style={sectionTitle}>
-            <div style={{ width: 3, height: 14, background: '#864A4F', borderRadius: 3 }} />
+            <div style={{ width: 3, height: 14, background: '#9B5DE5', borderRadius: 3 }} />
             Top signals — latest scan
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 10, marginBottom: 22 }}>
             {TF_LABELS.map((tf) => (
-              <div key={tf} style={{ borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(92,83,77,0.1)' }}>
+              <div key={tf} style={{ borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.35)' }}>
                 <div style={{ background: TF_COLORS[tf], padding: '11px 13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: 14, fontWeight: 800, color: TF_TEXT[tf], letterSpacing: '0.5px' }}>{tf === 'D' ? 'Daily' : tf + 'm'}</span>
                   <span style={{ fontSize: 9, color: TF_TEXT[tf], opacity: 0.6, background: 'rgba(255,255,255,0.18)', padding: '2px 7px', borderRadius: 7, fontWeight: 600 }}>TOP 5</span>
                 </div>
-                <div style={{ background: '#fff', padding: 8, minHeight: 60 }}>
+                <div style={{ background: 'rgba(15,15,30,0.7)', padding: 8, minHeight: 60 }}>
                   {topByTF[tf] && topByTF[tf].length > 0 ? topByTF[tf].map((s, i) => {
                     const st = getSignalStyle(s.signal);
                     return (
@@ -312,7 +312,7 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
                       </div>
                     );
                   }) : (
-                    <div style={{ padding: 14, textAlign: 'center', color: '#A09080', fontSize: 11, fontWeight: 600 }}>No signals</div>
+                    <div style={{ padding: 14, textAlign: 'center', color: '#8888AA', fontSize: 11, fontWeight: 600 }}>No signals</div>
                   )}
                 </div>
               </div>
@@ -321,48 +321,48 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
 
           {/* SIGNAL MATRIX */}
           <div style={sectionTitle}>
-            <div style={{ width: 3, height: 14, background: '#864A4F', borderRadius: 3 }} />
+            <div style={{ width: 3, height: 14, background: '#9B5DE5', borderRadius: 3 }} />
             All symbols — signal matrix
-            <span style={{ background: '#fdf5f5', color: '#864A4F', border: '1.5px solid #e8c8ca', borderRadius: 10, padding: '2px 9px', fontSize: 9, fontWeight: 700 }}>{filtered.length} shown</span>
+            <span style={{ background: 'rgba(155,93,229,0.12)', color: '#9B5DE5', border: '1.5px solid rgba(155,93,229,0.3)', borderRadius: 10, padding: '2px 9px', fontSize: 9, fontWeight: 700 }}>{filtered.length} shown</span>
           </div>
 
-          <div style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(92,83,77,0.1)' }}>
-            <div style={{ padding: '14px 18px', borderBottom: '1.5px solid #EFEBE0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-              <span style={{ fontSize: 9, fontWeight: 700, color: '#D4CABA', letterSpacing: '2px', textTransform: 'uppercase' }}>{symbols.length} symbols</span>
+          <div style={{ background: 'rgba(15,15,30,0.7)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.35)' }}>
+            <div style={{ padding: '14px 18px', borderBottom: '1.5px solid rgba(155,93,229,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#8888AA', letterSpacing: '2px', textTransform: 'uppercase' }}>{symbols.length} symbols</span>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                 <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search symbol..."
-                  style={{ background: '#EFEBE0', border: '1.5px solid #D4CABA', borderRadius: 8, padding: '5px 10px', color: '#5C534D', fontSize: 11, outline: 'none', width: 130, fontFamily: "'DM Sans', 'Inter', sans-serif" }} />
+                  style={{ background: 'rgba(15,15,30,0.7)', border: '1.5px solid rgba(155,93,229,0.2)', borderRadius: 8, padding: '5px 10px', color: '#F0F0FF', fontSize: 11, outline: 'none', width: 130, fontFamily: "'DM Sans', 'Inter', sans-serif" }} />
                 {(['ALL', 'LONG', 'SHORT', 'CONFLICT'] as const).map((f) => (
                   <button key={f} onClick={() => setFilter(f)}
                     style={{ padding: '5px 12px', borderRadius: 8, fontSize: 10, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.3px',
-                      border: `1.5px solid ${filter === f ? '#864A4F' : '#D4CABA'}`, background: filter === f ? '#864A4F' : '#fff', color: filter === f ? '#EFEBE0' : '#838368', fontFamily: "'DM Sans', 'Inter', sans-serif" }}>{f}</button>
+                      border: `1.5px solid ${filter === f ? '#9B5DE5' : 'rgba(155,93,229,0.2)'}`, background: filter === f ? '#9B5DE5' : 'rgba(15,15,30,0.7)', color: filter === f ? '#fff' : '#8888AA', fontFamily: "'DM Sans', 'Inter', sans-serif" }}>{f}</button>
                 ))}
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '150px repeat(5,1fr) 155px', padding: '10px 18px', background: '#EFEBE0', borderBottom: '1px solid #D4CABA' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '150px repeat(5,1fr) 155px', padding: '10px 18px', background: 'rgba(20,20,40,0.6)', borderBottom: '1px solid rgba(155,93,229,0.2)' }}>
               {['SYMBOL', '15m', '44m', '60m', '75m', 'Daily', 'STATUS'].map((h, i) => (
                 <div key={h} style={{
                   fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase',
                   textAlign: i === 0 || i === 6 ? 'left' : 'center',
-                  color: i === 0 || i === 6 ? '#D4CABA' : i === 1 ? '#2D5283' : i === 2 ? '#B0785D' : i === 3 ? '#748794' : i === 4 ? '#5C534D' : '#A09080'
+                  color: i === 0 || i === 6 ? '#8888AA' : i === 1 ? '#9B5DE5' : i === 2 ? '#F72585' : i === 3 ? '#00B4D8' : i === 4 ? '#FB8500' : '#FFD60A'
                 }}>{h}</div>
               ))}
             </div>
 
             {filtered.length === 0 ? (
-              <div style={{ padding: 30, textAlign: 'center', color: '#A09080', fontSize: 12, fontWeight: 600 }}>No symbols match.</div>
+              <div style={{ padding: 30, textAlign: 'center', color: '#8888AA', fontSize: 12, fontWeight: 600 }}>No symbols match.</div>
             ) : filtered.map((row, i) => {
               const st = getStatusStyle(row.status);
               return (
-                <div key={row.symbol} style={{ display: 'grid', gridTemplateColumns: '150px repeat(5,1fr) 155px', padding: '10px 18px', alignItems: 'center', borderBottom: i < filtered.length - 1 ? '1px solid #EFEBE0' : 'none' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#5C534D' }}>{row.symbol}</div>
+                <div key={row.symbol} style={{ display: 'grid', gridTemplateColumns: '150px repeat(5,1fr) 155px', padding: '10px 18px', alignItems: 'center', borderBottom: i < filtered.length - 1 ? '1px solid rgba(155,93,229,0.12)' : 'none' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#F0F0FF' }}>{row.symbol}</div>
                   {TF_LABELS.map((tf) => {
                     const sig = perTF[row.symbol]?.[tf]?.signal || 'NEUTRAL';
                     return (
                       <div key={tf} style={{ textAlign: 'center' }}>
                         <span style={{ color: TF_COLORS[tf], fontSize: 13, fontWeight: 700 }}>{getSignalType(sig)}</span>
-                        <span style={{ color: sig.includes('LONG') ? '#838368' : sig.includes('SHORT') ? '#C9960C' : '#A09080', fontSize: 14, fontWeight: 800, marginLeft: 2 }}>{getArrow(sig)}</span>
+                        <span style={{ color: sig.includes('LONG') ? '#838368' : sig.includes('SHORT') ? '#C9960C' : '#8888AA', fontSize: 14, fontWeight: 800, marginLeft: 2 }}>{getArrow(sig)}</span>
                       </div>
                     );
                   })}
