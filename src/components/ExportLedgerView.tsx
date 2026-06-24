@@ -94,7 +94,13 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
   };
 
   return (
-    <div className="space-y-6" style={{ color: '#F0E6C8' }}>
+    <div className="space-y-6" style={{
+      width: '100%',
+      minHeight: 'calc(100vh - 56px)',
+      padding: '20px 28px 40px',
+      color: '#F0E6C8',
+      fontFamily: "'DM Sans', sans-serif",
+    }}>
       {/* Title Header */}
       <div className="flex items-center gap-3">
         <span className="p-2 rounded-xl shadow-xl" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)', color: '#C9A84C' }}>

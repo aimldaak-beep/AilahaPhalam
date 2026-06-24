@@ -90,7 +90,13 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
   });
 
   return (
-    <div className="space-y-6" style={{ color: '#F0E6C8' }}>
+    <div className="space-y-6" style={{
+      width: '100%',
+      minHeight: '100vh',
+      padding: '20px 28px 40px',
+      color: '#F0E6C8',
+      fontFamily: "'DM Sans', sans-serif",
+    }}>
       {/* Title Bar */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
@@ -112,7 +118,13 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: 16,
+        marginBottom: 24,
+        width: '100%',
+      }}>
         {/* Total Net Profit */}
         <div id="cum-net-profit" className="relative overflow-hidden rounded-3xl p-5 shadow-lg backdrop-blur-sm transition-all duration-200" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
           <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}>

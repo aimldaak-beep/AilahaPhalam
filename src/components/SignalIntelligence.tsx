@@ -177,7 +177,13 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
   };
 
   return (
-    <div style={{ background: 'transparent', borderRadius: 16, padding: '20px 22px', fontFamily: "'DM Sans', 'Inter', sans-serif", color: '#E8E8F0' }}>
+    <div style={{
+      width: '100%',
+      minHeight: 'calc(100vh - 56px)',
+      padding: '20px 28px 40px',
+      color: '#F0E6C8',
+      fontFamily: "'DM Sans', sans-serif",
+    }}>
 
       {/* Local bar (Ailaha Phalam has its own header — this is just back + status) */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>

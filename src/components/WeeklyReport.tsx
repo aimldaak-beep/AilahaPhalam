@@ -277,9 +277,29 @@ export default function WeeklyReport({
   );
 
   return (
-    <div className="space-y-6" style={{color:'#F0E6C8'}}>
+    <div className="space-y-6" style={{
+      width: '100%',
+      minHeight: '100vh',
+      padding: '20px 28px 40px',
+      color: '#F0E6C8',
+      fontFamily: "'DM Sans', sans-serif",
+    }}>
       {/* Week Selector Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl px-6 py-5 shadow-xl backdrop-blur-sm" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
+      <div style={{
+        position: 'sticky',
+        top: 56,
+        zIndex: 40,
+        background: 'rgba(8,5,2,0.92)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(201,168,76,0.12)',
+        padding: '10px 0',
+        marginBottom: 20,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 10,
+      }}>
         <div className="flex items-center gap-3">
           <span className="p-3 rounded-2xl shadow-md" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C'}}>
             <Calendar className="w-5 h-5 shrink-0" style={{color:'#C9A84C'}} />

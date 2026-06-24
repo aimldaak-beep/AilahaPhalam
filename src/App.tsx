@@ -583,77 +583,133 @@ export default function App() {
 
         {/* Premium High-Density Navigation/Header with Magi Colors — hidden on the revamped hub (it has its own header). */}
         {currentView !== 'menu' && (
-        <header className="border-b border-[#9B5DE5]/20 bg-[#05050F]/90 backdrop-blur-md sticky top-0 z-40 px-6 py-4 shadow-xl">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-5">
-              <div className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-xl bg-[#1e2a3d] border border-white/10 flex items-center justify-center font-sans text-xs font-black text-[#7fb3d5]">
-                  AP
-                </span>
-                <div className="flex flex-col">
-                  <h1 
-                    onClick={() => setCurrentView('menu')}
-                    title="Go to Homepage"
-                    className="text-lg md:text-xl font-black tracking-widest text-[#7fb3d5] hover:opacity-90 transition duration-200 cursor-pointer select-none font-sans uppercase leading-none"
-                  >
-                    Ailaha Phalam
-                  </h1>
-                  <span className="text-[7.5px] uppercase tracking-widest font-mono text-[#7fb3d5]/70 font-black">Celestial Metrics</span>
-                </div>
-              </div>
-              <div className="hidden sm:block h-6 w-px bg-white/10"></div>
-              
-              <div className="flex items-center gap-6">
-                <div className="flex flex-col">
-                  <span className="text-[9px] uppercase tracking-wider text-slate-300 font-bold font-mono">Active Trades</span>
-                  <span className="text-xs font-mono text-[#7fb3d5] font-bold flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#7fb3d5] inline-block animate-ping" />
-                    {activeTradesCount.toString().padStart(2, '0')} CF
-                  </span>
-                </div>
+        <header style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          background: 'rgba(8,5,2,0.92)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderBottom: '1px solid rgba(201,168,76,0.15)',
+          padding: '0 24px',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: 56,
+            maxWidth: '100%',
+          }}>
+            {/* Logo */}
+            <div
+              onClick={() => setCurrentView('menu')}
+              title="Go to Homepage"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                flexShrink: 0,
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{
+                width: 34, height: 34,
+                background: 'linear-gradient(135deg,#C9A84C,#E8D5A3)',
+                borderRadius: 9,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 15, fontWeight: 900, color: '#1A1200',
+                fontFamily: "'DM Serif Display', serif",
+              }}>A</div>
+              <div>
+                <div style={{
+                  fontSize: 14, fontWeight: 800,
+                  color: '#F0E6C8',
+                  fontFamily: "'DM Serif Display', serif",
+                  letterSpacing: '-0.2px', lineHeight: 1.2,
+                }}>Ailaha Phalam</div>
+                <div style={{
+                  fontSize: 8, letterSpacing: '2.5px',
+                  color: 'rgba(201,168,76,0.5)',
+                  textTransform: 'uppercase',
+                }}>Celestial Metrics</div>
               </div>
             </div>
 
-            {/* Setup controls & Buttons */}
-            <div className="flex flex-wrap items-center gap-3">
+            {/* Center — active trades */}
+            {activeTradesCount > 0 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: 'rgba(201,168,76,0.08)',
+                border: '1px solid rgba(201,168,76,0.2)',
+                borderRadius: 20, padding: '4px 14px',
+                fontSize: 11, color: '#C9A84C', fontWeight: 700,
+                letterSpacing: '0.5px',
+              }}>
+                <div style={{
+                  width: 6, height: 6,
+                  background: '#C9A84C', borderRadius: '50%',
+                  animation: 'pulse 1.5s infinite',
+                }} />
+                {activeTradesCount} Active · CF
+              </div>
+            )}
+
+            {/* Right — actions */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
               <button
+                type="button"
                 onClick={() => setShowAddForm(true)}
-                id="new-trade-btn"
-                className="bg-[#7fb3d5]/10 hover:bg-[#7fb3d5]/20 text-[#7fb3d5] border border-[#7fb3d5]/30 font-bold px-4 py-2 rounded-xl text-xs transition duration-200 flex items-center gap-1.5 cursor-pointer shadow-lg active:scale-[0.98]"
-              >
-                <Plus className="w-4 h-4 text-[#7fb3d5]" />
-                New Trade Action
-              </button>
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: 'rgba(201,168,76,0.1)',
+                  border: '1px solid rgba(201,168,76,0.25)',
+                  borderRadius: 10, padding: '6px 14px',
+                  fontSize: 11, color: '#C9A84C', fontWeight: 700,
+                  cursor: 'pointer', letterSpacing: '0.5px',
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >+ New Trade</button>
+
               <button
-                onClick={handleResetDatabase}
-                className="bg-[#1e2a3d] border border-white/5 hover:border-[#7fb3d5]/30 text-slate-300 hover:text-[#7fb3d5] px-3 py-2 rounded-xl text-xs transition duration-200 cursor-pointer"
-                title="Reset all data (PIN protected)"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-              <button
+                type="button"
                 onClick={() => setPinIntent('change')}
-                className="bg-[#1e2a3d] border border-white/5 hover:border-[#7fb3d5]/30 text-slate-300 hover:text-[#7fb3d5] px-3 py-2 rounded-xl text-xs transition duration-200 cursor-pointer flex items-center gap-1.5"
-                title={pinHash ? 'Change security PIN' : 'Set security PIN'}
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                {pinHash ? 'Change PIN' : 'Set PIN'}
-              </button>
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(201,168,76,0.15)',
+                  borderRadius: 10, padding: '6px 14px',
+                  fontSize: 11, color: 'rgba(240,230,200,0.5)',
+                  cursor: 'pointer',
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >PIN</button>
+
               <button
-                onClick={handleSignOut}
-                className="bg-[#1e2a3d] border border-white/5 hover:border-[#7fb3d5]/30 text-slate-300 hover:text-[#7fb3d5] px-3 py-2 rounded-xl text-xs transition duration-200 cursor-pointer flex items-center gap-1.5"
-                title="Sign out"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                Sign out
-              </button>
+                type="button"
+                onClick={() => supabase.auth.signOut()}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(201,168,76,0.15)',
+                  borderRadius: 10, padding: '6px 14px',
+                  fontSize: 11, color: 'rgba(240,230,200,0.4)',
+                  cursor: 'pointer',
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >Sign out</button>
             </div>
           </div>
         </header>
         )}
 
         {/* Main Content Stage */}
-        <main className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+        <main style={{
+          width: '100%',
+          minHeight: 'calc(100vh - 56px)',
+          padding: '0',
+          position: 'relative',
+          zIndex: 1,
+        }}>
           {currentView === 'menu' ? (
             <>
               {/* Hub */}
@@ -943,8 +999,17 @@ export default function App() {
 
       {/* Humble Aesthetic Footer — hidden on the revamped hub (it has its own bottom brand). */}
       {currentView !== 'menu' && (
-      <footer className="border-t border-white/5 bg-slate-950/40 py-6 text-slate-500 text-center text-[10px] font-mono tracking-wider">
-        <p className="font-extrabold text-slate-400">AILAHA PHALAM • POSITION LEDGER LOGISTICS ENGINE</p>
+      <footer style={{
+        borderTop: '1px solid rgba(201,168,76,0.08)',
+        padding: '12px 24px',
+        textAlign: 'center',
+        fontSize: 9,
+        color: 'rgba(201,168,76,0.2)',
+        letterSpacing: '2.5px',
+        textTransform: 'uppercase',
+        background: 'rgba(8,5,2,0.6)',
+      }}>
+        Ailaha Phalam · Position Ledger Logistics Engine
       </footer>
       )}
 

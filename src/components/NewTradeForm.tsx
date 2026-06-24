@@ -125,11 +125,11 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-xl flex items-center justify-center p-4 z-50 animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/75 backdrop-blur-xl overflow-y-auto p-6">
       <div
         id="new-trade-form-card"
-        className="w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl transition-all duration-200"
-        style={{background:'rgba(8,5,2,0.92)',backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:24}}
+        className="w-full max-w-3xl max-h-[92vh] overflow-y-auto shadow-2xl transition-all duration-200"
+        style={{background:'rgba(8,5,2,0.92)',backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:24,marginTop:'5vh'}}
       >
         <div className="flex items-center justify-between px-6 py-4.5" style={{borderBottom:'1px solid rgba(201,168,76,0.08)'}}>
           <div className="flex items-center gap-4">

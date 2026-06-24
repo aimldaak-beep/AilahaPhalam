@@ -399,11 +399,11 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
     <div
       className="space-y-6"
       style={{
-        background: PALETTE.bg,
-        minHeight: '100vh',
+        width: '100%',
+        minHeight: 'calc(100vh - 56px)',
+        padding: '20px 28px 40px',
+        color: '#F0E6C8',
         fontFamily: "'DM Sans', sans-serif",
-        color: PALETTE.text,
-        padding: '20px 24px',
       }}
     >
       {/* Header + back */}
