@@ -106,42 +106,85 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
     return { rows, gross, brokerage, net, hypoStatus };
   }, [priceVal, dateVal, rateVal, trade, todayStr]);
 
+  const inputStyle: React.CSSProperties = {
+    background: 'rgba(201,168,76,0.04)',
+    border: '1px solid rgba(201,168,76,0.15)',
+    borderRadius: 8,
+    padding: '10px 14px',
+    color: '#F0E6C8',
+    fontSize: 13,
+    outline: 'none',
+    width: '100%',
+    fontFamily: "'DM Sans', sans-serif",
+    boxSizing: 'border-box',
+  };
+
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center p-4 z-50 animate-fade-in"
-      style={{ background: 'rgba(0,0,0,0.70)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
+      className="animate-fade-in"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 50,
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        background: 'rgba(0,0,0,0.75)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        overflowY: 'auto',
+        padding: '40px 20px',
+      }}
     >
       <div
         id="whatif-close-modal"
-        className="w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full shadow-2xl flex flex-col max-h-[90vh]"
         style={{
-          background: 'rgba(8,5,2,0.92)',
+          maxWidth: 560,
+          background: 'rgba(8,5,2,0.95)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
           border: '1px solid rgba(201,168,76,0.2)',
-          borderRadius: 24,
+          borderRadius: 16,
+          overflow: 'hidden',
         }}
       >
+        {/* Header */}
         <div
-          className="flex items-center justify-between px-6 py-4.5 shrink-0"
-          style={{ borderBottom: '1px solid rgba(201,168,76,0.08)' }}
+          className="shrink-0"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '20px 24px',
+            borderBottom: '1px solid rgba(201,168,76,0.1)',
+          }}
         >
           <div className="flex items-center gap-3">
             <span
-              className="p-2.5 rounded-xl shadow-md"
               style={{
                 background: 'rgba(201,168,76,0.10)',
                 border: '1px solid rgba(201,168,76,0.20)',
                 color: '#C9A84C',
+                borderRadius: 8,
+                padding: 10,
+                display: 'inline-flex',
+                alignItems: 'center',
               }}
             >
               <Calculator className="w-5 h-5" />
             </span>
             <div>
-              <h3 className="font-extrabold text-sm font-sans uppercase tracking-widest" style={{ color: '#F0E6C8' }}>
+              <h3
+                className="font-extrabold font-sans uppercase tracking-widest"
+                style={{ color: '#F0E6C8', fontSize: 14, fontWeight: 700 }}
+              >
                 What-If Close
               </h3>
-              <p className="text-[9px] font-bold font-mono uppercase tracking-widest" style={{ color: '#C9A84C' }}>
+              <p
+                className="font-bold font-mono uppercase"
+                style={{ color: 'rgba(201,168,76,0.4)', fontSize: 9, letterSpacing: '2px' }}
+              >
                 {trade.symbol} • {trade.instrument} • Preview only
               </p>
             </div>
@@ -149,20 +192,21 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
           <button
             type="button"
             onClick={onClose}
-            className="transition p-2 rounded-xl cursor-pointer"
-            style={{ color: 'rgba(240,230,200,0.5)' }}
+            className="transition cursor-pointer"
+            style={{ color: 'rgba(240,230,200,0.5)', background: 'none', border: 'none', borderRadius: 8, padding: 8 }}
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-6 space-y-4 overflow-y-auto">
+        <div className="space-y-4 overflow-y-auto" style={{ padding: 24 }}>
           {/* Preview-only banner */}
           <div
-            className="text-[10px] font-black font-mono uppercase tracking-widest px-4 py-2.5 rounded-xl text-center"
+            className="text-[10px] font-black font-mono uppercase tracking-widest px-4 py-2.5 text-center"
             style={{
               background: 'rgba(201,168,76,0.05)',
               border: '1px solid rgba(201,168,76,0.20)',
+              borderRadius: 8,
               color: '#C9A84C',
             }}
           >
@@ -171,10 +215,12 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
 
           {/* Entry reference */}
           <div
-            className="grid grid-cols-2 gap-4 p-4 rounded-lg"
+            className="grid grid-cols-2 gap-4"
             style={{
-              background: 'rgba(8,5,2,0.9)',
-              border: '1px solid rgba(201,168,76,0.08)',
+              background: 'rgba(0,0,0,0.2)',
+              border: '1px solid rgba(201,168,76,0.1)',
+              borderRadius: 12,
+              padding: 16,
             }}
           >
             <div>
@@ -206,7 +252,7 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
           <div className="space-y-1.5">
             <label
               className="block text-[9px] font-black uppercase tracking-widest font-mono"
-              style={{ color: 'rgba(240,230,200,0.5)' }}
+              style={{ color: 'rgba(240,230,200,0.55)' }}
             >
               {priceLabel}
             </label>
@@ -219,13 +265,8 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
                 value={priceVal}
                 onChange={(e) => validateAndSetDecimal(e.target.value, setPriceVal)}
                 autoFocus
-                className="w-full rounded-xl px-4 py-3 focus:outline-none font-mono text-sm transition"
-                style={{
-                  background: 'rgba(201,168,76,0.04)',
-                  border: '1px solid rgba(201,168,76,0.15)',
-                  borderRadius: 12,
-                  color: '#F0E6C8',
-                }}
+                className="focus:outline-none font-mono"
+                style={inputStyle}
                 onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.45)'; }}
                 onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)'; }}
               />
@@ -242,7 +283,7 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
             <div className="space-y-1.5">
               <label
                 className="block text-[9px] font-black uppercase tracking-widest font-mono"
-                style={{ color: 'rgba(240,230,200,0.5)' }}
+                style={{ color: 'rgba(240,230,200,0.55)' }}
               >
                 Hypothetical Close Date
               </label>
@@ -250,13 +291,8 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
                 type="date"
                 value={dateVal}
                 onChange={(e) => setDateVal(e.target.value)}
-                className="w-full rounded-xl px-3.5 py-2.5 text-xs focus:outline-none font-bold font-mono transition"
-                style={{
-                  background: 'rgba(201,168,76,0.04)',
-                  border: '1px solid rgba(201,168,76,0.15)',
-                  borderRadius: 12,
-                  color: '#F0E6C8',
-                }}
+                className="focus:outline-none font-bold font-mono"
+                style={inputStyle}
                 onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.45)'; }}
                 onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)'; }}
               />
@@ -275,13 +311,8 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
                   placeholder="e.g. 83.24"
                   value={rateVal}
                   onChange={(e) => validateAndSetDecimal(e.target.value, setRateVal)}
-                  className="w-full rounded-xl px-3.5 py-2.5 text-xs focus:outline-none font-bold font-mono transition"
-                  style={{
-                    background: 'rgba(201,168,76,0.04)',
-                    border: '1px solid rgba(201,168,76,0.15)',
-                    borderRadius: 12,
-                    color: '#F0E6C8',
-                  }}
+                  className="focus:outline-none font-bold font-mono"
+                  style={inputStyle}
                   onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(201,150,12,0.55)'; }}
                   onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)'; }}
                 />
@@ -292,12 +323,14 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
           {/* Live evaluation */}
           {preview ? (
             <div
-              className="p-4 rounded-lg border transition-all duration-200 shadow-sm"
-              style={
-                preview.net >= 0
+              className="transition-all duration-200 shadow-sm"
+              style={{
+                padding: 16,
+                borderRadius: 12,
+                ...(preview.net >= 0
                   ? { background: 'rgba(103,122,103,0.1)', border: '1px solid rgba(103,122,103,0.3)' }
-                  : { background: 'rgba(201,150,12,0.1)', border: '1px solid rgba(201,150,12,0.3)' }
-              }
+                  : { background: 'rgba(201,150,12,0.1)', border: '1px solid rgba(201,150,12,0.3)' }),
+              }}
             >
               <div
                 className="flex items-center justify-between pb-2.5 mb-3"
@@ -317,11 +350,12 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
                   </span>
                 </div>
                 <span
-                  className="text-[8px] font-black font-mono uppercase tracking-widest px-2 py-0.5 rounded"
+                  className="text-[8px] font-black font-mono uppercase tracking-widest px-2 py-0.5"
                   style={{
                     color: '#C9A84C',
                     background: 'rgba(201,168,76,0.10)',
                     border: '1px solid rgba(201,168,76,0.20)',
+                    borderRadius: 6,
                   }}
                 >
                   {preview.hypoStatus === 'CarryForwardClosed' ? 'CF Closed' : 'Same-week'}
@@ -384,11 +418,13 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
               </div>
 
               <div
-                className="text-[9px] font-bold font-mono mt-3.5 leading-relaxed p-3 rounded-xl uppercase tracking-wider"
+                className="text-[9px] font-bold font-mono mt-3.5 leading-relaxed uppercase tracking-wider"
                 style={{
                   color: 'rgba(240,230,200,0.5)',
-                  background: 'rgba(8,5,2,0.9)',
-                  border: '1px solid rgba(201,168,76,0.08)',
+                  background: 'rgba(0,0,0,0.2)',
+                  border: '1px solid rgba(201,168,76,0.1)',
+                  borderRadius: 8,
+                  padding: '10px 12px',
                 }}
               >
                 ⚠️ Hypothetical only. The trade stays open — nothing is saved or modified.
@@ -396,10 +432,11 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
             </div>
           ) : (
             <div
-              className="p-6 rounded-lg border border-dashed text-center text-xs font-medium leading-relaxed font-mono"
+              className="p-6 border border-dashed text-center text-xs font-medium leading-relaxed font-mono"
               style={{
-                background: 'rgba(4,2,0,0.95)',
-                borderColor: 'rgba(201,168,76,0.08)',
+                background: 'rgba(0,0,0,0.2)',
+                borderColor: 'rgba(201,168,76,0.1)',
+                borderRadius: 12,
                 color: 'rgba(240,230,200,0.5)',
               }}
             >
@@ -408,15 +445,20 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
             </div>
           )}
 
-          <div className="flex justify-end pt-2" style={{ borderTop: '1px solid rgba(201,168,76,0.08)' }}>
+          <div className="flex justify-end pt-2" style={{ borderTop: '1px solid rgba(201,168,76,0.1)' }}>
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl text-xs font-black transition cursor-pointer font-mono uppercase tracking-wider"
+              className="cursor-pointer uppercase tracking-wider"
               style={{
-                background: 'rgba(4,2,0,0.95)',
-                border: '1px solid rgba(201,168,76,0.15)',
-                color: '#F0E6C8',
+                background: 'rgba(201,168,76,0.08)',
+                border: '1px solid rgba(201,168,76,0.2)',
+                borderRadius: 8,
+                color: '#C9A84C',
+                padding: '8px 20px',
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: 'pointer',
               }}
             >
               Done

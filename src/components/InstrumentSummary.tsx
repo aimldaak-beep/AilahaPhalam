@@ -150,35 +150,35 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
   });
 
   return (
-    <div className="space-y-6" style={{
+    <div style={{
       width: '100%',
-      minHeight: 'calc(100vh - 56px)',
-      padding: '20px 28px 40px',
+      minHeight: '100vh',
+      padding: '20px 28px 60px',
       color: '#F0E6C8',
       fontFamily: "'DM Sans', sans-serif",
     }}>
       {/* Visual Title Header */}
-      <div className="flex items-center gap-3">
-        <span className="p-2 rounded-xl shadow-xl" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)', color: '#C9A84C' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, paddingBottom: 16, borderBottom: '1px solid rgba(201,168,76,0.1)' }}>
+        <span className="p-2" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 12, color: '#C9A84C' }}>
           <Sparkles className="w-4 h-4" style={{ color: '#C9A84C' }} />
         </span>
         <div>
-          <h2 className="text-xs font-black uppercase tracking-widest font-mono" style={{ color: '#F0E6C8' }}>
+          <h2 className="text-xs font-black uppercase tracking-widest font-mono" style={{ color: '#F0E6C8', margin: 0 }}>
             Instrument Ledger Analytics Matrix
           </h2>
-          <p className="text-[10px] font-mono" style={{ color: 'rgba(240,230,200,0.5)' }}>
+          <p className="text-[10px] font-mono" style={{ color: 'rgba(240,230,200,0.5)', margin: 0 }}>
             Grouped contract statistics segmented by portfolio indices
           </p>
         </div>
       </div>
 
       {/* Main overall stats row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="relative overflow-hidden rounded p-5 shadow-lg backdrop-blur-sm" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
-          <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5" style={{ marginBottom: 24 }}>
+        <div className="relative overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 16, padding: '20px 24px' }}>
+          <div className="absolute right-4 top-4 p-2" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 12, color: '#C9A84C' }}>
             <Compass className="w-4 h-4" style={{ color: '#C9A84C' }} />
           </div>
-          <span className="block text-[9px] font-black w-max uppercase tracking-widest font-mono font-bold" style={{ color: '#F0E6C8' }}>
+          <span className="block text-[9px] font-black w-max uppercase tracking-widest font-mono font-bold" style={{ color: '#C9A84C' }}>
             Consolidated Trades
           </span>
           <span className="block text-2xl font-black font-mono tracking-tight mt-3" style={{ color: '#F0E6C8' }}>
@@ -186,11 +186,11 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
           </span>
         </div>
 
-        <div className="relative overflow-hidden rounded p-5 shadow-lg backdrop-blur-sm" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
-          <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}>
+        <div className="relative overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 16, padding: '20px 24px' }}>
+          <div className="absolute right-4 top-4 p-2" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 12, color: '#C9A84C' }}>
             <TrendingUp className="w-4 h-4" style={{ color: '#C9A84C' }} />
           </div>
-          <span className="block text-[9px] font-black w-max uppercase tracking-widest font-mono font-bold" style={{ color: '#F0E6C8' }}>
+          <span className="block text-[9px] font-black w-max uppercase tracking-widest font-mono font-bold" style={{ color: '#C9A84C' }}>
             Total realized profit
           </span>
           <span className="block text-2xl font-black font-mono tracking-tight mt-3" style={{ color: totalOverallNetProfit >= 0 ? '#677A67' : '#C9960C' }}>
@@ -199,11 +199,11 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
           </span>
         </div>
 
-        <div className="relative overflow-hidden rounded p-5 shadow-lg backdrop-blur-sm" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
-          <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}>
+        <div className="relative overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 16, padding: '20px 24px' }}>
+          <div className="absolute right-4 top-4 p-2" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 12, color: '#C9A84C' }}>
             <Scale className="w-4 h-4" style={{ color: '#C9A84C' }} />
           </div>
-          <span className="block text-[9px] font-black w-max uppercase tracking-widest font-mono font-bold" style={{ color: '#F0E6C8' }}>
+          <span className="block text-[9px] font-black w-max uppercase tracking-widest font-mono font-bold" style={{ color: '#C9A84C' }}>
             Winning Trades
           </span>
           <span className="block text-2xl font-black font-mono tracking-tight mt-3" style={{ color: '#F0E6C8' }}>
@@ -213,8 +213,8 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
       </div>
 
       {/* Group segmentation grid */}
-      <div className="space-y-4">
-        <h3 className="text-[10px] font-black uppercase tracking-widest font-mono" style={{ color: 'rgba(240,230,200,0.5)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <h3 className="text-[10px] font-black uppercase tracking-widest font-mono" style={{ color: 'rgba(240,230,200,0.5)', margin: 0 }}>
           System Integrated Portfolios
         </h3>
 
@@ -224,20 +224,20 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
             return (
               <div
                 key={idx}
-                className={`relative overflow-hidden p-5 shadow-lg backdrop-blur-sm transition-all duration-200 flex flex-col justify-between min-h-[190px] ${group.colorClass}`}
-                style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}
+                className={`relative overflow-hidden flex flex-col justify-between min-h-[190px] ${group.colorClass}`}
+                style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 16, padding: '20px 24px' }}
               >
                 {/* Header detail */}
                 <div className="flex items-start justify-between w-full">
                   <div className="flex items-center gap-2">
-                    <span className="p-2 rounded-xl" style={{ background: 'rgba(4,2,0,0.95)', border: '1px solid rgba(201,168,76,0.08)' }}>
+                    <span className="p-2" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 12 }}>
                       {group.icon}
                     </span>
                     <div>
-                      <h4 className="font-extrabold text-sm uppercase tracking-wider font-sans" style={{ color: '#F0E6C8' }}>
+                      <h4 className="font-extrabold text-sm uppercase tracking-wider font-sans" style={{ color: '#F0E6C8', margin: 0 }}>
                         {group.name}
                       </h4>
-                      <p className="text-[8px] font-bold font-mono tracking-widest opacity-60">
+                      <p className="text-[8px] font-bold font-mono tracking-widest" style={{ color: 'rgba(240,230,200,0.45)', margin: 0 }}>
                         {group.totalTrades} {group.totalTrades === 1 ? 'CONTRACT' : 'CONTRACTS'} REGISTERED
                       </p>
                     </div>
@@ -253,7 +253,7 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
 
                 {/* Net yield statement */}
                 <div className="my-3">
-                  <span className="block text-[8px] font-black uppercase tracking-widest opacity-60 font-mono">
+                  <span className="block text-[8px] font-black uppercase tracking-widest font-mono" style={{ color: 'rgba(240,230,200,0.45)' }}>
                     Net Segment accounting Yield
                   </span>
                   <span className="block text-xl font-black font-mono tracking-tight mt-1" style={{ color: group.totalNetProfit >= 0 ? '#677A67' : '#C9960C' }}>

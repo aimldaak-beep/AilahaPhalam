@@ -33,23 +33,25 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
   const currencySymbol = trade.currency === 'USD' ? '$' : '₹';
 
   const userPrice = parseFloat(currentVal);
-  const evaluation = !isNaN(userPrice) && userPrice > 0 ? estimateInstantPnL(trade, userPrice) : null;  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)'}}>
+  const evaluation = !isNaN(userPrice) && userPrice > 0 ? estimateInstantPnL(trade, userPrice) : null;
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', overflowY: 'auto', padding: '40px 20px' }}>
       <div
         id="check-pnl-modal"
-        className="w-full max-w-md shadow-2xl transition-all overflow-hidden rounded"
-        style={{background:'rgba(8,5,2,0.92)',backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:24}}
+        style={{ width: '100%', maxWidth: 560, background: 'rgba(8,5,2,0.95)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 16, overflow: 'hidden' }}
       >
-        <div className="flex items-center justify-between px-6 py-4.5" style={{borderBottom:'1px solid rgba(201,168,76,0.08)'}}>
-          <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-xl shadow-md" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
-              <RefreshCw className="w-5 h-5 animate-spin" />
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid rgba(201,168,76,0.1)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ padding: 10, borderRadius: 10, background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C', display: 'flex' }}>
+              <RefreshCw style={{ width: 18, height: 18 }} className="animate-spin" />
             </span>
             <div>
-              <h3 className="font-extrabold text-sm font-sans uppercase tracking-widest" style={{color:'#F0E6C8'}}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#F0E6C8', margin: 0, fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Check Current PnL
               </h3>
-              <p className="text-[9px] font-bold font-mono uppercase tracking-widest" style={{color:'rgba(240,230,200,0.5)'}}>
+              <p style={{ fontSize: 9, fontWeight: 700, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '2px', color: 'rgba(201,168,76,0.4)', margin: 0 }}>
                 {trade.symbol} • {trade.instrument}
               </p>
             </div>
@@ -57,40 +59,40 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="transition p-2 rounded-xl cursor-pointer"
-            style={{color:'rgba(240,230,200,0.5)'}}
+            style={{ background: 'transparent', border: 'none', color: 'rgba(240,230,200,0.5)', cursor: 'pointer', padding: 8, display: 'flex', alignItems: 'center' }}
           >
-            <X className="w-4 h-4" />
+            <X style={{ width: 16, height: 16 }} />
           </button>
         </div>
 
-        <div className="p-6 space-y-4">
+        {/* Body */}
+        <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Reference Info */}
-          <div className="grid grid-cols-2 gap-4 p-4 rounded-lg" style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.1)',borderRadius:16}}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, padding: 16, borderRadius: 12, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(201,168,76,0.1)' }}>
             <div>
-              <span className="block text-[9px] font-black uppercase tracking-widest mb-1 font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
+              <span style={{ display: 'block', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '2.5px', marginBottom: 4, color: 'rgba(240,230,200,0.55)', fontFamily: 'monospace' }}>
                 {entryLabel}
               </span>
-              <span className="font-black font-mono text-xs" style={{color:'#F0E6C8'}}>
+              <span style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: 12, color: '#F0E6C8' }}>
                 {currencySymbol}{formatPrice(initiatorPrice)}
               </span>
             </div>
             <div>
-              <span className="block text-[9px] font-black uppercase tracking-widest mb-1 font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
-                Lots & Multiplier
+              <span style={{ display: 'block', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '2.5px', marginBottom: 4, color: 'rgba(240,230,200,0.55)', fontFamily: 'monospace' }}>
+                Lots &amp; Multiplier
               </span>
-              <span className="font-bold font-mono text-xs block" style={{color:'rgba(240,230,200,0.7)'}}>
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: 'rgba(240,230,200,0.7)', display: 'block' }}>
                 {trade.numberOfLots} Lots x {trade.lotSize}
               </span>
             </div>
           </div>
 
           {/* Current Trading Price Input */}
-          <div className="space-y-1.5 animate-fade-in">
-            <label className="block text-[9px] font-black uppercase tracking-widest font-mono" style={{color:'rgba(240,230,200,0.55)'}}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '2.5px', color: 'rgba(240,230,200,0.55)', fontFamily: 'monospace' }}>
               {trade.direction === 'Long' ? 'Enter temporary Sell value (to check current situation)' : 'Enter temporary Buy value (to check current situation)'}
             </label>
-            <div className="relative">
+            <div style={{ position: 'relative' }}>
               <input
                 id="current-price-pnl-input"
                 type="text"
@@ -100,12 +102,11 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
                 value={currentVal}
                 onChange={e => validateAndSetDecimal(e.target.value, setCurrentVal)}
                 autoFocus
-                className="w-full transition rounded-xl px-4 py-3 focus:outline-none font-mono text-sm"
-                style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,color:'#F0E6C8'}}
-                onFocus={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.5)'}
-                onBlur={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.15)'}
+                style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 8, padding: '10px 14px', color: '#F0E6C8', fontSize: 13, outline: 'none', width: '100%', fontFamily: 'monospace', boxSizing: 'border-box' }}
+                onFocus={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)'}
               />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black font-mono select-none uppercase tracking-widest" style={{color:'rgba(201,168,76,0.6)'}}>
+              <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 10, fontWeight: 900, fontFamily: 'monospace', userSelect: 'none', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(201,168,76,0.6)' }}>
                 {trade.currency}
               </div>
             </div>
@@ -114,58 +115,56 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
           {/* Evaluation Block */}
           {evaluation ? (
             <div
-              className="p-4 rounded-lg border transition-all duration-200 shadow-sm"
               style={
                 evaluation.points >= 0
-                  ? {background:'rgba(103,122,103,0.1)',border:'1px solid rgba(103,122,103,0.3)',color:'#677A67'}
-                  : {background:'rgba(201,150,12,0.1)',border:'1px solid rgba(201,150,12,0.3)',color:'#C9960C'}
+                  ? { padding: 16, borderRadius: 12, border: '1px solid rgba(103,122,103,0.3)', background: 'rgba(103,122,103,0.1)', color: '#677A67', transition: 'all 0.2s' }
+                  : { padding: 16, borderRadius: 12, border: '1px solid rgba(201,150,12,0.3)', background: 'rgba(201,150,12,0.1)', color: '#C9960C', transition: 'all 0.2s' }
               }
             >
-              <div className="flex items-center gap-1.5 pb-2.5 mb-3" style={{borderBottom:'1px solid rgba(201,168,76,0.08)'}}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 10, marginBottom: 12, borderBottom: '1px solid rgba(201,168,76,0.08)' }}>
                 {evaluation.points >= 0 ? (
-                  <TrendingUp className="w-4 h-4 animate-pulse" style={{color:'#677A67'}} />
+                  <TrendingUp style={{ width: 16, height: 16, color: '#677A67' }} className="animate-pulse" />
                 ) : (
-                  <TrendingDown className="w-4 h-4 animate-pulse" style={{color:'#C9960C'}} />
+                  <TrendingDown style={{ width: 16, height: 16, color: '#C9960C' }} className="animate-pulse" />
                 )}
-                <span className="text-[10px] font-black tracking-widest uppercase font-mono">
+                <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'monospace' }}>
                   {evaluation.points >= 0 ? 'Estimated Advantage' : 'Estimated Deficit'}
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-y-3.5 gap-x-2 text-xs">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 8px', fontSize: 12 }}>
                 <div>
-                  <span className="block text-[9px] font-extrabold tracking-widest uppercase mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
+                  <span style={{ display: 'block', fontSize: 9, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6, fontFamily: 'monospace', color: 'rgba(240,230,200,0.5)' }}>
                     PnL Points
                   </span>
-                  <span className="font-mono font-black text-xs">
+                  <span style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: 12 }}>
                     {evaluation.points >= 0 ? '+' : ''}
                     {formatAmount(evaluation.points, 3)} pt
                   </span>
                 </div>
                 <div>
-                  <span className="block text-[9px] font-extrabold tracking-widest uppercase mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
+                  <span style={{ display: 'block', fontSize: 9, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6, fontFamily: 'monospace', color: 'rgba(240,230,200,0.5)' }}>
                     Gross PnL (INR)
                   </span>
-                  <span className="font-mono font-black text-xs" style={{color:'#F0E6C8'}}>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: 12, color: '#F0E6C8' }}>
                     {evaluation.grossProfit >= 0 ? '+' : ''}
                     ₹{formatAmount(evaluation.grossProfit)}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-[9px] font-extrabold tracking-widest uppercase mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
+                  <span style={{ display: 'block', fontSize: 9, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6, fontFamily: 'monospace', color: 'rgba(240,230,200,0.5)' }}>
                     Double Brokerages
                   </span>
-                  <span className="font-mono text-xs font-black" style={{color:'#C9960C'}}>
+                  <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 900, color: '#C9960C' }}>
                     -₹{formatAmount(evaluation.estimatedBrokerage)}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-[9px] font-extrabold tracking-widest uppercase mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
+                  <span style={{ display: 'block', fontSize: 9, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6, fontFamily: 'monospace', color: 'rgba(240,230,200,0.5)' }}>
                     Net Yield (INR Estimate)
                   </span>
                   <span
-                    className="font-mono font-black text-sm block"
-                    style={{color: evaluation.netProfit >= 0 ? '#677A67' : '#C9960C'}}
+                    style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: 14, display: 'block', color: evaluation.netProfit >= 0 ? '#677A67' : '#C9960C' }}
                   >
                     {evaluation.netProfit >= 0 ? '+' : ''}
                     ₹{formatAmount(evaluation.netProfit)}
@@ -173,24 +172,23 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
                 </div>
               </div>
 
-              <div className="text-[9px] font-bold font-mono mt-3.5 leading-relaxed p-3 rounded-xl uppercase tracking-wider" style={{color:'rgba(240,230,200,0.35)',background:'rgba(4,2,0,0.95)',border:'1px solid rgba(201,168,76,0.08)'}}>
+              <div style={{ fontSize: 9, fontWeight: 700, fontFamily: 'monospace', marginTop: 14, lineHeight: 1.6, padding: 12, borderRadius: 8, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(240,230,200,0.35)', background: 'rgba(4,2,0,0.95)', border: '1px solid rgba(201,168,76,0.08)' }}>
                 ⚠️ Transients simulation block. Realized outcomes do not modify permanent ledgers.
               </div>
             </div>
           ) : (
-            <div className="p-6 rounded-lg border border-dashed text-center text-xs font-medium leading-relaxed font-mono" style={{background:'rgba(4,2,0,0.6)',borderColor:'rgba(201,168,76,0.08)',color:'rgba(240,230,200,0.35)'}}>
-              <Layers className="w-8 h-8 mx-auto mb-2.5 stroke-1" style={{color:'#C9A84C'}} />
+            <div style={{ padding: 24, borderRadius: 12, border: '1px dashed rgba(201,168,76,0.08)', textAlign: 'center', fontSize: 12, fontWeight: 500, lineHeight: 1.6, fontFamily: 'monospace', background: 'rgba(4,2,0,0.6)', color: 'rgba(240,230,200,0.35)' }}>
+              <Layers style={{ width: 32, height: 32, margin: '0 auto 10px', strokeWidth: 1, color: '#C9A84C', display: 'block' }} />
               Enter current trade rate above to generate instant real-time profit and loss calculations.
             </div>
           )}
 
           {/* Close button */}
-          <div className="flex justify-end pt-2" style={{borderTop:'1px solid rgba(201,168,76,0.08)'}}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 8, borderTop: '1px solid rgba(201,168,76,0.1)' }}>
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl text-xs font-black transition cursor-pointer font-mono uppercase tracking-wider"
-              style={{background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}
+              style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 8, color: '#C9A84C', padding: '8px 20px', fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: '1px', fontFamily: 'monospace', textTransform: 'uppercase' }}
             >
               Done Checking
             </button>

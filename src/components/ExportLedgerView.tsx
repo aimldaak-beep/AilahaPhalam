@@ -93,24 +93,52 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
     exportToExcel(trades, sDate, eDate, insts);
   };
 
+  // Shared style tokens
+  const glassCard: React.CSSProperties = {
+    background: 'rgba(255,255,255,0.03)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: '1px solid rgba(201,168,76,0.15)',
+    borderRadius: 16,
+    padding: '20px 24px',
+  };
+
+  const darkGlassPanel: React.CSSProperties = {
+    background: 'rgba(0,0,0,0.2)',
+    border: '1px solid rgba(201,168,76,0.1)',
+    borderRadius: 12,
+  };
+
+  const dateInputStyle: React.CSSProperties = {
+    background: 'rgba(201,168,76,0.04)',
+    border: '1px solid rgba(201,168,76,0.15)',
+    borderRadius: 8,
+    padding: '10px 14px',
+    color: '#F0E6C8',
+    fontSize: 13,
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
+  };
+
   return (
     <div className="space-y-6" style={{
       width: '100%',
-      minHeight: 'calc(100vh - 56px)',
-      padding: '20px 28px 40px',
+      minHeight: '100vh',
+      padding: '20px 28px 60px',
       color: '#F0E6C8',
       fontFamily: "'DM Sans', sans-serif",
     }}>
       {/* Title Header */}
       <div className="flex items-center gap-3">
-        <span className="p-2 rounded-xl shadow-xl" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)', color: '#C9A84C' }}>
+        <span className="p-2 rounded-xl shadow-xl" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,168,76,0.15)', color: '#C9A84C' }}>
           <Download className="w-4 h-4" style={{ color: '#C9A84C' }} />
         </span>
         <div>
-          <h2 className="text-xs font-black uppercase tracking-widest font-mono" style={{ color: '#F0E6C8' }}>
+          <h2 className="text-xs font-black uppercase tracking-widest" style={{ color: '#F0E6C8' }}>
             System CSV Ledger Exporter
           </h2>
-          <p className="text-[10px] font-mono" style={{ color: 'rgba(240,230,200,0.5)' }}>
+          <p className="text-[10px]" style={{ color: 'rgba(240,230,200,0.45)' }}>
             Generate custom filtered audits for accountancy reconciliation
           </p>
         </div>
@@ -120,10 +148,10 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
         {/* Left column: Setup controls */}
         <div className="lg:col-span-2 space-y-6">
           {/* Card 1: Chronological bounds */}
-          <div className="rounded p-6 shadow-lg space-y-4" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+          <div className="shadow-lg space-y-4" style={glassCard}>
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" style={{ color: '#C9A84C' }} />
-              <h3 className="text-xs font-extrabold uppercase tracking-wider font-mono" style={{ color: '#F0E6C8' }}>
+              <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: '#F0E6C8' }}>
                 1. Chronological Bounds (Date Range)
               </h3>
             </div>
@@ -136,7 +164,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                 className={`flex-1 py-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-lg transition duration-200`}
                 style={
                   !useDateRange
-                    ? { background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.25)', color: '#C9A84C' }
+                    ? { background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.45)', color: '#C9A84C' }
                     : { color: 'rgba(240,230,200,0.5)' }
                 }
               >
@@ -148,7 +176,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                 className={`flex-1 py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-lg transition duration-200`}
                 style={
                   useDateRange
-                    ? { background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.25)', color: '#C9A84C' }
+                    ? { background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.45)', color: '#C9A84C' }
                     : { color: 'rgba(240,230,200,0.5)' }
                 }
               >
@@ -160,7 +188,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
             {useDateRange && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 animate-fade-in">
                 <div>
-                  <label htmlFor="export-start-date" className="block text-[9px] uppercase tracking-wider font-bold mb-1.5 font-mono" style={{ color: 'rgba(240,230,200,0.5)' }}>
+                  <label htmlFor="export-start-date" className="block text-[9px] uppercase tracking-wider font-bold mb-1.5" style={{ color: 'rgba(240,230,200,0.45)' }}>
                     Initiation Date (From)
                   </label>
                   <input
@@ -168,14 +196,14 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                     type="date"
                     value={startDate}
                     onChange={e => setStartDate(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl text-xs outline-none font-mono transition"
-                    style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 12, color: '#F0E6C8' }}
+                    className="transition"
+                    style={dateInputStyle}
                     onFocus={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)'; }}
                     onBlur={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)'; }}
                   />
                 </div>
                 <div>
-                  <label htmlFor="export-end-date" className="block text-[9px] uppercase tracking-wider font-bold mb-1.5 font-mono" style={{ color: 'rgba(240,230,200,0.5)' }}>
+                  <label htmlFor="export-end-date" className="block text-[9px] uppercase tracking-wider font-bold mb-1.5" style={{ color: 'rgba(240,230,200,0.45)' }}>
                     Initiation Date (To)
                   </label>
                   <input
@@ -183,8 +211,8 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                     type="date"
                     value={endDate}
                     onChange={e => setEndDate(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl text-xs outline-none font-mono transition"
-                    style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 12, color: '#F0E6C8' }}
+                    className="transition"
+                    style={dateInputStyle}
                     onFocus={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)'; }}
                     onBlur={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)'; }}
                   />
@@ -194,11 +222,11 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
           </div>
 
           {/* Card 2: Instrument Type Filters */}
-          <div className="rounded p-6 shadow-lg space-y-4" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+          <div className="shadow-lg space-y-4" style={glassCard}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4" style={{ color: '#C9A84C' }} />
-                <h3 className="text-xs font-extrabold uppercase tracking-wider font-mono" style={{ color: '#F0E6C8' }}>
+                <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: '#F0E6C8' }}>
                   2. Segment Filters (Instrument Type)
                 </h3>
               </div>
@@ -208,7 +236,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                 <button
                   type="button"
                   onClick={selectAllInstruments}
-                  className="text-[9px] font-bold hover:underline uppercase tracking-wide font-mono px-2 py-1 rounded"
+                  className="text-[9px] font-bold hover:underline uppercase tracking-wide px-2 py-1 rounded"
                   style={{ color: '#C9A84C', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.15)' }}
                 >
                   Select All
@@ -216,15 +244,15 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                 <button
                   type="button"
                   onClick={clearAllInstruments}
-                  className="text-[9px] font-bold uppercase tracking-wide font-mono px-2 py-1 rounded"
-                  style={{ color: 'rgba(240,230,200,0.5)', background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.08)' }}
+                  className="text-[9px] font-bold uppercase tracking-wide px-2 py-1 rounded"
+                  style={{ color: 'rgba(240,230,200,0.45)', background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.08)' }}
                 >
                   Clear All
                 </button>
               </div>
             </div>
 
-            <p className="text-[10px] font-mono leading-relaxed" style={{ color: 'rgba(240,230,200,0.5)' }}>
+            <p className="text-[10px] leading-relaxed" style={{ color: 'rgba(240,230,200,0.45)' }}>
               If no specific segments are chosen, the ledger will output all recorded contract classifications. Click to toggle selection:
             </p>
 
@@ -241,10 +269,10 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                     style={
                       isSelected
                         ? { background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.45)', color: '#C9A84C' }
-                        : { background: 'rgba(8,5,2,0.9)', border: '1px solid rgba(201,168,76,0.08)', color: 'rgba(240,230,200,0.7)' }
+                        : { background: 'rgba(8,5,2,0.9)', border: '1px solid rgba(201,168,76,0.08)', color: 'rgba(240,230,200,0.45)' }
                     }
                   >
-                    <span className="font-mono">{inst}</span>
+                    <span>{inst}</span>
                     {isSelected && <Check className="w-3.5 h-3.5" style={{ color: '#C9A84C' }} />}
                   </button>
                 );
@@ -255,19 +283,19 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
 
         {/* Right column: Matched preview & export triggers */}
         <div className="space-y-6">
-          <div className="rounded p-6 shadow-lg flex flex-col justify-between min-h-[300px]" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+          <div className="shadow-lg flex flex-col justify-between min-h-[300px]" style={{ ...glassCard }}>
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4" style={{ color: '#C9A84C' }} />
-                <h3 className="text-xs font-extrabold uppercase tracking-wider font-mono" style={{ color: '#C9A84C' }}>
+                <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: '#C9A84C' }}>
                   Export Matrix Diagnostics
                 </h3>
               </div>
 
               {/* Status tally board */}
-              <div className="p-4 rounded-lg space-y-3.5" style={{ background: 'rgba(4,2,0,0.95)', border: '1px solid rgba(201,168,76,0.08)' }}>
+              <div className="p-4 space-y-3.5" style={darkGlassPanel}>
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-mono uppercase font-black" style={{ color: 'rgba(240,230,200,0.5)' }}>Matched Contracts:</span>
+                  <span className="text-[9px] uppercase font-black" style={{ color: 'rgba(240,230,200,0.45)' }}>Matched Contracts:</span>
                   <span className="text-sm font-mono font-black" style={{ color: '#F0E6C8' }}>
                     {matchedTrades.length.toString().padStart(2, '0')} / {trades.length.toString().padStart(2, '0')}
                   </span>
@@ -280,7 +308,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                   />
                 </div>
 
-                <div className="text-[9px] font-mono space-y-1 p-2.5 rounded-lg" style={{ color: 'rgba(240,230,200,0.5)', background: 'rgba(4,2,0,0.5)', border: '1px solid rgba(201,168,76,0.08)' }}>
+                <div className="text-[9px] space-y-1 p-2.5 rounded-lg" style={{ color: 'rgba(240,230,200,0.45)', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 8 }}>
                   <div className="flex justify-between">
                     <span>Date Bounds:</span>
                     <span className="font-bold" style={{ color: '#C9A84C' }}>
@@ -308,11 +336,11 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                 type="button"
                 onClick={handleExport}
                 disabled={matchedTrades.length === 0}
-                className="w-full py-4 rounded-lg text-xs font-black uppercase tracking-widest font-mono flex items-center justify-center gap-2 transition duration-200 cursor-pointer shadow-lg active:scale-[0.98]"
+                className="w-full py-4 rounded-lg text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition duration-200 shadow-lg active:scale-[0.98]"
                 style={
                   matchedTrades.length > 0
-                    ? { background: '#C9A84C', color: '#1A1200', fontWeight: 800, border: '1px solid rgba(201,168,76,0.4)' }
-                    : { background: 'rgba(8,5,2,0.9)', border: '1px solid rgba(201,168,76,0.08)', color: 'rgba(240,230,200,0.35)', cursor: 'not-allowed' }
+                    ? { background: '#C9A84C', color: '#1A1200', border: 'none', borderRadius: 8, padding: '8px 20px', fontSize: 11, fontWeight: 800, cursor: 'pointer', letterSpacing: '1px', fontFamily: "'DM Sans', sans-serif" }
+                    : { background: 'rgba(8,5,2,0.9)', border: '1px solid rgba(201,168,76,0.08)', color: 'rgba(240,230,200,0.35)', cursor: 'not-allowed', borderRadius: 8, padding: '8px 20px', fontSize: 11, fontWeight: 800, letterSpacing: '1px', fontFamily: "'DM Sans', sans-serif" }
                 }
               >
                 <Download className="w-4 h-4" />
@@ -324,14 +352,14 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
               <button
                 type="button"
                 onClick={() => downloadReconciliationCsv(trades, weekOffsets)}
-                className="w-full py-3 rounded-lg text-xs font-black uppercase tracking-widest font-mono flex items-center justify-center gap-2 transition duration-200 cursor-pointer shadow-md active:scale-[0.98]"
-                style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.3)', color: '#C9A84C' }}
+                className="w-full py-3 rounded-lg text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition duration-200 shadow-md active:scale-[0.98]"
+                style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 8, padding: '8px 20px', fontSize: 11, fontWeight: 700, color: '#C9A84C', cursor: 'pointer' }}
               >
                 <Download className="w-4 h-4" />
                 Export Weekly Reconciliation CSV
               </button>
 
-              <div className="flex items-start gap-1.5 text-[8.5px] font-medium leading-relaxed font-mono p-3 rounded-xl" style={{ color: 'rgba(240,230,200,0.5)', background: 'rgba(4,2,0,0.5)', border: '1px solid rgba(201,168,76,0.08)' }}>
+              <div className="flex items-start gap-1.5 text-[8.5px] font-medium leading-relaxed p-3 rounded-xl" style={{ color: 'rgba(240,230,200,0.45)', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(201,168,76,0.1)' }}>
                 <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: '#C9A84C' }} />
                 <span>
                   The exported document outputs in standard CSV format and is fully compatible with Microsoft Excel, Google Sheets, and Numbers.
@@ -344,37 +372,37 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
 
       {/* Matched Positions Preview List */}
       {matchedTrades.length > 0 && (
-        <div className="rounded p-6 shadow-lg space-y-3" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+        <div className="shadow-lg space-y-3" style={glassCard}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Briefcase className="w-4 h-4" style={{ color: 'rgba(240,230,200,0.7)' }} />
-              <h3 className="text-xs font-extrabold uppercase tracking-wider font-mono" style={{ color: '#F0E6C8' }}>
+              <Briefcase className="w-4 h-4" style={{ color: 'rgba(240,230,200,0.45)' }} />
+              <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: '#F0E6C8' }}>
                 Matching Positions Record Preview
               </h3>
             </div>
-            <span className="text-[8px] font-bold font-mono uppercase tracking-widest px-2.5 py-1 rounded" style={{ color: 'rgba(240,230,200,0.5)', background: 'rgba(4,2,0,0.95)', border: '1px solid rgba(201,168,76,0.08)' }}>
+            <span className="text-[8px] font-bold uppercase tracking-widest px-2.5 py-1 rounded" style={{ color: 'rgba(240,230,200,0.45)', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(201,168,76,0.1)' }}>
               Live Filter Query
             </span>
           </div>
 
-          <div className="overflow-x-auto rounded-xl scrollbar-thin" style={{ border: '1px solid rgba(201,168,76,0.08)' }}>
+          <div className="overflow-x-auto scrollbar-thin" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 12 }}>
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b text-[9px] font-mono tracking-widest uppercase" style={{ background: 'rgba(201,168,76,0.06)', borderBottomColor: 'rgba(201,168,76,0.15)', color: 'rgba(240,230,200,0.5)' }}>
-                  <th className="py-2.5 px-4 font-bold">Symbol</th>
-                  <th className="py-2.5 px-4 font-bold">Instrument</th>
-                  <th className="py-2.5 px-4 font-bold">Direction</th>
-                  <th className="py-2.5 px-4 font-bold">Initiated</th>
-                  <th className="py-2.5 px-4 font-bold text-right">Entry Price</th>
-                  <th className="py-2.5 px-4 font-bold">Status</th>
-                  <th className="py-2.5 px-4 font-bold text-right">Edit</th>
+                <tr style={{ background: 'rgba(201,168,76,0.05)', borderBottom: '1px solid rgba(201,168,76,0.12)' }}>
+                  <th className="py-2.5 px-4 font-mono" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)' }}>Symbol</th>
+                  <th className="py-2.5 px-4 font-mono" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)' }}>Instrument</th>
+                  <th className="py-2.5 px-4 font-mono" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)' }}>Direction</th>
+                  <th className="py-2.5 px-4 font-mono" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)' }}>Initiated</th>
+                  <th className="py-2.5 px-4 font-mono text-right" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)' }}>Entry Price</th>
+                  <th className="py-2.5 px-4 font-mono" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)' }}>Status</th>
+                  <th className="py-2.5 px-4 font-mono text-right" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)' }}>Edit</th>
                 </tr>
               </thead>
-              <tbody className="font-mono text-[11px]" style={{ color: 'rgba(240,230,200,0.7)' }}>
+              <tbody style={{ color: 'rgba(240,230,200,0.7)' }}>
                 {matchedTrades.slice(0, 5).map(t => (
                   <tr key={t.id} className="transition duration-150" style={{ borderBottom: '1px solid rgba(201,168,76,0.06)' }}>
-                    <td className="py-2 px-4 font-extrabold" style={{ color: '#F0E6C8' }}>{t.symbol}</td>
-                    <td className="py-2 px-4">{t.instrument}</td>
+                    <td className="py-2 px-4 font-extrabold" style={{ color: '#F0E6C8', fontSize: 11 }}>{t.symbol}</td>
+                    <td className="py-2 px-4" style={{ fontSize: 11 }}>{t.instrument}</td>
                     <td className="py-2 px-4">
                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-black tracking-wider uppercase`}
                         style={
@@ -386,13 +414,13 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                         {t.direction}
                       </span>
                     </td>
-                    <td className="py-2 px-4" style={{ color: 'rgba(240,230,200,0.5)' }}>{t.dateInitiated}</td>
-                    <td className="py-2 px-4 text-right font-bold" style={{ color: '#F0E6C8' }}>
+                    <td className="py-2 px-4 font-mono" style={{ color: 'rgba(240,230,200,0.45)', fontSize: 11 }}>{t.dateInitiated}</td>
+                    <td className="py-2 px-4 text-right font-bold font-mono" style={{ color: '#F0E6C8', fontSize: 11 }}>
                       {t.currency === 'INR' ? '₹' : '$'}
                       {formatPrice(t.direction === 'Long' ? t.buyPrice : t.sellPrice)}
                     </td>
                     <td className="py-2 px-4">
-                      <span className="text-[10px] uppercase font-black tracking-wider" style={{ color: 'rgba(240,230,200,0.5)' }}>
+                      <span className="text-[10px] uppercase font-black tracking-wider" style={{ color: 'rgba(240,230,200,0.45)' }}>
                         {t.status.replace('CarryForward', 'CF ')}
                       </span>
                     </td>
@@ -414,7 +442,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                 ))}
                 {matchedTrades.length > 5 && (
                   <tr>
-                    <td colSpan={7} className="py-3 px-4 text-center font-bold text-[10px] uppercase tracking-wider font-mono" style={{ background: 'rgba(8,5,2,0.9)', color: 'rgba(240,230,200,0.5)' }}>
+                    <td colSpan={7} className="py-3 px-4 text-center font-bold text-[10px] uppercase tracking-wider font-mono" style={{ background: 'rgba(0,0,0,0.2)', color: 'rgba(240,230,200,0.45)' }}>
                       ✦ And {matchedTrades.length - 5} additional registered trades match current filter ✦
                     </td>
                   </tr>

@@ -124,64 +124,229 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
     onClose();
   };
 
+  /* ─── shared style tokens ─────────────────────────────────────────── */
+  const labelStyle: React.CSSProperties = {
+    fontSize: 9,
+    fontWeight: 700,
+    letterSpacing: '2.5px',
+    textTransform: 'uppercase',
+    color: 'rgba(240,230,200,0.55)',
+    display: 'block',
+    marginBottom: 6,
+  };
+
+  const inputStyle: React.CSSProperties = {
+    background: 'rgba(201,168,76,0.04)',
+    border: '1px solid rgba(201,168,76,0.15)',
+    borderRadius: 8,
+    padding: '10px 14px',
+    color: '#F0E6C8',
+    fontSize: 13,
+    fontWeight: 500,
+    outline: 'none',
+    width: '100%',
+    fontFamily: "'DM Sans', sans-serif",
+    boxSizing: 'border-box' as const,
+  };
+
+  const inputMonoStyle: React.CSSProperties = {
+    ...inputStyle,
+    fontFamily: "'DM Mono', 'Courier New', monospace",
+  };
+
+  const inactiveBtnStyle: React.CSSProperties = {
+    background: 'rgba(4,2,0,0.95)',
+    border: '1px solid rgba(201,168,76,0.1)',
+    color: 'rgba(240,230,200,0.4)',
+    borderRadius: 8,
+    padding: '10px 14px',
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: 'pointer',
+    textAlign: 'center' as const,
+    letterSpacing: '1px',
+    textTransform: 'uppercase' as const,
+    transition: 'all 0.15s',
+  };
+
+  /* ─── JSX ─────────────────────────────────────────────────────────── */
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/75 backdrop-blur-xl overflow-y-auto p-6">
+    /* 7A — overlay */
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 50,
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        background: 'rgba(0,0,0,0.75)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        overflowY: 'auto',
+        padding: '40px 20px',
+      }}
+    >
+      {/* 7B — modal card */}
       <div
         id="new-trade-form-card"
-        className="w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl transition-all duration-200"
-        style={{background:'rgba(8,5,2,0.92)',backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:12,marginTop:'5vh',width:'90vw',maxWidth:680}}
+        style={{
+          width: '100%',
+          maxWidth: 640,
+          background: 'rgba(8,5,2,0.95)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(201,168,76,0.2)',
+          borderRadius: 16,
+          overflow: 'hidden',
+        }}
       >
-        <div className="flex items-center justify-between px-6 py-4.5" style={{borderBottom:'1px solid rgba(201,168,76,0.08)'}}>
-          <div className="flex items-center gap-4">
-            <span className="p-2.5 rounded-xl shadow-md" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
-              <Plus className="w-5 h-5" />
+        {/* 7C — header row */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '20px 24px',
+            borderBottom: '1px solid rgba(201,168,76,0.1)',
+          }}
+        >
+          {/* left: icon badge + title stack */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <span
+              style={{
+                padding: '8px',
+                borderRadius: 10,
+                background: 'rgba(201,168,76,0.1)',
+                border: '1px solid rgba(201,168,76,0.2)',
+                color: '#C9A84C',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Plus style={{ width: 18, height: 18 }} />
             </span>
             <div>
-              <h3 className="font-extrabold text-sm font-sans uppercase tracking-widest" style={{color:'#F0E6C8'}}>
+              <h3
+                style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: '#F0E6C8',
+                  letterSpacing: '-0.2px',
+                  margin: 0,
+                  lineHeight: 1.3,
+                }}
+              >
                 Initiate New Contract
               </h3>
-              <p className="text-[13px] font-bold font-mono uppercase tracking-widest" style={{color:'#C9A84C'}}>
+              <p
+                style={{
+                  fontSize: 9,
+                  color: 'rgba(201,168,76,0.4)',
+                  letterSpacing: '2px',
+                  textTransform: 'uppercase',
+                  margin: 0,
+                  marginTop: 2,
+                }}
+              >
                 Ailaha Phalam Ledger Logistics Engine
               </p>
             </div>
           </div>
+
+          {/* right: close button */}
           <button
             type="button"
             onClick={onClose}
-            className="transition p-2 rounded-xl cursor-pointer"
-            style={{color:'rgba(240,230,200,0.5)'}}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'rgba(240,230,200,0.5)',
+              cursor: 'pointer',
+              padding: 6,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            <X className="w-4 h-4" />
+            <X style={{ width: 16, height: 16 }} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{
-          padding: '24px 28px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
-          maxWidth: '100%',
-        }}>
+        {/* 7D — form body */}
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+          }}
+        >
           {/* Metadata Display */}
-          <div className="rounded-lg p-4 flex flex-wrap items-center justify-between gap-4 text-sm" style={{background:'rgba(4,2,0,0.95)',border:'1px solid rgba(201,168,76,0.08)'}}>
-            <div className="flex items-center gap-2 font-semibold font-mono text-[12px] uppercase tracking-wider" style={{color:'rgba(240,230,200,0.7)'}}>
-              <Calendar className="w-4 h-4" style={{color:'#C9A84C'}} />
+          <div
+            style={{
+              borderRadius: 8,
+              padding: '12px 14px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              background: 'rgba(4,2,0,0.95)',
+              border: '1px solid rgba(201,168,76,0.1)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontSize: 11,
+                fontWeight: 600,
+                color: 'rgba(240,230,200,0.7)',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+              }}
+            >
+              <Calendar style={{ width: 14, height: 14, color: '#C9A84C' }} />
               <span>Initiation Date Week:</span>
             </div>
-            <div className="flex items-center gap-2 font-black font-mono">
-              <span className="px-2.5 py-1 rounded-lg text-[12px] uppercase font-mono tracking-widest shadow-sm" style={{background:'rgba(201,150,12,0.2)',border:'1px solid rgba(201,150,12,0.4)',color:'#C9A84C'}}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span
+                style={{
+                  padding: '3px 10px',
+                  borderRadius: 6,
+                  fontSize: 11,
+                  textTransform: 'uppercase',
+                  fontFamily: "'DM Mono', 'Courier New', monospace",
+                  letterSpacing: '1.5px',
+                  fontWeight: 700,
+                  background: 'rgba(201,150,12,0.2)',
+                  border: '1px solid rgba(201,150,12,0.4)',
+                  color: '#C9A84C',
+                }}
+              >
                 Week {weekInfo.weekNum}
               </span>
-              <span className="font-mono text-sm" style={{color:'rgba(240,230,200,0.7)'}}>
+              <span
+                style={{
+                  fontFamily: "'DM Mono', 'Courier New', monospace",
+                  fontSize: 12,
+                  color: 'rgba(240,230,200,0.7)',
+                }}
+              >
                 {weekInfo.weekRange}
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* 7G — grid: Symbol + Instrument */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             {/* Symbol */}
-            <div className="space-y-1.5 animate-fade-in">
-              <label className="block text-[13px] font-black uppercase tracking-widest font-mono" style={{color:'rgba(240,230,200,0.55)'}}>
+            <div>
+              <label style={labelStyle}>
                 Symbol / Security Identifier
               </label>
               <input
@@ -191,80 +356,127 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                 placeholder="e.g. NIFTY25S"
                 value={symbol}
                 onChange={e => setSymbol(e.target.value)}
-                onFocus={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.5)'}
-                onBlur={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.15)'}
-                className="w-full px-3.5 py-3 text-base focus:outline-none font-bold font-mono tracking-wide transition rounded-xl"
-                style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,color:'#F0E6C8'}}
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)')}
+                style={inputStyle}
               />
             </div>
 
             {/* Instrument dropdown */}
-            <div className="space-y-1.5 animate-fade-in">
-              <label className="block text-[13px] font-black uppercase tracking-widest font-mono" style={{color:'rgba(240,230,200,0.55)'}}>
+            <div>
+              <label style={labelStyle}>
                 Instrument Type
               </label>
               <select
                 id="instrument-select"
                 value={instrument}
                 onChange={e => setInstrument(e.target.value as Instrument)}
-                onFocus={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.5)'}
-                onBlur={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.15)'}
-                className="w-full px-3 py-3 text-base focus:outline-none font-bold cursor-pointer font-mono transition rounded-xl"
-                style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,color:'#F0E6C8'}}
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)')}
+                style={{ ...inputStyle, cursor: 'pointer' }}
               >
-                <option value="NSE Futures" style={{background:'#0A0804',color:'#F0E6C8'}}>NSE Futures</option>
-                <option value="NSE Options" style={{background:'#0A0804',color:'#F0E6C8'}}>NSE Options</option>
-                <option value="DOW" style={{background:'#0A0804',color:'#F0E6C8'}}>DOW</option>
-                <option value="Nikkei" style={{background:'#0A0804',color:'#F0E6C8'}}>Nikkei</option>
-                <option value="Nasdaq" style={{background:'#0A0804',color:'#F0E6C8'}}>Nasdaq</option>
-                <option value="NG" style={{background:'#0A0804',color:'#F0E6C8'}}>NG (Natural Gas)</option>
-                <option value="SnP" style={{background:'#0A0804',color:'#F0E6C8'}}>S&P 500</option>
-                <option value="Gift Nifty" style={{background:'#0A0804',color:'#F0E6C8'}}>Gift Nifty</option>
+                <option value="NSE Futures" style={{ background: '#0A0804', color: '#F0E6C8' }}>NSE Futures</option>
+                <option value="NSE Options" style={{ background: '#0A0804', color: '#F0E6C8' }}>NSE Options</option>
+                <option value="DOW" style={{ background: '#0A0804', color: '#F0E6C8' }}>DOW</option>
+                <option value="Nikkei" style={{ background: '#0A0804', color: '#F0E6C8' }}>Nikkei</option>
+                <option value="Nasdaq" style={{ background: '#0A0804', color: '#F0E6C8' }}>Nasdaq</option>
+                <option value="NG" style={{ background: '#0A0804', color: '#F0E6C8' }}>NG (Natural Gas)</option>
+                <option value="SnP" style={{ background: '#0A0804', color: '#F0E6C8' }}>S&P 500</option>
+                <option value="Gift Nifty" style={{ background: '#0A0804', color: '#F0E6C8' }}>Gift Nifty</option>
               </select>
             </div>
           </div>
 
-          {/* Direction toggle */}
-          <div className="space-y-2">
-            <label className="block text-[13px] font-black uppercase tracking-widest font-mono" style={{color:'rgba(240,230,200,0.55)'}}>
+          {/* 7H — Direction toggle */}
+          <div>
+            <label style={labelStyle}>
               Trade Direction
             </label>
-            <div className="grid grid-cols-2 gap-4">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <button
                 type="button"
                 id="dir-long-btn"
                 onClick={() => setDirection('Long')}
-                className="py-3 px-4 rounded-xl text-sm font-black transition text-center flex items-center justify-center gap-1.5 cursor-pointer font-mono tracking-widest"
                 style={
                   direction === 'Long'
-                    ? {background:'rgba(103,122,103,0.2)',border:'1px solid #677A67',color:'#677A67'}
-                    : {background:'rgba(4,2,0,0.95)',border:'1px solid rgba(201,168,76,0.08)',color:'rgba(240,230,200,0.5)'}
+                    ? {
+                        background: 'rgba(103,122,103,0.15)',
+                        border: '1px solid #677A67',
+                        color: '#677A67',
+                        borderRadius: 8,
+                        padding: '10px 14px',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        letterSpacing: '1px',
+                        textTransform: 'uppercase',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        fontFamily: "'DM Mono', 'Courier New', monospace",
+                        transition: 'all 0.15s',
+                      }
+                    : {
+                        ...inactiveBtnStyle,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        fontFamily: "'DM Mono', 'Courier New', monospace",
+                      }
                 }
               >
-                <span className="w-1.5 h-1.5 rounded-full inline-block animate-ping" style={{background:'#677A67'}} />
+                <span className="w-1.5 h-1.5 rounded-full inline-block animate-ping" style={{ background: '#677A67' }} />
                 LONG / BUY FIRST
               </button>
               <button
                 type="button"
                 id="dir-short-btn"
                 onClick={() => setDirection('Short')}
-                className="py-3 px-4 rounded-xl text-sm font-black transition text-center flex items-center justify-center gap-1.5 cursor-pointer font-mono tracking-widest"
                 style={
                   direction === 'Short'
-                    ? {background:'rgba(201,150,12,0.15)',border:'1px solid #C9960C',color:'#C9960C'}
-                    : {background:'rgba(4,2,0,0.95)',border:'1px solid rgba(201,168,76,0.08)',color:'rgba(240,230,200,0.5)'}
+                    ? {
+                        background: 'rgba(201,150,12,0.12)',
+                        border: '1px solid #C9960C',
+                        color: '#C9960C',
+                        borderRadius: 8,
+                        padding: '10px 14px',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        letterSpacing: '1px',
+                        textTransform: 'uppercase',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        fontFamily: "'DM Mono', 'Courier New', monospace",
+                        transition: 'all 0.15s',
+                      }
+                    : {
+                        ...inactiveBtnStyle,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        fontFamily: "'DM Mono', 'Courier New', monospace",
+                      }
                 }
               >
-                <span className="w-1.5 h-1.5 rounded-full inline-block animate-ping" style={{background:'#C9960C'}} />
+                <span className="w-1.5 h-1.5 rounded-full inline-block animate-ping" style={{ background: '#C9960C' }} />
                 SHORT / SELL FIRST
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          {/* 7G — grid: Entry Price + Lot Size + No. of Lots */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
             {/* Entry Price */}
-            <div className="space-y-1.5">
-              <label className="block text-[13px] font-black uppercase tracking-widest font-mono" style={{color:'rgba(240,230,200,0.55)'}}>
+            <div>
+              <label style={labelStyle}>
                 {direction === 'Long' ? 'Buy Price' : 'Sell Price'}
               </label>
               <input
@@ -275,16 +487,15 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                 placeholder="0.00"
                 value={entryPrice}
                 onChange={e => validateAndSetDecimal(e.target.value, setEntryPrice)}
-                onFocus={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.5)'}
-                onBlur={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.15)'}
-                className="w-full px-3.5 py-3 text-base focus:outline-none font-bold font-mono transition rounded-xl"
-                style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,color:'#F0E6C8'}}
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)')}
+                style={inputMonoStyle}
               />
             </div>
 
             {/* Lot Size */}
-            <div className="space-y-1.5">
-              <label className="block text-[13px] font-black uppercase tracking-widest font-mono" style={{color:'rgba(240,230,200,0.55)'}}>
+            <div>
+              <label style={labelStyle}>
                 Multiplier Size
               </label>
               <input
@@ -294,16 +505,15 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                 required
                 value={lotSize}
                 onChange={e => validateAndSetDecimal(e.target.value, setLotSize)}
-                onFocus={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.5)'}
-                onBlur={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.15)'}
-                className="w-full px-4 py-3 text-base focus:outline-none font-bold font-mono transition rounded-xl"
-                style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,color:'#F0E6C8'}}
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)')}
+                style={inputMonoStyle}
               />
             </div>
 
             {/* Lots count */}
-            <div className="space-y-1.5">
-              <label className="block text-[13px] font-black uppercase tracking-widest font-mono" style={{color:'rgba(240,230,200,0.55)'}}>
+            <div>
+              <label style={labelStyle}>
                 No. of Lots
               </label>
               <input
@@ -313,18 +523,17 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                 required
                 value={numberOfLots}
                 onChange={e => validateAndSetDecimal(e.target.value, setNumberOfLots)}
-                onFocus={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.5)'}
-                onBlur={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.15)'}
-                className="w-full px-4 py-3 text-base focus:outline-none font-bold font-mono transition rounded-xl"
-                style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,color:'#F0E6C8'}}
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)')}
+                style={inputMonoStyle}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4">
-            {/* Initiation date */}
-            <div className="space-y-1.5">
-              <label className="block text-[13px] font-black uppercase tracking-widest font-mono" style={{color:'rgba(240,230,200,0.55)'}}>
+          {/* Initiation date — full width */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14 }}>
+            <div>
+              <label style={labelStyle}>
                 Initiation Date Form
               </label>
               <input
@@ -333,26 +542,56 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                 required
                 value={dateInitiated}
                 onChange={e => setDateInitiated(e.target.value)}
-                onFocus={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.5)'}
-                onBlur={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.15)'}
-                className="w-full px-3.5 py-3 text-base focus:outline-none font-bold font-mono transition rounded-xl"
-                style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,color:'#F0E6C8'}}
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)')}
+                style={inputMonoStyle}
               />
             </div>
           </div>
 
           {/* Currency and Realization Configuration Panel */}
-          <div className="pt-4 mt-2 space-y-3" style={{borderTop:'1px solid rgba(201,168,76,0.08)'}}>
-            <span className="text-[13px] font-black uppercase tracking-widest block font-mono" style={{color:'#C9A84C'}}>
+          <div style={{ paddingTop: 14, marginTop: 2, borderTop: '1px solid rgba(201,168,76,0.1)' }}>
+            <span
+              style={{
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: '2.5px',
+                textTransform: 'uppercase',
+                color: '#C9A84C',
+                display: 'block',
+                marginBottom: 10,
+              }}
+            >
               Accounting & Currency Parameters
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg" style={{background:'rgba(4,2,0,0.95)',border:'1px solid rgba(201,168,76,0.08)'}}>
-              {/* Currency Select */}
-              <div className="space-y-1.5">
-                <label className="block text-[13px] font-black uppercase tracking-widest font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 14,
+                padding: '14px',
+                borderRadius: 8,
+                background: 'rgba(4,2,0,0.95)',
+                border: '1px solid rgba(201,168,76,0.1)',
+              }}
+            >
+              {/* 7I — Currency Select */}
+              <div>
+                <label style={labelStyle}>
                   Accounting Currency
                 </label>
-                <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl" style={{background:'rgba(8,5,2,0.9)',border:'1px solid rgba(201,168,76,0.08)'}}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: 6,
+                    padding: 4,
+                    borderRadius: 8,
+                    background: 'rgba(8,5,2,0.9)',
+                    border: '1px solid rgba(201,168,76,0.08)',
+                  }}
+                >
                   <button
                     type="button"
                     onClick={() => {
@@ -361,11 +600,32 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                         setRealizationOption('Full');
                       }
                     }}
-                    className="px-3 py-1.5 text-sm rounded-lg transition flex items-center justify-center gap-1 font-black font-mono cursor-pointer"
                     style={
                       currency === 'INR'
-                        ? {background:'rgba(103,122,103,0.15)',color:'#677A67',border:'1px solid rgba(103,122,103,0.3)'}
-                        : {color:'rgba(240,230,200,0.5)'}
+                        ? {
+                            background: 'rgba(103,122,103,0.15)',
+                            color: '#677A67',
+                            border: '1px solid rgba(103,122,103,0.3)',
+                            borderRadius: 6,
+                            padding: '6px 10px',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            fontFamily: "'DM Mono', 'Courier New', monospace",
+                            letterSpacing: '0.5px',
+                          }
+                        : {
+                            background: 'transparent',
+                            border: '1px solid transparent',
+                            color: 'rgba(240,230,200,0.4)',
+                            borderRadius: 6,
+                            padding: '6px 10px',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            fontFamily: "'DM Mono', 'Courier New', monospace",
+                            letterSpacing: '0.5px',
+                          }
                     }
                   >
                     ₹ INR
@@ -376,11 +636,32 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                       setCurrency('USD');
                       setRealizationOption('80/20');
                     }}
-                    className="px-3 py-1.5 text-sm rounded-lg transition flex items-center justify-center gap-1 font-black font-mono cursor-pointer"
                     style={
                       currency === 'USD'
-                        ? {background:'rgba(201,150,12,0.2)',color:'#C9960C',border:'1px solid rgba(201,150,12,0.3)'}
-                        : {color:'rgba(240,230,200,0.5)'}
+                        ? {
+                            background: 'rgba(201,150,12,0.2)',
+                            color: '#C9960C',
+                            border: '1px solid rgba(201,150,12,0.3)',
+                            borderRadius: 6,
+                            padding: '6px 10px',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            fontFamily: "'DM Mono', 'Courier New', monospace",
+                            letterSpacing: '0.5px',
+                          }
+                        : {
+                            background: 'transparent',
+                            border: '1px solid transparent',
+                            color: 'rgba(240,230,200,0.4)',
+                            borderRadius: 6,
+                            padding: '6px 10px',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            fontFamily: "'DM Mono', 'Courier New', monospace",
+                            letterSpacing: '0.5px',
+                          }
                     }
                   >
                     $ USD
@@ -388,20 +669,54 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                 </div>
               </div>
 
-              {/* Realization Rate selection */}
-              <div className="space-y-1.5">
-                <label className="block text-[13px] font-black uppercase tracking-widest font-mono" title="USD and Gift Nifty default to 80/20 book profits" style={{color:'rgba(240,230,200,0.5)'}}>
+              {/* 7I — Realization Rate selection */}
+              <div>
+                <label
+                  style={labelStyle}
+                  title="USD and Gift Nifty default to 80/20 book profits"
+                >
                   Realization Rate Multiplier
                 </label>
-                <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl" style={{background:'rgba(8,5,2,0.9)',border:'1px solid rgba(201,168,76,0.08)'}}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: 6,
+                    padding: 4,
+                    borderRadius: 8,
+                    background: 'rgba(8,5,2,0.9)',
+                    border: '1px solid rgba(201,168,76,0.08)',
+                  }}
+                >
                   <button
                     type="button"
                     onClick={() => setRealizationOption('Full')}
-                    className="px-3 py-1.5 text-sm rounded-lg transition font-black font-mono cursor-pointer"
                     style={
                       realizationOption === 'Full'
-                        ? {background:'rgba(103,122,103,0.15)',color:'#677A67',border:'1px solid rgba(103,122,103,0.3)'}
-                        : {color:'rgba(240,230,200,0.5)'}
+                        ? {
+                            background: 'rgba(103,122,103,0.15)',
+                            color: '#677A67',
+                            border: '1px solid rgba(103,122,103,0.3)',
+                            borderRadius: 6,
+                            padding: '6px 10px',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            fontFamily: "'DM Mono', 'Courier New', monospace",
+                            letterSpacing: '0.5px',
+                          }
+                        : {
+                            background: 'transparent',
+                            border: '1px solid transparent',
+                            color: 'rgba(240,230,200,0.4)',
+                            borderRadius: 6,
+                            padding: '6px 10px',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            fontFamily: "'DM Mono', 'Courier New', monospace",
+                            letterSpacing: '0.5px',
+                          }
                     }
                   >
                     FULL (1.0)
@@ -409,11 +724,32 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                   <button
                     type="button"
                     onClick={() => setRealizationOption('80/20')}
-                    className="px-3 py-1.5 text-sm rounded-lg transition font-black font-mono cursor-pointer"
                     style={
                       realizationOption === '80/20'
-                        ? {background:'rgba(201,150,12,0.2)',color:'#C9960C',border:'1px solid rgba(201,150,12,0.3)'}
-                        : {color:'rgba(240,230,200,0.5)'}
+                        ? {
+                            background: 'rgba(201,150,12,0.2)',
+                            color: '#C9960C',
+                            border: '1px solid rgba(201,150,12,0.3)',
+                            borderRadius: 6,
+                            padding: '6px 10px',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            fontFamily: "'DM Mono', 'Courier New', monospace",
+                            letterSpacing: '0.5px',
+                          }
+                        : {
+                            background: 'transparent',
+                            border: '1px solid transparent',
+                            color: 'rgba(240,230,200,0.4)',
+                            borderRadius: 6,
+                            padding: '6px 10px',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            fontFamily: "'DM Mono', 'Courier New', monospace",
+                            letterSpacing: '0.5px',
+                          }
                     }
                   >
                     80% (0.8)
@@ -423,9 +759,24 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
 
               {/* Conditionally ask for USD to INR exchange rate */}
               {currency === 'USD' && (
-                <div className="col-span-1 sm:col-span-2 pt-3 animate-in fade-in space-y-1.5" style={{borderTop:'1px solid rgba(201,168,76,0.08)'}}>
-                  <label className="block text-[13px] font-black uppercase tracking-widest flex items-center gap-1.5 font-mono" style={{color:'#C9960C'}}>
-                    <span className="w-1.5 h-1.5 rounded-full inline-block animate-pulse" style={{background:'#C9960C'}}></span>
+                <div
+                  style={{
+                    gridColumn: '1 / -1',
+                    paddingTop: 12,
+                    borderTop: '1px solid rgba(201,168,76,0.08)',
+                  }}
+                >
+                  <label
+                    style={{
+                      ...labelStyle,
+                      color: '#C9960C',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      marginBottom: 6,
+                    }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full inline-block animate-pulse" style={{ background: '#C9960C' }}></span>
                     USD to INR Conversion Rate
                   </label>
                   <input
@@ -435,12 +786,20 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                     placeholder="e.g. 83.24"
                     value={usdToInrRate}
                     onChange={e => validateAndSetDecimal(e.target.value, setUsdToInrRate)}
-                    onFocus={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.5)'}
-                    onBlur={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.15)'}
-                    className="w-full px-4 py-3 text-base font-mono focus:outline-none transition rounded-xl"
-                    style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,color:'#F0E6C8'}}
+                    onFocus={e => (e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)')}
+                    onBlur={e => (e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)')}
+                    style={inputMonoStyle}
                   />
-                  <span className="text-[12px] mt-1 block leading-normal font-bold" style={{color:'rgba(240,230,200,0.5)'}}>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      marginTop: 4,
+                      display: 'block',
+                      lineHeight: 1.5,
+                      fontWeight: 600,
+                      color: 'rgba(240,230,200,0.5)',
+                    }}
+                  >
                     * USD base values will translate to INR ledger automatically using this rate.
                   </span>
                 </div>
@@ -448,12 +807,39 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
             </div>
           </div>
 
-          {/* Info Banner on Rollover */}
-          <div className="pt-4 mt-2" style={{borderTop:'1px solid rgba(201,168,76,0.08)'}}>
-            <div className="p-4 rounded-lg flex gap-4 text-[13px] leading-relaxed font-bold" style={{background:'rgba(103,122,103,0.06)',border:'1px solid rgba(103,122,103,0.2)',color:'#677A67'}}>
-              <AlertOctagon className="w-5 h-5 shrink-0 mt-0.5 animate-pulse" style={{color:'#677A67'}} />
+          {/* Info Banner on Rollover — olive accent */}
+          <div style={{ paddingTop: 14, marginTop: 2, borderTop: '1px solid rgba(201,168,76,0.1)' }}>
+            <div
+              style={{
+                padding: '12px 14px',
+                borderRadius: 8,
+                display: 'flex',
+                gap: 12,
+                fontSize: 12,
+                lineHeight: 1.6,
+                fontWeight: 600,
+                background: 'rgba(103,122,103,0.06)',
+                border: '1px solid rgba(103,122,103,0.2)',
+                color: '#677A67',
+              }}
+            >
+              <AlertOctagon
+                className="animate-pulse"
+                style={{ width: 18, height: 18, flexShrink: 0, marginTop: 1, color: '#677A67' }}
+              />
               <div>
-                <span className="font-black block mb-1 text-[12px] uppercase tracking-widest font-mono" style={{color:'#677A67'}}>
+                <span
+                  style={{
+                    fontWeight: 800,
+                    display: 'block',
+                    marginBottom: 4,
+                    fontSize: 9,
+                    letterSpacing: '2px',
+                    textTransform: 'uppercase',
+                    fontFamily: "'DM Mono', 'Courier New', monospace",
+                    color: '#677A67',
+                  }}
+                >
                   Active Trade Initiation Modality
                 </span>
                 This contract will initiate as open-trading in the active positions roster. You can close, check current PnL, or carry it forward at any time from the Weekly Reporting view.
@@ -462,22 +848,55 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
           </div>
 
           {/* Action buttons */}
-          <div className="flex gap-4 justify-end pt-4" style={{borderTop:'1px solid rgba(201,168,76,0.08)'}}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 12,
+              justifyContent: 'flex-end',
+              paddingTop: 14,
+              borderTop: '1px solid rgba(201,168,76,0.1)',
+            }}
+          >
+            {/* 7K — Cancel */}
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-3 rounded-xl text-sm font-black transition cursor-pointer font-mono uppercase tracking-wider"
-              style={{background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}
+              style={{
+                background: 'rgba(201,168,76,0.08)',
+                border: '1px solid rgba(201,168,76,0.2)',
+                borderRadius: 8,
+                color: '#C9A84C',
+                padding: '10px 24px',
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: 'pointer',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                fontFamily: "'DM Mono', 'Courier New', monospace",
+              }}
             >
               Cancel
             </button>
+
+            {/* 7J — Confirm & Deploy */}
             <button
               type="submit"
               id="confirm-btn"
-              className="px-6 py-3 rounded-xl text-sm transition cursor-pointer font-mono uppercase tracking-wider shadow-lg"
-              style={{background:'#C9A84C',color:'#1A1200',fontWeight:800}}
+              style={{
+                background: '#C9A84C',
+                color: '#1A1200',
+                border: 'none',
+                borderRadius: 8,
+                padding: '10px 28px',
+                fontSize: 11,
+                fontWeight: 800,
+                cursor: 'pointer',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                fontFamily: "'DM Mono', 'Courier New', monospace",
+              }}
             >
-              Confirm & Deploy
+              Confirm &amp; Deploy
             </button>
           </div>
         </form>

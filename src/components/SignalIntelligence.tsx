@@ -252,9 +252,9 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
                 onClick={() => setSelectedDate(d)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 5,
-                  background: isSel ? '#7fb3d5' : 'rgba(10,10,25,0.8)',
+                  background: isSel ? '#C9A84C' : 'rgba(10,10,25,0.8)',
                   color: isSel ? '#fff' : '#E8E8F0',
-                  border: `1.5px solid ${isSel ? '#7fb3d5' : 'rgba(255,255,255,0.1)'}`,
+                  border: `1.5px solid ${isSel ? '#C9A84C' : 'rgba(255,255,255,0.1)'}`,
                   borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer'
                 }}
               >

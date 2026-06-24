@@ -41,17 +41,22 @@ const STATUSES: { value: TradeStatus; label: string }[] = [
 ];
 
 // Field styling shared with the close-trade modal so this feels familiar.
-const inputClass =
-  'w-full rounded-xl px-3.5 py-3 text-base focus:outline-none font-bold font-mono';
+const inputClass = 'w-full focus:outline-none';
 const labelClass =
-  'block text-[13px] font-black uppercase tracking-widest font-mono mb-1.5';
+  'block text-[11px] font-black uppercase tracking-widest mb-1.5';
 
-const inputStyle = {
+const inputStyle: React.CSSProperties = {
   background: 'rgba(201,168,76,0.04)',
   border: '1px solid rgba(201,168,76,0.15)',
-  borderRadius: 12,
+  borderRadius: 8,
+  padding: '10px 14px',
   color: '#F0E6C8',
-} as React.CSSProperties;
+  fontSize: 13,
+  outline: 'none',
+  width: '100%',
+  fontFamily: "'DM Sans', sans-serif",
+  boxSizing: 'border-box',
+};
 
 const optionStyle = { background: '#0A0804', color: '#F0E6C8' } as React.CSSProperties;
 
@@ -172,23 +177,70 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
   const exitPriceLabel = direction === 'Long' ? 'Sell / Exit Price' : 'Buy / Exit Price';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.70)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 50,
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        background: 'rgba(0,0,0,0.75)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        overflowY: 'auto',
+        padding: '40px 20px',
+      }}
+    >
       <div
         id="edit-trade-modal"
-        className="w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-        style={{ background: 'rgba(8,5,2,0.92)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 24 }}
+        className="w-full shadow-2xl flex flex-col max-h-[90vh]"
+        style={{
+          maxWidth: 640,
+          background: 'rgba(8,5,2,0.95)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(201,168,76,0.2)',
+          borderRadius: 16,
+          overflow: 'hidden',
+        }}
       >
-        {/* Header — mirrors CloseTradeModal, lime accent + pencil */}
-        <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: '1px solid rgba(201,168,76,0.08)' }}>
+        {/* Header */}
+        <div
+          className="flex items-center justify-between shrink-0"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '20px 24px',
+            borderBottom: '1px solid rgba(201,168,76,0.1)',
+          }}
+        >
           <div className="flex items-center gap-4">
-            <span className="p-2.5 rounded-xl shadow-md" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}>
+            <span
+              className="p-2.5 shadow-md"
+              style={{
+                background: 'rgba(201,168,76,0.1)',
+                border: '1px solid rgba(201,168,76,0.2)',
+                color: '#C9A84C',
+                borderRadius: 8,
+                display: 'inline-flex',
+                alignItems: 'center',
+              }}
+            >
               <Pencil className="w-5 h-5" />
             </span>
             <div>
-              <h3 className="font-extrabold text-sm font-sans uppercase tracking-widest" style={{ color: '#F0E6C8' }}>
+              <h3
+                className="font-extrabold font-sans uppercase tracking-widest"
+                style={{ color: '#F0E6C8', fontSize: 14, fontWeight: 700 }}
+              >
                 Edit Position
               </h3>
-              <p className="text-[13px] font-bold font-mono uppercase tracking-widest" style={{ color: '#C9A84C' }}>
+              <p
+                className="font-bold font-mono uppercase"
+                style={{ color: 'rgba(201,168,76,0.4)', fontSize: 9, letterSpacing: '2px' }}
+              >
                 {trade.symbol} • {trade.instrument} • Correct any value
               </p>
             </div>
@@ -196,14 +248,14 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
           <button
             type="button"
             onClick={onClose}
-            className="transition p-2 rounded-xl cursor-pointer"
-            style={{ color: 'rgba(240,230,200,0.5)' }}
+            className="transition p-2 cursor-pointer"
+            style={{ color: 'rgba(240,230,200,0.5)', background: 'none', border: 'none', borderRadius: 8 }}
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="space-y-5 overflow-y-auto" style={{ padding: 24 }}>
           {/* Identity */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -317,19 +369,27 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
 
           {/* USD/INR rates */}
           {currency === 'USD' && (
-            <div className="p-4 rounded-lg grid grid-cols-1 sm:grid-cols-2 gap-4" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.1)' }}>
+            <div
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+              style={{
+                background: 'rgba(0,0,0,0.2)',
+                border: '1px solid rgba(201,168,76,0.1)',
+                borderRadius: 12,
+                padding: 16,
+              }}
+            >
               <div>
-                <label className="block text-[13px] font-black uppercase tracking-widest font-mono mb-1.5" style={{ color: '#C9960C' }}>
+                <label className="block text-[11px] font-black uppercase tracking-widest mb-1.5" style={{ color: '#C9960C' }}>
                   USD/INR Rate (general)
                 </label>
                 <input type="text" inputMode="decimal" value={usdToInrRate} onChange={(e) => setUsdToInrRate(e.target.value)} className={inputClass} style={inputStyle} placeholder="e.g. 83.24" />
               </div>
               <div>
-                <label className="block text-[13px] font-black uppercase tracking-widest font-mono mb-1.5" style={{ color: '#C9960C' }}>
+                <label className="block text-[11px] font-black uppercase tracking-widest mb-1.5" style={{ color: '#C9960C' }}>
                   Closed USD/INR Rate
                 </label>
                 <input type="text" inputMode="decimal" value={closedUsdToInrRate} onChange={(e) => setClosedUsdToInrRate(e.target.value)} className={inputClass} style={inputStyle} placeholder="closing-week rate (blank = use general)" />
-                <p className="text-[13px] mt-1 font-medium leading-snug" style={{ color: 'rgba(240,230,200,0.35)' }}>
+                <p className="text-[11px] mt-1 font-medium leading-snug" style={{ color: 'rgba(240,230,200,0.35)' }}>
                   Takes precedence on the closing week. This is the one to fix when correcting a mid-week FX estimate.
                 </p>
               </div>
@@ -338,14 +398,22 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
 
           {/* Per-week Friday closing prices + per-week FX (carry-forward weeks) */}
           {activeWeeks.length > 0 && (
-            <div className="p-4 rounded-lg space-y-3" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.1)' }}>
+            <div
+              className="space-y-3"
+              style={{
+                background: 'rgba(0,0,0,0.2)',
+                border: '1px solid rgba(201,168,76,0.1)',
+                borderRadius: 12,
+                padding: 16,
+              }}
+            >
               <div className="flex items-center gap-2">
                 <AlertCircle className="w-3.5 h-3.5" style={{ color: '#C9A84C' }} />
-                <span className="text-[13px] font-black uppercase tracking-widest font-mono" style={{ color: '#C9A84C' }}>
+                <span className="text-[11px] font-black uppercase tracking-widest font-mono" style={{ color: '#C9A84C' }}>
                   Per-Week Friday Closes{currency === 'USD' ? ' & FX Rates' : ''}
                 </span>
               </div>
-              <p className="text-[13px] font-medium leading-snug" style={{ color: 'rgba(240,230,200,0.35)' }}>
+              <p className="text-[11px] font-medium leading-snug" style={{ color: 'rgba(240,230,200,0.35)' }}>
                 One row per ISO week this trade spans. Leave blank to omit (a blank is never stored as 0). The closing
                 week uses the exit price, not a Friday close.
               </p>
@@ -367,7 +435,7 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
                           value={friClose[w.weekKey] ?? ''}
                           onChange={(e) => setFriClose((p) => ({ ...p, [w.weekKey]: e.target.value }))}
                           className={inputClass}
-                          style={inputStyle}
+                          style={{ ...inputStyle, fontFamily: "'DM Mono', monospace" }}
                           placeholder={isCloseWeek ? 'n/a (uses exit price)' : 'Friday close'}
                         />
                       </div>
@@ -379,7 +447,7 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
                             value={friFx[w.weekKey] ?? ''}
                             onChange={(e) => setFriFx((p) => ({ ...p, [w.weekKey]: e.target.value }))}
                             className={inputClass}
-                            style={inputStyle}
+                            style={{ ...inputStyle, fontFamily: "'DM Mono', monospace" }}
                             placeholder="FX rate"
                           />
                         </div>
@@ -392,20 +460,43 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
           )}
 
           {/* Actions */}
-          <div className="flex gap-4 justify-end pt-4 sticky bottom-0" style={{ borderTop: '1px solid rgba(201,168,76,0.08)' }}>
+          <div
+            className="flex gap-4 justify-end pt-4 sticky bottom-0"
+            style={{ borderTop: '1px solid rgba(201,168,76,0.1)' }}
+          >
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-3 rounded-xl text-sm font-black transition cursor-pointer font-mono uppercase tracking-wider"
-              style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}
+              className="cursor-pointer uppercase tracking-wider"
+              style={{
+                background: 'rgba(201,168,76,0.08)',
+                border: '1px solid rgba(201,168,76,0.2)',
+                borderRadius: 8,
+                color: '#C9A84C',
+                padding: '8px 20px',
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: 'pointer',
+                letterSpacing: '1px',
+              }}
             >
               Cancel
             </button>
             <button
               type="submit"
               id="confirm-edit-btn"
-              className="px-6 py-3 rounded-xl text-sm font-black transition cursor-pointer font-mono uppercase tracking-wider"
-              style={{ background: '#C9A84C', color: '#1A1200', fontWeight: 800 }}
+              className="cursor-pointer uppercase tracking-wider"
+              style={{
+                background: '#C9A84C',
+                color: '#1A1200',
+                border: 'none',
+                borderRadius: 8,
+                padding: '8px 20px',
+                fontSize: 11,
+                fontWeight: 800,
+                cursor: 'pointer',
+                letterSpacing: '1px',
+              }}
             >
               Save Changes
             </button>

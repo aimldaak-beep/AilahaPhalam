@@ -277,28 +277,28 @@ export default function WeeklyReport({
   );
 
   return (
-    <div className="space-y-6" style={{
+    <div style={{
       width: '100%',
       minHeight: '100vh',
-      padding: '20px 28px 40px',
+      padding: '0 0 60px',
       color: '#F0E6C8',
       fontFamily: "'DM Sans', sans-serif",
     }}>
-      {/* Week Selector Bar */}
+      {/* Week Selector Bar — 3B */}
       <div style={{
         position: 'sticky',
-        top: 56,
-        zIndex: 40,
-        background: 'rgba(8,5,2,0.92)',
+        top: 96,
+        zIndex: 38,
+        background: 'rgba(8,5,2,0.85)',
         backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(201,168,76,0.12)',
-        padding: '10px 0',
-        marginBottom: 20,
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(201,168,76,0.1)',
+        padding: '12px 28px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: 10,
+        gap: 12,
       }}>
         <div className="flex items-center gap-3">
           <span className="p-3 rounded-lg shadow-md" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C'}}>
@@ -445,18 +445,18 @@ export default function WeeklyReport({
         </div>
       )}
 
-      {/* Weekly performance grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16 }}>
+      {/* Weekly performance grid — 3C */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, padding: '20px 28px 0', marginBottom: 16 }}>
         {/* Weekly Net PnL card */}
-        <div id="weekly-net-card" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 16, padding: '20px 24px', position: 'relative', overflow: 'hidden' }}>
+        <div id="weekly-net-card" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 16, padding: '20px 24px', position: 'relative' }}>
           <Calculator className="w-4 h-4" style={{ position: 'absolute', right: 18, top: 18, color: 'rgba(201,168,76,0.4)' }} />
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.5)', marginBottom: 10 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.45)', marginBottom: 10 }}>
             Weekly Net {savedOffsetAmount !== 0 ? 'Reconciled' : 'Realized'}
           </div>
-          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.1, fontFamily: "'DM Sans', sans-serif", color: adjustedWeeklyNet >= 0 ? '#677A67' : '#C9960C' }}>
+          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.1, color: adjustedWeeklyNet >= 0 ? '#677A67' : '#C9960C' }}>
             {adjustedWeeklyNet >= 0 ? '+' : ''}₹{formatAmount(adjustedWeeklyNet)}
           </div>
-          <div style={{ fontSize: 10, color: 'rgba(240,230,200,0.35)', marginTop: 6, letterSpacing: '1px' }}>
+          <div style={{ fontSize: 10, color: 'rgba(240,230,200,0.3)', marginTop: 6, letterSpacing: '0.5px' }}>
             {savedOffsetAmount !== 0
               ? <>Calc ₹{formatAmount(weeklyNetSum)} {savedOffsetAmount >= 0 ? '+' : '−'} ₹{formatAmount(Math.abs(savedOffsetAmount))} offset</>
               : <>Net of Week {activeWeekInfo.weekNum}</>}
@@ -464,37 +464,37 @@ export default function WeeklyReport({
         </div>
 
         {/* Weekly Gross PnL card */}
-        <div id="weekly-gross-card" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 16, padding: '20px 24px', position: 'relative', overflow: 'hidden' }}>
+        <div id="weekly-gross-card" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 16, padding: '20px 24px', position: 'relative' }}>
           <SlidersHorizontal className="w-4 h-4" style={{ position: 'absolute', right: 18, top: 18, color: 'rgba(201,168,76,0.4)' }} />
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.5)', marginBottom: 10 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.45)', marginBottom: 10 }}>
             Weekly Gross Profit
           </div>
-          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.1, fontFamily: "'DM Sans', sans-serif", color: weeklyGrossSum >= 0 ? '#677A67' : '#C9960C' }}>
+          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.1, color: weeklyGrossSum >= 0 ? '#677A67' : '#C9960C' }}>
             {weeklyGrossSum >= 0 ? '+' : ''}₹{formatAmount(weeklyGrossSum)}
           </div>
-          <div style={{ fontSize: 10, color: 'rgba(240,230,200,0.35)', marginTop: 6, letterSpacing: '1px' }}>
+          <div style={{ fontSize: 10, color: 'rgba(240,230,200,0.3)', marginTop: 6, letterSpacing: '0.5px' }}>
             Gross of Week {activeWeekInfo.weekNum}
           </div>
         </div>
 
         {/* Weekly Brokerage card */}
-        <div id="weekly-brokerage-card" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 16, padding: '20px 24px', position: 'relative', overflow: 'hidden' }}>
+        <div id="weekly-brokerage-card" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 16, padding: '20px 24px', position: 'relative' }}>
           <Clock className="w-4 h-4" style={{ position: 'absolute', right: 18, top: 18, color: 'rgba(201,168,76,0.4)' }} />
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.5)', marginBottom: 10 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.45)', marginBottom: 10 }}>
             Commissions Deductions
           </div>
-          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.1, fontFamily: "'DM Sans', sans-serif", color: '#C9960C' }}>
+          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.1, color: '#C9960C' }}>
             -₹{formatAmount(weeklyBrokerageSum)}
           </div>
-          <div style={{ fontSize: 10, color: 'rgba(240,230,200,0.35)', marginTop: 6, letterSpacing: '1px' }}>
+          <div style={{ fontSize: 10, color: 'rgba(240,230,200,0.3)', marginTop: 6, letterSpacing: '0.5px' }}>
             Charges for Week {activeWeekInfo.weekNum}
           </div>
         </div>
       </div>
 
-      {/* Per-week reconciliation offset editor */}
-      <div id="week-offset-card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(201,168,76,0.12)', borderRadius: 12, padding: '16px 20px', marginBottom: 16 }}>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+      {/* Per-week reconciliation offset editor — 3D */}
+      <div id="week-offset-card" style={{ margin: '0 28px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 12, padding: '16px 20px' }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
           <Scale className="w-3.5 h-3.5" style={{ color: '#C9A84C' }} />
           Broker Reconciliation — Week {activeWeekInfo.weekNum}
         </div>
@@ -524,8 +524,8 @@ export default function WeeklyReport({
           </div>
         </div>
 
-        {/* Editor */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 8, marginTop: 10 }}>
+        {/* Editor — 3E */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'rgba(201,168,76,0.03)', border: '1px solid rgba(201,168,76,0.12)', borderRadius: 8, marginTop: 10 }}>
           <input
             id="offset-amount-input"
             type="text"
@@ -546,7 +546,7 @@ export default function WeeklyReport({
           <button
             type="button"
             onClick={handleSaveOffsetClick}
-            style={{ background: '#C9A84C', color: '#1A1200', border: 'none', borderRadius: 6, padding: '6px 16px', fontSize: 10, fontWeight: 800, cursor: 'pointer', letterSpacing: '1px', fontFamily: "'DM Sans', sans-serif" }}
+            style={{ background: '#C9A84C', color: '#1A1200', border: 'none', borderRadius: 6, padding: '6px 16px', fontSize: 10, fontWeight: 800, cursor: 'pointer', letterSpacing: '1px' }}
           >
             SAVE
           </button>
@@ -554,7 +554,7 @@ export default function WeeklyReport({
             <button
               type="button"
               onClick={handleClearOffsetClick}
-              style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', color: 'rgba(240,230,200,0.7)', borderRadius: 6, padding: '6px 14px', fontSize: 10, fontWeight: 800, cursor: 'pointer', letterSpacing: '1px', fontFamily: "'DM Sans', sans-serif" }}
+              style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', color: 'rgba(240,230,200,0.7)', borderRadius: 6, padding: '6px 14px', fontSize: 10, fontWeight: 800, cursor: 'pointer', letterSpacing: '1px' }}
             >
               CLEAR
             </button>
@@ -565,9 +565,9 @@ export default function WeeklyReport({
         </p>
       </div>
 
-      {/* === ACTIVE POSITIONS — all open trades, any week (live blotter) === */}
-      <div>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.5)', display: 'flex', alignItems: 'center', gap: 8, padding: '16px 20px 8px', borderBottom: '1px solid rgba(201,168,76,0.1)', marginBottom: 0, justifyContent: 'space-between' }}>
+      {/* === ACTIVE POSITIONS — all open trades, any week (live blotter) === 3F */}
+      <div style={{ margin: '0 28px 16px' }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.45)', padding: '0 0 10px', borderBottom: '1px solid rgba(201,168,76,0.1)', marginBottom: 0, display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <TrendingUp className="w-3.5 h-3.5" style={{ color: '#C9A84C' }} />
             Active Positions ({openTrades.length})
@@ -580,12 +580,12 @@ export default function WeeklyReport({
             <p className="text-sm font-bold font-mono" style={{color:'rgba(240,230,200,0.5)'}}>No open positions.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg shadow-lg" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.25)'}}>
+          <div style={{ background: 'rgba(0,0,0,0.15)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 12, overflow: 'hidden', marginTop: 12 }}>
             <div style={{ minWidth: 900 }}>
-              {/* Header row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '160px 130px 100px 1fr 130px 160px 170px', padding: '8px 20px', background: 'rgba(201,168,76,0.06)', borderBottom: '1px solid rgba(201,168,76,0.15)', gap: 8 }}>
-                {['SYMBOL', 'TYPE', 'LOTS', 'ENTRY', 'ENTRY DATE', 'CURRENT PNL', 'ACTIONS'].map((h, i) => (
-                  <div key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', textAlign: i >= 5 ? 'right' : 'left' }}>{h}</div>
+              {/* Header row — 6 columns */}
+              <div style={{ display: 'grid', gridTemplateColumns: '180px 120px 120px 1fr 160px 160px', padding: '8px 20px', background: 'rgba(201,168,76,0.05)', borderBottom: '1px solid rgba(201,168,76,0.12)', gap: 8 }}>
+                {['SYMBOL', 'TYPE', 'LOTS', 'ENTRY + DATE', 'CURRENT PNL', 'ACTIONS'].map((h, i) => (
+                  <div key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', textAlign: i >= 4 ? 'right' : 'left' }}>{h}</div>
                 ))}
               </div>
               {/* Data rows */}
@@ -594,7 +594,7 @@ export default function WeeklyReport({
                 const entryPrice = trade.direction === 'Long' ? trade.buyPrice : trade.sellPrice;
                 const { value: curPnl, live } = currentPnLForOpenTrade(trade);
                 return (
-                  <div key={trade.id} id={`active-trade-${trade.id}`} style={{ display: 'grid', gridTemplateColumns: '160px 130px 100px 1fr 130px 160px 170px', padding: '12px 20px', borderBottom: '1px solid rgba(201,168,76,0.06)', alignItems: 'center', gap: 8 }}>
+                  <div key={trade.id} id={`active-trade-${trade.id}`} style={{ display: 'grid', gridTemplateColumns: '180px 120px 120px 1fr 160px 160px', padding: '12px 20px', borderBottom: '1px solid rgba(201,168,76,0.06)', alignItems: 'center', gap: 8 }}>
                     <div className="font-mono" style={{ fontSize: 14, fontWeight: 700, color: '#F0E6C8', letterSpacing: '0.3px' }}>{trade.symbol}</div>
                     <div>
                       <span className="font-mono" style={{ fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 4, letterSpacing: '1px', display: 'inline-block', ...(trade.direction === 'Long' ? { background: 'rgba(103,122,103,0.1)', color: '#677A67', border: '1px solid rgba(103,122,103,0.25)' } : { background: 'rgba(201,150,12,0.1)', color: '#C9960C', border: '1px solid rgba(201,150,12,0.25)' }) }}>
@@ -603,8 +603,11 @@ export default function WeeklyReport({
                       <span className="block font-mono mt-0.5" style={{ fontSize: 10, color: 'rgba(240,230,200,0.5)' }}>{trade.instrument}</span>
                     </div>
                     <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, color: 'rgba(240,230,200,0.7)' }}>{trade.numberOfLots} × {trade.lotSize}</div>
-                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, fontWeight: 700, color: '#F0E6C8' }}>{sym}{formatPrice(entryPrice)}</div>
-                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 11, color: 'rgba(240,230,200,0.5)' }}>{trade.dateInitiated}</div>
+                    {/* Merged entry price + entry date cell */}
+                    <div>
+                      <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, fontWeight: 700, color: '#F0E6C8' }}>{sym}{formatPrice(entryPrice)}</div>
+                      <div className="font-mono whitespace-nowrap" style={{ fontSize: 11, color: 'rgba(240,230,200,0.5)' }}>{trade.dateInitiated}</div>
+                    </div>
                     <div className="font-mono" style={{ textAlign: 'right' }}>
                       {curPnl === null ? (
                         <span style={{ fontSize: 14, color: 'rgba(240,230,200,0.35)' }}>—</span>
@@ -615,7 +618,7 @@ export default function WeeklyReport({
                         </span>
                       )}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end', paddingRight: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
                       <button type="button" title="Close trade" onClick={() => onOpenCloseTrade(trade)} className="p-1 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,150,12,0.08)',border:'1px solid rgba(201,150,12,0.2)',color:'#C9960C'}}>
                         <Lock className="w-3.5 h-3.5" />
                       </button>
@@ -643,9 +646,9 @@ export default function WeeklyReport({
         )}
       </div>
 
-      {/* === CLOSED / SETTLED TRADES — selected week === */}
-      <div>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.5)', display: 'flex', alignItems: 'center', gap: 8, padding: '16px 20px 8px', borderBottom: '1px solid rgba(201,168,76,0.1)', marginBottom: 0, justifyContent: 'space-between' }}>
+      {/* === CLOSED / SETTLED TRADES — selected week === 3G */}
+      <div style={{ margin: '0 28px 16px' }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.45)', padding: '0 0 10px', borderBottom: '1px solid rgba(201,168,76,0.1)', marginBottom: 0, display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <CheckCircle className="w-3.5 h-3.5" style={{ color: '#677A67' }} />
             Closed Trades — Week {activeWeekInfo.weekNum} ({closedInWeek.length})
@@ -658,11 +661,11 @@ export default function WeeklyReport({
             <p className="text-sm font-bold font-mono" style={{color:'rgba(240,230,200,0.5)'}}>No settled trades for this week.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg shadow-lg" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
+          <div style={{ background: 'rgba(0,0,0,0.15)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 12, overflow: 'hidden', marginTop: 12 }}>
             <div style={{ minWidth: 1010 }}>
-              {/* Header row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '160px 130px 100px 140px 140px 120px 160px 80px', padding: '8px 20px', background: 'rgba(201,168,76,0.06)', borderBottom: '1px solid rgba(201,168,76,0.15)', gap: 8 }}>
-                {['SYMBOL', 'TYPE', 'LOTS', 'ENTRY', 'CLOSE', 'EXIT DATE', 'NET PNL', 'ACTIONS'].map((h, i) => (
+              {/* Header row — 8 columns */}
+              <div style={{ display: 'grid', gridTemplateColumns: '180px 120px 100px 140px 130px 110px 150px 80px', padding: '8px 20px', background: 'rgba(201,168,76,0.05)', borderBottom: '1px solid rgba(201,168,76,0.12)', gap: 8 }}>
+                {['SYMBOL', 'TYPE', 'LOTS', 'ENTRY', 'CLOSE', 'DATE', 'NET PNL', 'ACTIONS'].map((h, i) => (
                   <div key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', textAlign: i === 6 ? 'right' : i === 7 ? 'center' : 'left' }}>{h}</div>
                 ))}
               </div>
@@ -674,7 +677,7 @@ export default function WeeklyReport({
                 const exitDate = trade.direction === 'Long' ? trade.sellDate : trade.buyDate;
                 const totNet = tradeTotalNet(trade);
                 return (
-                  <div key={trade.id} id={`closed-trade-${trade.id}`} style={{ display: 'grid', gridTemplateColumns: '160px 130px 100px 140px 140px 120px 160px 80px', padding: '12px 20px', borderBottom: '1px solid rgba(201,168,76,0.06)', alignItems: 'center', gap: 8 }}>
+                  <div key={trade.id} id={`closed-trade-${trade.id}`} style={{ display: 'grid', gridTemplateColumns: '180px 120px 100px 140px 130px 110px 150px 80px', padding: '12px 20px', borderBottom: '1px solid rgba(201,168,76,0.06)', alignItems: 'center', gap: 8 }}>
                     <div className="font-mono" style={{ fontSize: 14, fontWeight: 700, color: '#F0E6C8', letterSpacing: '0.3px' }}>{trade.symbol}</div>
                     <div>
                       <span className="font-mono" style={{ fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 4, letterSpacing: '1px', display: 'inline-block', ...(trade.direction === 'Long' ? { background: 'rgba(103,122,103,0.1)', color: '#677A67', border: '1px solid rgba(103,122,103,0.25)' } : { background: 'rgba(201,150,12,0.1)', color: '#C9960C', border: '1px solid rgba(201,150,12,0.25)' }) }}>
@@ -691,7 +694,7 @@ export default function WeeklyReport({
                         {totNet >= 0 ? '+' : ''}₹{formatAmount(totNet)}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
                       <button type="button" title="Edit / correct" onClick={() => onOpenEditTrade(trade)} className="p-1 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
                         <Pencil className="w-3.5 h-3.5" />
                       </button>

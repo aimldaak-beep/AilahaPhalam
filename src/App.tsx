@@ -933,37 +933,46 @@ export default function App() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '8px 28px',
-                borderBottom: '1px solid rgba(201,168,76,0.1)',
-                background: 'rgba(8,5,2,0.6)',
-                backdropFilter: 'blur(12px)',
+                padding: '10px 28px',
+                borderBottom: '1px solid rgba(201,168,76,0.08)',
+                background: 'rgba(8,5,2,0.7)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                position: 'sticky',
+                top: 56,
+                zIndex: 39,
               }}>
                 <button
                   type="button"
                   id="back-to-menu-btn"
                   onClick={() => setCurrentView('menu')}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
                     background: 'transparent',
                     border: 'none',
-                    color: 'rgba(240,230,200,0.6)',
-                    fontSize: 11, fontWeight: 600,
+                    color: 'rgba(240,230,200,0.55)',
+                    fontSize: 11,
+                    fontWeight: 600,
                     cursor: 'pointer',
                     letterSpacing: '0.5px',
-                    padding: '4px 0',
                     fontFamily: "'DM Sans', sans-serif",
+                    padding: '4px 0',
                   }}
                 >
-                  <ArrowLeft style={{width:14,height:14,color:'#C9A84C'}} />
+                  <ArrowLeft style={{
+                    width: 14, height: 14,
+                    color: '#C9A84C',
+                  }} />
                   Back to Hub Menu
                 </button>
-
                 <span style={{
                   fontSize: 9,
                   fontWeight: 700,
                   letterSpacing: '3px',
                   textTransform: 'uppercase',
-                  color: 'rgba(201,168,76,0.4)',
+                  color: 'rgba(201,168,76,0.35)',
                   fontFamily: "'DM Sans', sans-serif",
                 }}>
                   {currentView === 'weekly' && 'Weekly Ledger'}

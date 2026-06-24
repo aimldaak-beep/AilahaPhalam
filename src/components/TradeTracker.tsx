@@ -7,7 +7,7 @@
  * touch the main trades ledger, types.ts, or the PnL engine.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import {
   fetchTrackerTrades,
   addTrackerTrade,
@@ -128,12 +128,37 @@ function groupByEntryDate(trades: any[]): Record<string, any[]> {
   }, {} as Record<string, any[]>);
 }
 
-const inputCls =
-  'w-full bg-[#0a0a19cc] border border-white/10 focus:border-[#7fb3d5] transition rounded-lg px-2.5 py-1.5 text-xs text-[#e8edf4] focus:outline-none font-mono';
+// Glass card style token
+const glassCard: CSSProperties = {
+  background: 'rgba(255,255,255,0.03)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  border: '1px solid rgba(201,168,76,0.15)',
+  borderRadius: 16,
+  padding: '20px 24px',
+};
 
-// Light-palette input for the (re-themed) new-trade form.
-const formInputCls =
-  'w-full bg-[#0a0a19cc] border border-[rgba(67,72,77,0.12)] focus:border-[#87A7AC] transition rounded-lg px-2.5 py-1.5 text-xs text-[#E8E8F0] focus:outline-none font-mono';
+// Dark glass for table containers
+const darkGlassContainer: CSSProperties = {
+  background: 'rgba(0,0,0,0.15)',
+  border: '1px solid rgba(201,168,76,0.1)',
+  borderRadius: 12,
+  overflow: 'hidden',
+};
+
+// Input style
+const inputStyle: CSSProperties = {
+  background: 'rgba(201,168,76,0.04)',
+  border: '1px solid rgba(201,168,76,0.15)',
+  borderRadius: 8,
+  padding: '10px 14px',
+  color: '#F0E6C8',
+  fontSize: 13,
+  outline: 'none',
+  width: '100%',
+  boxSizing: 'border-box',
+  fontFamily: 'font-mono',
+};
 
 // ---------------------------------------------------------------------------
 
@@ -400,62 +425,96 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
       className="space-y-6"
       style={{
         width: '100%',
-        minHeight: 'calc(100vh - 56px)',
-        padding: '20px 28px 40px',
+        minHeight: '100vh',
+        padding: '20px 28px 60px',
         color: '#F0E6C8',
         fontFamily: "'DM Sans', sans-serif",
       }}
     >
-      {/* Header + back */}
-      <div className="flex items-center justify-between bg-[#0a0a19cc] border border-white/10 px-4 py-3 rounded-lg">
+      {/* 9B — Header card */}
+      <div
+        style={{
+          ...glassCard,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
         <button
           type="button"
           onClick={() => setCurrentView('menu')}
-          className="flex items-center gap-2 text-xs font-bold text-[#e8edf4] hover:text-[#7fb3d5] transition bg-[#0a0a19cc] px-4 py-2 rounded-xl border border-white/10 cursor-pointer active:scale-95"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            fontSize: 11,
+            fontWeight: 800,
+            color: '#F0E6C8',
+            background: 'rgba(201,168,76,0.06)',
+            border: '1px solid rgba(201,168,76,0.15)',
+            borderRadius: 8,
+            padding: '8px 16px',
+            cursor: 'pointer',
+            letterSpacing: '0.5px',
+          }}
         >
-          <ArrowLeft className="w-3.5 h-3.5 text-[#7fb3d5]" />
+          <ArrowLeft style={{ width: 14, height: 14, color: '#C9A84C' }} />
           Back to Hub Menu
         </button>
-        <span className="text-[10px] bg-[#0a0a19cc] border border-white/10 text-[#7fb3d5] px-3.5 py-1.5 rounded-xl font-bold font-mono uppercase tracking-widest">
+        <span
+          style={{
+            fontSize: 10,
+            fontWeight: 800,
+            color: '#C9A84C',
+            background: 'rgba(201,168,76,0.06)',
+            border: '1px solid rgba(201,168,76,0.15)',
+            borderRadius: 8,
+            padding: '6px 14px',
+            letterSpacing: '2px',
+            textTransform: 'uppercase',
+            fontFamily: 'font-mono',
+          }}
+        >
           Signal Outcome Tracker
         </span>
       </div>
 
       {/* SECTION 1 — OPEN TRADES */}
       <div className="space-y-4">
+        {/* Section header card */}
         <div
-          className="flex items-center justify-between"
           style={{
-            background: PALETTE.card,
-            borderBottom: `1px solid ${PALETTE.border}`,
-            borderRadius: 10,
-            padding: '12px 16px',
+            ...glassCard,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
-          <div className="flex items-center gap-3">
-            <span style={{ padding: 6, background: `${PALETTE.muted}20`, borderRadius: 8, color: PALETTE.muted, display: 'inline-flex' }}>
-              <TrendingUp className="w-4 h-4" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ padding: 6, background: 'rgba(201,168,76,0.08)', borderRadius: 8, color: '#C9A84C', display: 'inline-flex' }}>
+              <TrendingUp style={{ width: 16, height: 16 }} />
             </span>
-            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, fontWeight: 400, color: PALETTE.text, lineHeight: 1 }}>
+            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, fontWeight: 400, color: '#F0E6C8', lineHeight: 1 }}>
               Trade Tracker
             </h2>
-            <span style={{ fontSize: 12, color: PALETTE.muted }}>({openTrades.length} open)</span>
+            <span style={{ fontSize: 12, color: 'rgba(240,230,200,0.45)' }}>({openTrades.length} open)</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onClick={downloadCSV}
               style={{
-                background: '#677A6715',
-                border: '1px solid #677A6740',
+                background: 'rgba(103,122,103,0.08)',
+                border: '1px solid rgba(103,122,103,0.25)',
                 borderRadius: 8,
-                padding: '7px 16px',
+                padding: '8px 16px',
                 color: '#677A67',
-                fontSize: 12,
-                fontWeight: 700,
+                fontSize: 11,
+                fontWeight: 800,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
+                letterSpacing: '1px',
               }}
             >
               ↓ CSV
@@ -464,20 +523,21 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
               type="button"
               onClick={() => setShowNew((v) => !v)}
               style={{
-                background: '#87A7AC',
-                color: '#fff',
+                background: '#C9A84C',
+                color: '#1A1200',
                 border: 'none',
                 borderRadius: 8,
-                padding: '7px 16px',
-                fontSize: 12,
-                fontWeight: 700,
+                padding: '8px 20px',
+                fontSize: 11,
+                fontWeight: 800,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
+                letterSpacing: '1px',
               }}
             >
-              <Plus className="w-4 h-4" />
+              <Plus style={{ width: 16, height: 16 }} />
               New Trade
             </button>
           </div>
@@ -486,22 +546,22 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
         {showNew && (
           <div
             className="space-y-3"
-            style={{ background: PALETTE.card, border: `1px solid ${PALETTE.border}`, borderRadius: 12, padding: 16 }}
+            style={{ ...glassCard }}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input
                 value={nSymbol}
                 onChange={(e) => setNSymbol(e.target.value.toUpperCase())}
                 placeholder="Symbol"
-                className={formInputCls + ' uppercase'}
+                style={{ ...inputStyle, textTransform: 'uppercase', fontFamily: 'monospace' }}
               />
               <div className="flex gap-2">
                 {(['Long', 'Short'] as const).map((d) => {
                   const active = nDir === d;
                   const activeStyle =
                     d === 'Long'
-                      ? { background: '#677A6720', color: '#677A67', border: '1px solid #677A6740' }
-                      : { background: '#E7B97F20', color: '#C8943A', border: '1px solid #E7B97F60' };
+                      ? { background: 'rgba(103,122,103,0.12)', color: '#677A67', border: '1px solid rgba(103,122,103,0.25)' }
+                      : { background: 'rgba(201,152,12,0.12)', color: '#C9960C', border: '1px solid rgba(201,152,12,0.25)' };
                   return (
                     <button
                       key={d}
@@ -509,7 +569,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                       onClick={() => setNDir(d)}
                       style={{
                         flex: 1,
-                        padding: '6px 12px',
+                        padding: '8px 12px',
                         borderRadius: 8,
                         fontSize: 12,
                         fontWeight: 700,
@@ -517,7 +577,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                         transition: 'all .15s',
                         ...(active
                           ? activeStyle
-                          : { background: PALETTE.bg, color: PALETTE.muted, border: `1px solid ${PALETTE.border}` }),
+                          : { background: 'rgba(201,168,76,0.04)', color: 'rgba(240,230,200,0.45)', border: '1px solid rgba(201,168,76,0.15)' }),
                       }}
                     >
                       {d}
@@ -525,28 +585,28 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                   );
                 })}
               </div>
-              <input type="date" value={nDate} onChange={(e) => setNDate(e.target.value)} className={formInputCls} />
+              <input type="date" value={nDate} onChange={(e) => setNDate(e.target.value)} style={{ ...inputStyle, fontFamily: 'monospace' }} />
               <input
                 type="text"
                 inputMode="decimal"
                 value={nPrice}
                 onChange={(e) => setNPrice(e.target.value)}
                 placeholder="Entry price"
-                className={formInputCls}
+                style={{ ...inputStyle, fontFamily: 'monospace' }}
               />
             </div>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={submitNew}
-                style={{ background: '#87A7AC', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                style={{ background: '#C9A84C', color: '#1A1200', border: 'none', borderRadius: 8, padding: '8px 20px', fontSize: 11, fontWeight: 800, cursor: 'pointer', letterSpacing: '1px' }}
               >
                 Submit
               </button>
               <button
                 type="button"
                 onClick={() => setShowNew(false)}
-                style={{ background: PALETTE.bg, color: PALETTE.muted, border: `1px solid ${PALETTE.border}`, borderRadius: 8, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                style={{ background: 'rgba(201,168,76,0.04)', color: 'rgba(240,230,200,0.45)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 8, padding: '8px 20px', fontSize: 11, fontWeight: 800, cursor: 'pointer', letterSpacing: '1px' }}
               >
                 Cancel
               </button>
@@ -555,16 +615,16 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
         )}
 
         {loading ? (
-          <div className="bg-[#0a0a19cc] border border-dashed border-white/10 p-8 rounded-lg text-center">
-            <p className="text-[#8a9bb3] text-sm font-bold font-mono">Loading…</p>
+          <div style={{ ...darkGlassContainer, borderStyle: 'dashed', padding: '32px', textAlign: 'center' }}>
+            <p style={{ color: 'rgba(240,230,200,0.45)', fontSize: 14, fontWeight: 700, fontFamily: 'monospace' }}>Loading…</p>
           </div>
         ) : err ? (
-          <div className="bg-[#0a0a19cc] border border-[#e8a04d]/30 p-6 rounded-lg text-center">
-            <p className="text-[#e8a04d] text-xs font-bold font-mono">{err}</p>
+          <div style={{ ...darkGlassContainer, borderColor: 'rgba(232,160,77,0.3)', padding: '24px', textAlign: 'center' }}>
+            <p style={{ color: '#C9960C', fontSize: 12, fontWeight: 700, fontFamily: 'monospace' }}>{err}</p>
           </div>
         ) : openTrades.length === 0 ? (
-          <div className="bg-[#0a0a19cc] border border-dashed border-white/10 p-8 rounded-lg text-center">
-            <p className="text-[#8a9bb3] text-sm font-bold font-mono">No open tracker trades.</p>
+          <div style={{ ...darkGlassContainer, borderStyle: 'dashed', padding: '32px', textAlign: 'center' }}>
+            <p style={{ color: 'rgba(240,230,200,0.45)', fontSize: 14, fontWeight: 700, fontFamily: 'monospace' }}>No open tracker trades.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -616,11 +676,13 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                     <div style={{
                       display: 'grid',
                       gridTemplateColumns: '140px 80px 120px 100px 60px repeat(7, 1fr) 80px',
-                      padding: '6px 16px',
-                      marginBottom: 4
+                      padding: '8px 16px',
+                      marginBottom: 4,
+                      background: 'rgba(201,168,76,0.05)',
+                      borderBottom: '1px solid rgba(201,168,76,0.12)',
                     }}>
                       {['Symbol', 'Dir', 'Entry ₹', 'Days'].map((lbl) => (
-                        <div key={lbl} style={{ fontSize: 10, fontWeight: 700, color: PALETTE.muted, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'DM Sans', sans-serif" }}>{lbl}</div>
+                        <div key={lbl} style={{ fontSize: 9, fontWeight: 700, color: 'rgba(201,168,76,0.4)', letterSpacing: '2px', textTransform: 'uppercase' }}>{lbl}</div>
                       ))}
                       <div></div>
                       {tradingDates.map((d) => {
@@ -631,9 +693,8 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                             <div style={{
                               fontSize: 13,
                               fontWeight: 800,
-                              color: hasData ? PALETTE.text : PALETTE.muted,
-                              fontFamily: "'DM Sans', sans-serif",
-                              marginBottom: 3
+                              color: hasData ? '#F0E6C8' : 'rgba(240,230,200,0.45)',
+                              marginBottom: 3,
                             }}>
                               {formatDateShort(d)}
                             </div>
@@ -649,7 +710,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                                 padding: '2px 6px',
                                 fontSize: 10,
                                 fontWeight: 700,
-                                color: hasData ? groupColor : PALETTE.border,
+                                color: hasData ? groupColor : 'rgba(201,168,76,0.15)',
                                 cursor: hasData ? 'pointer' : 'not-allowed',
                                 width: '100%'
                               }}
@@ -669,16 +730,19 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                         style={{
                           display: 'grid',
                           gridTemplateColumns: '140px 80px 120px 100px 60px repeat(7, 1fr) 80px',
-                          padding: '10px 16px',
+                          padding: '12px 16px',
                           marginBottom: 6,
-                          background: PALETTE.card,
+                          background: 'rgba(255,255,255,0.03)',
+                          backdropFilter: 'blur(20px)',
+                          WebkitBackdropFilter: 'blur(20px)',
                           borderRadius: 10,
                           alignItems: 'center',
-                          border: `1px solid ${PALETTE.border}`
+                          border: '1px solid rgba(201,168,76,0.1)',
+                          borderBottomWidth: 1,
                         }}
                       >
                         {/* Symbol */}
-                        <div style={{ fontSize: 15, fontWeight: 900, color: PALETTE.text, fontFamily: "'DM Sans', sans-serif" }}>
+                        <div style={{ fontSize: 15, fontWeight: 900, color: '#F0E6C8' }}>
                           {trade.symbol}
                         </div>
 
@@ -689,21 +753,21 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                             fontWeight: 700,
                             padding: '3px 8px',
                             borderRadius: 4,
-                            background: trade.direction === 'Long' ? '#677A6720' : '#E7B97F20',
-                            color: trade.direction === 'Long' ? '#677A67' : '#C8943A',
-                            border: `1px solid ${trade.direction === 'Long' ? '#677A6740' : '#E7B97F60'}`
+                            background: trade.direction === 'Long' ? 'rgba(103,122,103,0.15)' : 'rgba(201,152,12,0.15)',
+                            color: trade.direction === 'Long' ? '#677A67' : '#C9960C',
+                            border: `1px solid ${trade.direction === 'Long' ? 'rgba(103,122,103,0.3)' : 'rgba(201,152,12,0.3)'}`
                           }}>
                             {trade.direction?.toUpperCase()}
                           </span>
                         </div>
 
                         {/* Entry Price */}
-                        <div style={{ fontSize: 15, fontWeight: 700, color: PALETTE.text, fontFamily: 'monospace' }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: '#F0E6C8', fontFamily: 'monospace' }}>
                           ₹{trade.entry_price?.toLocaleString('en-IN')}
                         </div>
 
                         {/* Days held */}
-                        <div style={{ fontSize: 12, color: PALETTE.muted }}>
+                        <div style={{ fontSize: 12, color: 'rgba(240,230,200,0.45)', fontFamily: 'monospace' }}>
                           {Math.floor((new Date().getTime() - new Date(trade.entry_date).getTime()) / 86400000)}d
                         </div>
 
@@ -718,7 +782,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                           if (!hasData) {
                             return (
                               <div key={d} style={{ textAlign: 'center' }}>
-                                <span style={{ color: PALETTE.border, fontSize: 11 }}>—</span>
+                                <span style={{ color: 'rgba(201,168,76,0.15)', fontSize: 11 }}>—</span>
                               </div>
                             );
                           }
@@ -726,7 +790,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                           if (!dayData) {
                             return (
                               <div key={d} style={{ textAlign: 'center' }}>
-                                <span style={{ fontSize: 10, color: PALETTE.muted, cursor: 'pointer' }}>·</span>
+                                <span style={{ fontSize: 10, color: 'rgba(240,230,200,0.45)', cursor: 'pointer' }}>·</span>
                               </div>
                             );
                           }
@@ -751,7 +815,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                                       alignItems: 'center',
                                       gap: 4,
                                       color: col,
-                                      fontFamily: "'DM Sans', monospace",
+                                      fontFamily: 'monospace',
                                       fontSize: isClose ? 14 : 13,
                                       fontWeight: isClose ? 800 : 400,
                                       marginBottom: 2,
@@ -773,11 +837,11 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                           <button
                             onClick={() => { setCloseFor(trade); setCloseDate(todayStr()); setClosePrice(''); }}
                             style={{
-                              background: 'rgba(127,179,213,0.1)',
-                              border: '1px solid rgba(127,179,213,0.2)',
+                              background: 'rgba(201,168,76,0.08)',
+                              border: '1px solid rgba(201,168,76,0.2)',
                               borderRadius: 6,
                               padding: '4px 8px',
-                              color: '#7fb3d5',
+                              color: '#C9A84C',
                               fontSize: 10,
                               cursor: 'pointer'
                             }}
@@ -785,11 +849,11 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                           <button
                             onClick={() => remove(trade.id)}
                             style={{
-                              background: 'rgba(232,160,77,0.1)',
+                              background: 'rgba(232,160,77,0.08)',
                               border: '1px solid rgba(232,160,77,0.2)',
                               borderRadius: 6,
                               padding: '4px 8px',
-                              color: '#e8a04d',
+                              color: '#C9960C',
                               fontSize: 10,
                               cursor: 'pointer'
                             }}
@@ -807,101 +871,164 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
 
       {/* SECTION 2 — CLOSED TRADES */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2 pb-3" style={{ borderBottom: `1px solid ${PALETTE.border}` }}>
-          <span style={{ padding: 6, background: `${PALETTE.profit}15`, border: `1px solid ${PALETTE.profit}30`, borderRadius: 8, color: PALETTE.profit, display: 'inline-flex' }}>
-            <CheckCircle className="w-4 h-4" />
+        {/* 9D section heading */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            paddingBottom: 12,
+            borderBottom: '1px solid rgba(201,168,76,0.12)',
+          }}
+        >
+          <span style={{ padding: 6, background: 'rgba(103,122,103,0.08)', border: '1px solid rgba(103,122,103,0.2)', borderRadius: 8, color: '#677A67', display: 'inline-flex' }}>
+            <CheckCircle style={{ width: 16, height: 16 }} />
           </span>
-          <span style={{ color: PALETTE.muted, fontSize: 12, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'DM Sans', sans-serif" }}>
+          <span style={{ color: 'rgba(240,230,200,0.45)', fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' }}>
             Closed Trades ({closedTrades.length})
           </span>
         </div>
 
         {closedTrades.length === 0 ? (
-          <div className="bg-[#0a0a19cc] border border-dashed border-white/10 p-8 rounded-lg text-center">
-            <p className="text-[#8a9bb3] text-sm font-bold font-mono">No closed tracker trades.</p>
+          <div style={{ ...darkGlassContainer, borderStyle: 'dashed', padding: '32px', textAlign: 'center' }}>
+            <p style={{ color: 'rgba(240,230,200,0.45)', fontSize: 14, fontWeight: 700, fontFamily: 'monospace' }}>No closed tracker trades.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-white/10 bg-[#0a0a19cc] shadow-lg">
-            <table className="w-full min-w-[760px] text-left border-collapse">
-              <thead>
-                <tr className="bg-[#0a0a19cc] text-[#8a9bb3] uppercase text-[10px] font-mono tracking-widest border-b border-white/10">
-                  <th className="py-2.5 px-3 font-black">Symbol</th>
-                  <th className="py-2.5 px-2 font-black">Dir</th>
-                  <th className="py-2.5 px-2 font-black">Entry Date</th>
-                  <th className="py-2.5 px-2 font-black text-right">Entry ₹</th>
-                  <th className="py-2.5 px-2 font-black">Close Date</th>
-                  <th className="py-2.5 px-2 font-black text-right">Close ₹</th>
-                  <th className="py-2.5 px-2 font-black text-right">Move %</th>
-                  <th className="py-2.5 px-2 font-black text-right">Days</th>
-                  <th className="py-2.5 px-3 font-black text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {closedTrades.map((trade) => {
-                  const move = trade.close_price != null ? pct(trade.close_price, trade.entry_price, trade.direction) : 0;
-                  return (
-                    <tr key={trade.id} className="hover:bg-white/5 transition">
-                      <td className="py-2.5 px-3 font-mono font-extrabold text-[#e8edf4] text-sm">{trade.symbol}</td>
-                      <td className="py-2.5 px-2">
-                        <span
-                          className="text-[10px] font-black font-mono uppercase px-1.5 py-0.5 rounded border"
-                          style={{
-                            color: trade.direction === 'Long' ? '#5dcaa5' : '#e8a04d',
-                            borderColor: (trade.direction === 'Long' ? '#5dcaa5' : '#e8a04d') + '40',
-                          }}
-                        >
-                          {trade.direction}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-2 font-mono text-[#8a9bb3] text-xs whitespace-nowrap">{trade.entry_date}</td>
-                      <td className="py-2.5 px-2 font-mono text-[#e8edf4] text-sm text-right font-bold whitespace-nowrap">₹{formatPrice(trade.entry_price)}</td>
-                      <td className="py-2.5 px-2 font-mono text-[#8a9bb3] text-xs whitespace-nowrap">{trade.close_date ?? '—'}</td>
-                      <td className="py-2.5 px-2 font-mono text-[#e8edf4] text-sm text-right font-bold whitespace-nowrap">{trade.close_price != null ? '₹' + formatPrice(trade.close_price) : '—'}</td>
-                      <td className="py-2.5 px-2 text-right font-mono font-black text-sm" style={{ color: pctColor(move) }}>{fmtPct(move)}</td>
-                      <td className="py-2.5 px-2 font-mono text-[#8a9bb3] text-xs text-right">{trade.close_date ? workingDaysBetween(trade.entry_date, trade.close_date) : '—'}</td>
-                      <td className="py-2.5 px-3">
-                        <div className="flex items-center justify-end">
-                          <button
-                            type="button"
-                            title="Delete"
-                            onClick={() => remove(trade.id)}
-                            className="p-1.5 rounded-lg bg-[#e8a04d]/10 border border-[#e8a04d]/30 text-[#e8a04d] hover:bg-[#e8a04d] hover:text-white transition cursor-pointer active:scale-95"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          /* 9D — Closed trades fixed CSS grid */
+          <div style={{ ...darkGlassContainer }}>
+            {/* Grid header */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '160px 80px 100px 140px 100px 80px 1fr 100px',
+                background: 'rgba(201,168,76,0.05)',
+                borderBottom: '1px solid rgba(201,168,76,0.12)',
+                padding: '8px 20px',
+              }}
+            >
+              {['Symbol', 'Dir', 'Entry Date', 'Entry ₹', 'Close Date', 'Close ₹', 'Move %', 'Actions'].map((h) => (
+                <div key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)' }}>{h}</div>
+              ))}
+            </div>
+            {/* Grid rows */}
+            {closedTrades.map((trade) => {
+              const move = trade.close_price != null ? pct(trade.close_price, trade.entry_price, trade.direction) : 0;
+              return (
+                <div
+                  key={trade.id}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '160px 80px 100px 140px 100px 80px 1fr 100px',
+                    padding: '12px 20px',
+                    borderBottom: '1px solid rgba(201,168,76,0.06)',
+                    alignItems: 'center',
+                    borderRadius: 0,
+                  }}
+                >
+                  <div style={{ fontFamily: 'monospace', fontWeight: 800, color: '#F0E6C8', fontSize: 14 }}>{trade.symbol}</div>
+                  <div>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 800,
+                        fontFamily: 'monospace',
+                        textTransform: 'uppercase',
+                        padding: '2px 6px',
+                        borderRadius: 4,
+                        color: trade.direction === 'Long' ? '#677A67' : '#C9960C',
+                        border: `1px solid ${trade.direction === 'Long' ? 'rgba(103,122,103,0.3)' : 'rgba(201,152,12,0.3)'}`,
+                        background: trade.direction === 'Long' ? 'rgba(103,122,103,0.1)' : 'rgba(201,152,12,0.1)',
+                      }}
+                    >
+                      {trade.direction}
+                    </span>
+                  </div>
+                  <div style={{ fontFamily: 'monospace', color: 'rgba(240,230,200,0.45)', fontSize: 12, whiteSpace: 'nowrap' }}>{trade.entry_date}</div>
+                  <div style={{ fontFamily: 'monospace', color: '#F0E6C8', fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }}>₹{formatPrice(trade.entry_price)}</div>
+                  <div style={{ fontFamily: 'monospace', color: 'rgba(240,230,200,0.45)', fontSize: 12, whiteSpace: 'nowrap' }}>{trade.close_date ?? '—'}</div>
+                  <div style={{ fontFamily: 'monospace', color: '#F0E6C8', fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }}>{trade.close_price != null ? '₹' + formatPrice(trade.close_price) : '—'}</div>
+                  <div style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 14, color: pctColor(move) }}>{fmtPct(move)}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                    <button
+                      type="button"
+                      title="Delete"
+                      onClick={() => remove(trade.id)}
+                      style={{
+                        padding: '6px',
+                        borderRadius: 8,
+                        background: 'rgba(232,160,77,0.08)',
+                        border: '1px solid rgba(232,160,77,0.25)',
+                        color: '#C9960C',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Trash2 style={{ width: 14, height: 14 }} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Close modal */}
+      {/* 9F — Close modal */}
       {closeFor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="bg-[#0a0a19cc] border border-white/10 rounded-lg p-6 w-full max-w-sm space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-[#7fb3d5] uppercase tracking-widest font-mono">Close Trade</h3>
-              <button type="button" onClick={() => setCloseFor(null)} className="text-[#8a9bb3] hover:text-[#e8edf4] cursor-pointer">
-                <X className="w-4 h-4" />
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'center',
+            background: 'rgba(0,0,0,0.75)',
+            backdropFilter: 'blur(20px)',
+            overflowY: 'auto',
+            padding: '40px 20px',
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 560,
+              background: 'rgba(8,5,2,0.95)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              border: '1px solid rgba(201,168,76,0.2)',
+              borderRadius: 16,
+              overflow: 'hidden',
+              padding: 24,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h3 style={{ fontSize: 11, fontWeight: 800, color: '#C9A84C', textTransform: 'uppercase', letterSpacing: '2px', fontFamily: 'monospace' }}>Close Trade</h3>
+              <button type="button" onClick={() => setCloseFor(null)} style={{ color: 'rgba(240,230,200,0.45)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
+                <X style={{ width: 16, height: 16 }} />
               </button>
             </div>
-            <div className="bg-[#0a0a19cc] border border-white/10 rounded-lg px-3 py-2 font-mono text-sm text-[#e8edf4] font-bold">
-              {closeFor.symbol} <span className="text-[#8a9bb3] text-xs">· {closeFor.direction} · entry ₹{formatPrice(closeFor.entry_price)}</span>
+            <div style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 8, padding: '10px 14px', fontFamily: 'monospace', fontSize: 14, color: '#F0E6C8', fontWeight: 700, marginBottom: 16 }}>
+              {closeFor.symbol} <span style={{ color: 'rgba(240,230,200,0.45)', fontSize: 12 }}>· {closeFor.direction} · entry ₹{formatPrice(closeFor.entry_price)}</span>
             </div>
-            <div className="space-y-2">
-              <label className="block text-[10px] text-[#8a9bb3] font-mono uppercase tracking-wider">Close Date</label>
-              <input type="date" value={closeDate} onChange={(e) => setCloseDate(e.target.value)} className={inputCls} />
-              <label className="block text-[10px] text-[#8a9bb3] font-mono uppercase tracking-wider">Close Price</label>
-              <input type="text" inputMode="decimal" value={closePrice} onChange={(e) => setClosePrice(e.target.value)} placeholder="Close price" className={inputCls} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 10, color: 'rgba(240,230,200,0.45)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Close Date</label>
+              <input type="date" value={closeDate} onChange={(e) => setCloseDate(e.target.value)} style={{ ...inputStyle, fontFamily: 'monospace' }} />
+              <label style={{ display: 'block', fontSize: 10, color: 'rgba(240,230,200,0.45)', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Close Price</label>
+              <input type="text" inputMode="decimal" value={closePrice} onChange={(e) => setClosePrice(e.target.value)} placeholder="Close price" style={{ ...inputStyle, fontFamily: 'monospace' }} />
             </div>
-            <div className="flex gap-2">
-              <button type="button" onClick={confirmClose} className="flex-1 bg-[#7fb3d5] hover:bg-[#5f9fc8] text-[#161f2e] px-4 py-2 rounded-lg text-xs font-black font-mono uppercase tracking-wider transition cursor-pointer">Confirm</button>
-              <button type="button" onClick={() => setCloseFor(null)} className="flex-1 bg-[#0a0a19cc] border border-white/10 hover:border-[#e8a04d]/40 text-[#8a9bb3] hover:text-[#e8a04d] px-4 py-2 rounded-lg text-xs font-black font-mono uppercase tracking-wider transition cursor-pointer">Cancel</button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={confirmClose}
+                style={{ flex: 1, background: '#C9A84C', color: '#1A1200', border: 'none', borderRadius: 8, padding: '8px 20px', fontSize: 11, fontWeight: 800, cursor: 'pointer', letterSpacing: '1px', textTransform: 'uppercase', fontFamily: 'monospace' }}
+              >Confirm</button>
+              <button
+                type="button"
+                onClick={() => setCloseFor(null)}
+                style={{ flex: 1, background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', color: 'rgba(240,230,200,0.45)', borderRadius: 8, padding: '8px 20px', fontSize: 11, fontWeight: 800, cursor: 'pointer', letterSpacing: '1px', textTransform: 'uppercase', fontFamily: 'monospace' }}
+              >Cancel</button>
             </div>
           </div>
         </div>
