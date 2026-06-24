@@ -153,10 +153,10 @@ export default function App() {
     };
   }, [session]);
 
-  // Aurora canvas — gilded particle/stream field behind the hub. Re-binds whenever the
-  // menu view (and its <canvas>) actually mounts, since the canvas only exists on the hub.
+  // Aurora canvas — gilded/neon particle/stream field behind every page. Binds once a
+  // session exists; the <canvas> is now always mounted (outside the view switch).
   useEffect(() => {
-    if (currentView !== 'menu' || !session) return;
+    if (!session) return;
     const canvas = document.getElementById('aurora-canvas') as HTMLCanvasElement | null;
     if (!canvas) return;
     const ctx = canvas.getContext('2d')!;
@@ -172,6 +172,7 @@ export default function App() {
     const particles: any[] = [];
     const streams: any[] = [];
 
+    const pColorTypes = ['gold', 'gold', 'gold', 'silver', 'silver', 'pink', 'green', 'blue', 'blue'];
     for (let i = 0; i < 150; i++) {
       particles.push({
         x: Math.random() * canvas.width,
@@ -181,11 +182,13 @@ export default function App() {
         speedY: (Math.random() - 0.5) * 0.35,
         life: Math.random() * 200,
         maxLife: Math.random() * 200 + 100,
-        gold: Math.random() > 0.35,
+        gold: false,
         alpha: Math.random() * 0.5 + 0.15,
+        colorType: pColorTypes[i % pColorTypes.length],
       });
     }
 
+    const colorTypes = ['gold', 'gold', 'gold', 'silver', 'silver', 'pink', 'green', 'blue'];
     for (let i = 0; i < 30; i++) {
       streams.push({
         x: Math.random() * canvas.width,
@@ -197,6 +200,7 @@ export default function App() {
         width: Math.random() * 1.0 + 0.3,
         alpha: Math.random() * 0.35 + 0.08,
         points: [] as { x: number; y: number }[],
+        colorType: colorTypes[i % colorTypes.length],
       });
     }
 
@@ -214,6 +218,21 @@ export default function App() {
       g2.addColorStop(1, 'transparent');
       ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H);
 
+      const g3 = ctx.createRadialGradient(W * 0.5, H * 0.5, 0, W * 0.5, H * 0.5, W * 0.4);
+      g3.addColorStop(0, 'rgba(247,37,133,0.04)');
+      g3.addColorStop(1, 'transparent');
+      ctx.fillStyle = g3; ctx.globalAlpha = 1; ctx.fillRect(0, 0, W, H);
+
+      const g4 = ctx.createRadialGradient(W * 0.1, H * 0.5, 0, W * 0.1, H * 0.5, W * 0.35);
+      g4.addColorStop(0, 'rgba(0,200,120,0.04)');
+      g4.addColorStop(1, 'transparent');
+      ctx.fillStyle = g4; ctx.fillRect(0, 0, W, H);
+
+      const g5 = ctx.createRadialGradient(W * 0.9, H * 0.7, 0, W * 0.9, H * 0.7, W * 0.3);
+      g5.addColorStop(0, 'rgba(0,180,255,0.04)');
+      g5.addColorStop(1, 'transparent');
+      ctx.fillStyle = g5; ctx.fillRect(0, 0, W, H);
+
       streams.forEach(s => {
         s.y += s.speed * Math.sin(s.angle);
         s.x += s.speed * Math.cos(s.angle);
@@ -226,9 +245,20 @@ export default function App() {
         for (let i = 1; i < s.points.length; i++) {
           const t = i / s.points.length;
           ctx.globalAlpha = s.alpha * t * t;
-          ctx.strokeStyle = s.gold
-            ? `rgba(${200 + Math.floor(t * 40)},${145 + Math.floor(t * 40)},${25 + Math.floor(t * 20)},1)`
-            : `rgba(${175 + Math.floor(t * 65)},${175 + Math.floor(t * 65)},${195 + Math.floor(t * 45)},1)`;
+          ctx.strokeStyle = (() => {
+            const colorType = s.colorType;
+            if (colorType === 'gold')
+              return `rgba(${200 + Math.floor(t * 40)},${145 + Math.floor(t * 40)},${25 + Math.floor(t * 20)},1)`;
+            if (colorType === 'silver')
+              return `rgba(${175 + Math.floor(t * 65)},${175 + Math.floor(t * 65)},${195 + Math.floor(t * 45)},1)`;
+            if (colorType === 'pink')
+              return `rgba(247,${37 + Math.floor(t * 30)},${133 + Math.floor(t * 40)},${t})`;
+            if (colorType === 'green')
+              return `rgba(${0 + Math.floor(t * 40)},${255 - Math.floor(t * 30)},${100 + Math.floor(t * 50)},${t})`;
+            if (colorType === 'blue')
+              return `rgba(${0 + Math.floor(t * 30)},${180 + Math.floor(t * 30)},${255},${t})`;
+            return `rgba(201,168,76,${t})`;
+          })();
           ctx.lineWidth = s.width * t;
           ctx.beginPath();
           ctx.moveTo(s.points[i - 1].x, s.points[i - 1].y);
@@ -245,9 +275,19 @@ export default function App() {
         const t = p.life / p.maxLife;
         const a = t < 0.1 ? t / 0.1 : t > 0.9 ? (1 - t) / 0.1 : 1;
         ctx.globalAlpha = p.alpha * a;
-        ctx.fillStyle = p.gold
-          ? `rgb(${180 + Math.floor(Math.random() * 40)},${138 + Math.floor(Math.random() * 30)},${28 + Math.floor(Math.random() * 35)})`
-          : `rgb(${178 + Math.floor(Math.random() * 60)},${178 + Math.floor(Math.random() * 60)},${195 + Math.floor(Math.random() * 40)})`;
+        ctx.fillStyle = (() => {
+          if (p.colorType === 'gold')
+            return `rgb(${180 + Math.floor(Math.random() * 40)},${138 + Math.floor(Math.random() * 30)},${28 + Math.floor(Math.random() * 35)})`;
+          if (p.colorType === 'silver')
+            return `rgb(${178 + Math.floor(Math.random() * 60)},${178 + Math.floor(Math.random() * 60)},${195 + Math.floor(Math.random() * 40)})`;
+          if (p.colorType === 'pink')
+            return `rgb(247,${37 + Math.floor(Math.random() * 20)},${133 + Math.floor(Math.random() * 40)})`;
+          if (p.colorType === 'green')
+            return `rgb(${Math.floor(Math.random() * 40)},${200 + Math.floor(Math.random() * 55)},${80 + Math.floor(Math.random() * 60)})`;
+          if (p.colorType === 'blue')
+            return `rgb(${Math.floor(Math.random() * 30)},${160 + Math.floor(Math.random() * 60)},255)`;
+          return `rgb(180,138,28)`;
+        })();
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
@@ -262,7 +302,7 @@ export default function App() {
       cancelAnimationFrame(animId);
       window.removeEventListener('resize', resize);
     };
-  }, [currentView, session]);
+  }, [session]);
 
   // Persist a state mutation to Supabase by diffing the previous list against the next.
   // Each Trade object is stored in the `data` jsonb column; rows are keyed by data->>id
@@ -538,6 +578,9 @@ export default function App() {
       <div className="absolute bottom-[-10%] left-[10%] w-[550px] h-[550px] bg-[#7fb3d5]/4 rounded-full blur-[150px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '5s' }} />
 
       <div className="relative z-10">
+        {/* Aurora Canvas — always mounted, renders behind every page */}
+        <canvas id="aurora-canvas" />
+
         {/* Premium High-Density Navigation/Header with Magi Colors — hidden on the revamped hub (it has its own header). */}
         {currentView !== 'menu' && (
         <header className="border-b border-[#9B5DE5]/20 bg-[#05050F]/90 backdrop-blur-md sticky top-0 z-40 px-6 py-4 shadow-xl">
@@ -613,9 +656,6 @@ export default function App() {
         <main className="max-w-7xl mx-auto px-6 py-6 space-y-6">
           {currentView === 'menu' ? (
             <>
-              {/* Aurora Canvas */}
-              <canvas id="aurora-canvas" />
-
               {/* Hub */}
               <div style={{
                 position: 'relative',
