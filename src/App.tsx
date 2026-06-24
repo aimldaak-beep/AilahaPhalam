@@ -592,8 +592,31 @@ export default function App() {
           WebkitBackdropFilter: 'blur(24px)',
           borderBottom: '1px solid rgba(201,168,76,0.15)',
           padding: '0 24px',
+          overflow: 'hidden',
         }}>
+          {/* Wave glow overlay */}
           <div style={{
+            position: 'absolute',
+            inset: 0,
+            overflow: 'hidden',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%,-50%)',
+              width: '600px',
+              height: '80px',
+              background: 'radial-gradient(ellipse 60% 100% at 50% 50%, rgba(201,130,30,0.08) 0%, rgba(0,100,200,0.05) 50%, transparent 100%)',
+              filter: 'blur(8px)',
+              animation: 'headerWave 8s ease-in-out infinite',
+            }} />
+          </div>
+          <div style={{
+            position: 'relative',
+            zIndex: 1,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -906,37 +929,48 @@ export default function App() {
           ) : (
             <div className="space-y-5">
               {/* Back navigation strip */}
-              <div className="flex items-center justify-between bg-[#1e2a3d] border border-white/10 px-4 py-3 rounded-2xl backdrop-blur-sm">
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '8px 28px',
+                borderBottom: '1px solid rgba(201,168,76,0.1)',
+                background: 'rgba(8,5,2,0.6)',
+                backdropFilter: 'blur(12px)',
+              }}>
                 <button
                   type="button"
                   id="back-to-menu-btn"
                   onClick={() => setCurrentView('menu')}
-                  className="flex items-center gap-2 text-xs font-bold text-slate-100 hover:text-[#7fb3d5] transition bg-[#1e2a3d] px-4 py-2 rounded-xl border border-white/10 cursor-pointer active:scale-95 shadow-md"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'rgba(240,230,200,0.6)',
+                    fontSize: 11, fontWeight: 600,
+                    cursor: 'pointer',
+                    letterSpacing: '0.5px',
+                    padding: '4px 0',
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
                 >
-                  <ArrowLeft className="w-3.5 h-3.5 text-[#7fb3d5]" />
+                  <ArrowLeft style={{width:14,height:14,color:'#C9A84C'}} />
                   Back to Hub Menu
                 </button>
 
-                {currentView === 'weekly' && (
-                  <span className="text-[10px] bg-[#1e2a3d] border border-white/10 text-[#7fb3d5] px-3.5 py-1.5 rounded-xl font-bold font-mono uppercase tracking-widest">
-                    Weekly Ledger Active View
-                  </span>
-                )}
-                {currentView === 'cumulative' && (
-                  <span className="text-[10px] bg-[#1e2a3d] border border-white/10 text-[#7fb3d5] px-3.5 py-1.5 rounded-xl font-bold font-mono uppercase tracking-widest">
-                    Cumulative Core Analytics View
-                  </span>
-                )}
-                {currentView === 'summary' && (
-                  <span className="text-[10px] bg-[#1e2a3d] border border-white/10 text-[#7fb3d5] px-3.5 py-1.5 rounded-xl font-bold font-mono uppercase tracking-widest">
-                    Portfolio Segmented Summary
-                  </span>
-                )}
-                {currentView === 'export' && (
-                  <span className="text-[10px] bg-[#1e2a3d] border border-[#7fb3d5]/20 text-[#7fb3d5] px-3.5 py-1.5 rounded-xl font-bold font-mono uppercase tracking-widest">
-                    Export Configuration Workspace
-                  </span>
-                )}
+                <span style={{
+                  fontSize: 9,
+                  fontWeight: 700,
+                  letterSpacing: '3px',
+                  textTransform: 'uppercase',
+                  color: 'rgba(201,168,76,0.4)',
+                  fontFamily: "'DM Sans', sans-serif",
+                }}>
+                  {currentView === 'weekly' && 'Weekly Ledger'}
+                  {currentView === 'cumulative' && 'Cumulative Analytics'}
+                  {currentView === 'summary' && 'Portfolio Summary'}
+                  {currentView === 'export' && 'Export Workspace'}
+                </span>
               </div>
 
               {currentView === 'weekly' && (

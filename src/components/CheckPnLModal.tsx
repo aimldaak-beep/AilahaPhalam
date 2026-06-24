@@ -37,7 +37,7 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)'}}>
       <div
         id="check-pnl-modal"
-        className="w-full max-w-md shadow-2xl transition-all overflow-hidden rounded-3xl"
+        className="w-full max-w-md shadow-2xl transition-all overflow-hidden rounded"
         style={{background:'rgba(8,5,2,0.92)',backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:24}}
       >
         <div className="flex items-center justify-between px-6 py-4.5" style={{borderBottom:'1px solid rgba(201,168,76,0.08)'}}>
@@ -66,7 +66,7 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
 
         <div className="p-6 space-y-4">
           {/* Reference Info */}
-          <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl" style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.1)',borderRadius:16}}>
+          <div className="grid grid-cols-2 gap-4 p-4 rounded-lg" style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.1)',borderRadius:16}}>
             <div>
               <span className="block text-[9px] font-black uppercase tracking-widest mb-1 font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
                 {entryLabel}
@@ -114,7 +114,7 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
           {/* Evaluation Block */}
           {evaluation ? (
             <div
-              className="p-4 rounded-2xl border transition-all duration-200 shadow-sm"
+              className="p-4 rounded-lg border transition-all duration-200 shadow-sm"
               style={
                 evaluation.points >= 0
                   ? {background:'rgba(103,122,103,0.1)',border:'1px solid rgba(103,122,103,0.3)',color:'#677A67'}
@@ -178,7 +178,7 @@ export default function CheckPnLModal({ trade, onClose }: CheckPnLModalProps) {
               </div>
             </div>
           ) : (
-            <div className="p-6 rounded-2xl border border-dashed text-center text-xs font-medium leading-relaxed font-mono" style={{background:'rgba(4,2,0,0.6)',borderColor:'rgba(201,168,76,0.08)',color:'rgba(240,230,200,0.35)'}}>
+            <div className="p-6 rounded-lg border border-dashed text-center text-xs font-medium leading-relaxed font-mono" style={{background:'rgba(4,2,0,0.6)',borderColor:'rgba(201,168,76,0.08)',color:'rgba(240,230,200,0.35)'}}>
               <Layers className="w-8 h-8 mx-auto mb-2.5 stroke-1" style={{color:'#C9A84C'}} />
               Enter current trade rate above to generate instant real-time profit and loss calculations.
             </div>

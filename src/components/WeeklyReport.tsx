@@ -301,7 +301,7 @@ export default function WeeklyReport({
         gap: 10,
       }}>
         <div className="flex items-center gap-3">
-          <span className="p-3 rounded-2xl shadow-md" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C'}}>
+          <span className="p-3 rounded-lg shadow-md" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C'}}>
             <Calendar className="w-5 h-5 shrink-0" style={{color:'#C9A84C'}} />
           </span>
           <div>
@@ -364,9 +364,9 @@ export default function WeeklyReport({
 
       {/* Saturday 10:00 AM Prompt Warning Banner */}
       {pendingSaturdayDemands.length > 0 && (
-        <div id="saturday-closing-warning" className="rounded-3xl p-5 space-y-4 shadow-xl" style={{background:'rgba(201,168,76,0.05)',border:'1px solid rgba(201,168,76,0.2)'}}>
+        <div id="saturday-closing-warning" className="rounded p-5 space-y-4 shadow-xl" style={{background:'rgba(201,168,76,0.05)',border:'1px solid rgba(201,168,76,0.2)'}}>
           <div className="flex gap-3.5">
-            <div className="p-2.5 rounded-2xl shrink-0" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
+            <div className="p-2.5 rounded-lg shrink-0" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
               <Clock className="w-5 h-5" style={{color:'#C9A84C'}} />
             </div>
             <div>
@@ -381,7 +381,7 @@ export default function WeeklyReport({
               const entryPrice = trade.direction === 'Long' ? trade.buyPrice : trade.sellPrice;
               const currencySymbol = trade.currency === 'USD' ? '$' : '₹';
               return (
-                <div key={trade.id} className="p-4 rounded-2xl flex flex-col justify-between gap-3.5 shadow-md" style={{background:'rgba(4,2,0,0.95)',border:'1px solid rgba(201,168,76,0.08)'}}>
+                <div key={trade.id} className="p-4 rounded-lg flex flex-col justify-between gap-3.5 shadow-md" style={{background:'rgba(4,2,0,0.95)',border:'1px solid rgba(201,168,76,0.08)'}}>
                   <div className="flex items-center justify-between text-xs">
                     <div>
                       <span className="font-black font-mono text-sm tracking-wide" style={{color:'#F0E6C8'}}>
@@ -448,7 +448,7 @@ export default function WeeklyReport({
       {/* Weekly performance grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Weekly Net PnL card */}
-        <div id="weekly-net-card" className="rounded-3xl p-5 relative overflow-hidden shadow-lg backdrop-blur-sm" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
+        <div id="weekly-net-card" className="rounded p-5 relative overflow-hidden shadow-lg backdrop-blur-sm" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
           <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
             <Calculator className="w-4 h-4" style={{color:'#C9A84C'}} />
           </div>
@@ -468,7 +468,7 @@ export default function WeeklyReport({
         </div>
 
         {/* Weekly Gross PnL card */}
-        <div id="weekly-gross-card" className="rounded-3xl p-5 relative overflow-hidden shadow-lg backdrop-blur-sm" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
+        <div id="weekly-gross-card" className="rounded p-5 relative overflow-hidden shadow-lg backdrop-blur-sm" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
           <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
             <SlidersHorizontal className="w-4 h-4" style={{color:'#C9A84C'}} />
           </div>
@@ -486,7 +486,7 @@ export default function WeeklyReport({
         </div>
 
         {/* Weekly Brokerage card */}
-        <div id="weekly-brokerage-card" className="rounded-3xl p-5 relative overflow-hidden shadow-lg backdrop-blur-sm" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
+        <div id="weekly-brokerage-card" className="rounded p-5 relative overflow-hidden shadow-lg backdrop-blur-sm" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
           <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
             <Clock className="w-4 h-4" style={{color:'#C9A84C'}} />
           </div>
@@ -504,7 +504,7 @@ export default function WeeklyReport({
       </div>
 
       {/* Per-week reconciliation offset editor */}
-      <div id="week-offset-card" className="rounded-3xl p-5 shadow-lg backdrop-blur-sm space-y-4" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
+      <div id="week-offset-card" className="rounded p-5 shadow-lg backdrop-blur-sm space-y-4" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
         <div className="flex items-center gap-2">
           <span className="p-1.5 rounded-lg" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C'}}>
             <Scale className="w-4 h-4" style={{color:'#C9A84C'}} />
@@ -516,13 +516,13 @@ export default function WeeklyReport({
 
         {/* Calculated → Offset → Adjusted breakdown */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-2xl p-3.5" style={{background:'rgba(5,3,1,0.95)',border:'1px solid rgba(201,168,76,0.15)'}}>
+          <div className="rounded-lg p-3.5" style={{background:'rgba(5,3,1,0.95)',border:'1px solid rgba(201,168,76,0.15)'}}>
             <span className="block text-[9px] font-extrabold uppercase tracking-widest mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.7)'}}>Calculated Net</span>
             <span className="font-mono font-black text-sm" style={{color: weeklyNetSum >= 0 ? '#F0E6C8' : '#C9960C'}}>
               {weeklyNetSum >= 0 ? '+' : ''}₹{formatAmount(weeklyNetSum)}
             </span>
           </div>
-          <div className="rounded-2xl p-3.5" style={{background:'rgba(5,3,1,0.95)',border:'1px solid rgba(201,168,76,0.15)'}}>
+          <div className="rounded-lg p-3.5" style={{background:'rgba(5,3,1,0.95)',border:'1px solid rgba(201,168,76,0.15)'}}>
             <span className="block text-[9px] font-extrabold uppercase tracking-widest mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.7)'}}>Offset Applied</span>
             <span className="font-mono font-black text-sm" style={{color: savedOffsetAmount === 0 ? 'rgba(240,230,200,0.5)' : savedOffsetAmount > 0 ? '#677A67' : '#C9960C'}}>
               {savedOffsetAmount > 0 ? '+' : ''}₹{formatAmount(savedOffsetAmount)}
@@ -531,7 +531,7 @@ export default function WeeklyReport({
               <span className="block text-[9px] font-mono mt-1 truncate" style={{color:'rgba(240,230,200,0.5)'}} title={savedOffset.note}>"{savedOffset.note}"</span>
             ) : null}
           </div>
-          <div className="rounded-2xl p-3.5" style={{background:'rgba(201,168,76,0.05)',border:'1px solid rgba(201,168,76,0.3)'}}>
+          <div className="rounded-lg p-3.5" style={{background:'rgba(201,168,76,0.05)',border:'1px solid rgba(201,168,76,0.3)'}}>
             <span className="block text-[9px] font-extrabold uppercase tracking-widest mb-1.5 font-mono" style={{color:'#C9A84C'}}>Adjusted Total (Reconciled)</span>
             <span className="font-mono font-black text-base" style={{color: adjustedWeeklyNet >= 0 ? '#677A67' : '#C9960C'}}>
               {adjustedWeeklyNet >= 0 ? '+' : ''}₹{formatAmount(adjustedWeeklyNet)}
@@ -607,11 +607,11 @@ export default function WeeklyReport({
         </div>
 
         {openTrades.length === 0 ? (
-          <div className="border border-dashed p-8 rounded-2xl text-center" style={{background:'rgba(12,8,3,0.9)',borderColor:'rgba(201,168,76,0.15)'}}>
+          <div className="border border-dashed p-8 rounded-lg text-center" style={{background:'rgba(12,8,3,0.9)',borderColor:'rgba(201,168,76,0.15)'}}>
             <p className="text-sm font-bold font-mono" style={{color:'rgba(240,230,200,0.5)'}}>No open positions.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl shadow-lg" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.25)'}}>
+          <div className="overflow-x-auto rounded-lg shadow-lg" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.25)'}}>
             <table className="w-full min-w-[820px] text-left border-collapse">
               <thead>
                 <tr className="uppercase text-[10px] font-mono tracking-widest" style={{background:'rgba(201,168,76,0.06)',color:'rgba(240,230,200,0.7)',borderBottom:'1px solid rgba(201,168,76,0.15)'}}>
@@ -701,11 +701,11 @@ export default function WeeklyReport({
         </div>
 
         {closedInWeek.length === 0 ? (
-          <div className="border border-dashed p-8 rounded-2xl text-center" style={{background:'rgba(12,8,3,0.9)',borderColor:'rgba(201,168,76,0.15)'}}>
+          <div className="border border-dashed p-8 rounded-lg text-center" style={{background:'rgba(12,8,3,0.9)',borderColor:'rgba(201,168,76,0.15)'}}>
             <p className="text-sm font-bold font-mono" style={{color:'rgba(240,230,200,0.5)'}}>No settled trades for this week.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl shadow-lg" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
+          <div className="overflow-x-auto rounded-lg shadow-lg" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
             <table className="w-full min-w-[860px] text-left border-collapse">
               <thead>
                 <tr className="uppercase text-[10px] font-mono tracking-widest" style={{background:'rgba(201,168,76,0.06)',color:'rgba(240,230,200,0.7)',borderBottom:'1px solid rgba(201,168,76,0.15)'}}>

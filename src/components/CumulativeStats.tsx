@@ -126,7 +126,7 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
         width: '100%',
       }}>
         {/* Total Net Profit */}
-        <div id="cum-net-profit" className="relative overflow-hidden rounded-3xl p-5 shadow-lg backdrop-blur-sm transition-all duration-200" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+        <div id="cum-net-profit" className="relative overflow-hidden rounded p-5 shadow-lg backdrop-blur-sm transition-all duration-200" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
           <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}>
             <Landmark className="w-4 h-4" style={{ color: '#C9A84C' }} />
           </div>
@@ -140,7 +140,7 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
         </div>
 
         {/* Win Rate */}
-        <div id="cum-win-rate" className="relative overflow-hidden rounded-3xl p-5 shadow-lg backdrop-blur-sm transition-all duration-200" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+        <div id="cum-win-rate" className="relative overflow-hidden rounded p-5 shadow-lg backdrop-blur-sm transition-all duration-200" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
           <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}>
             <Scale className="w-4 h-4" style={{ color: '#C9A84C' }} />
           </div>
@@ -161,7 +161,7 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
         </div>
 
         {/* Gross Profit */}
-        <div id="cum-gross-profit" className="relative overflow-hidden rounded-3xl p-5 shadow-lg backdrop-blur-sm transition-all duration-200" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+        <div id="cum-gross-profit" className="relative overflow-hidden rounded p-5 shadow-lg backdrop-blur-sm transition-all duration-200" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
           <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}>
             <TrendingUp className="w-4 h-4" style={{ color: '#C9A84C' }} />
           </div>
@@ -175,7 +175,7 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
         </div>
 
         {/* Total Brokerage */}
-        <div id="cum-brokerage" className="relative overflow-hidden rounded-3xl p-5 shadow-lg backdrop-blur-sm transition-all duration-200" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+        <div id="cum-brokerage" className="relative overflow-hidden rounded p-5 shadow-lg backdrop-blur-sm transition-all duration-200" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
           <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}>
             <TrendingDown className="w-4 h-4" style={{ color: '#C9A84C' }} />
           </div>
@@ -189,7 +189,7 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
       </div>
 
       {/* Total Offset Summary — lifetime running total of all weekly offsets */}
-      <div id="cum-lifetime-offset" className="relative overflow-hidden rounded-3xl p-5 shadow-lg backdrop-blur-sm flex flex-wrap items-center justify-between gap-4" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+      <div id="cum-lifetime-offset" className="relative overflow-hidden rounded p-5 shadow-lg backdrop-blur-sm flex flex-wrap items-center justify-between gap-4" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)', width: '100%', marginTop: 20 }}>
         <div className="flex items-center gap-3">
           <span className="p-2.5 rounded-xl shadow-md" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', color: '#C9A84C' }}>
             <Scale className="w-5 h-5" style={{ color: '#C9A84C' }} />
@@ -215,7 +215,7 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
 
       {/* Secondary micro details */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-4 rounded-2xl flex items-center justify-between text-xs shadow-md" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+        <div className="p-4 rounded-lg flex items-center justify-between text-xs shadow-md" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
           <div className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" style={{ color: '#C9A84C' }} />
             <span className="font-bold font-mono text-[10px] uppercase tracking-wider" style={{ color: 'rgba(240,230,200,0.7)' }}>Registered Ledgers</span>
@@ -225,7 +225,7 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
           </span>
         </div>
 
-        <div className="p-4 rounded-2xl flex items-center justify-between text-xs shadow-md" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+        <div className="p-4 rounded-lg flex items-center justify-between text-xs shadow-md" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4" style={{ color: '#C9A84C' }} />
             <span className="font-bold font-mono text-[10px] uppercase tracking-wider" style={{ color: 'rgba(240,230,200,0.7)' }}>Top Realized Trade</span>
@@ -235,7 +235,7 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
           </span>
         </div>
 
-        <div className="p-4 rounded-2xl flex items-center justify-between text-xs shadow-md" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+        <div className="p-4 rounded-lg flex items-center justify-between text-xs shadow-md" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
           <div className="flex items-center gap-2">
             <TrendingDown className="w-4 h-4" style={{ color: '#C9A84C' }} />
             <span className="font-bold font-mono text-[10px] uppercase tracking-wider" style={{ color: 'rgba(240,230,200,0.7)' }}>Max Deficit Trade</span>

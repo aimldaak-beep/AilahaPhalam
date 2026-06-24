@@ -82,31 +82,31 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
     {
       name: "NSE Futures",
       match: (t: Trade) => t.instrument === 'Futures' || t.instrument === 'NSE Futures',
-      colorClass: "border rounded-3xl",
+      colorClass: "border rounded",
       icon: <TrendingUp className="w-5 h-5 text-teal-400" />
     },
     {
       name: "NSE & Global Options",
       match: (t: Trade) => t.instrument === 'Option' || t.instrument === 'NSE Options',
-      colorClass: "border rounded-3xl",
+      colorClass: "border rounded",
       icon: <Award className="w-5 h-5 text-fuchsia-400" />
     },
     {
       name: "GIFT Nifty",
       match: (t: Trade) => t.instrument === 'Gift Nifty',
-      colorClass: "border rounded-3xl",
+      colorClass: "border rounded",
       icon: <Target className="w-5 h-5 text-[#e8a04d]" />
     },
     {
       name: "DOW Conglomerate",
       match: (t: Trade) => t.instrument === 'DOW',
-      colorClass: "border rounded-3xl",
+      colorClass: "border rounded",
       icon: <Landmark className="w-5 h-5 text-blue-400" />
     },
     {
       name: "Global Indices & Commodities",
       match: (t: Trade) => ['Nasdaq', 'Nikkei', 'SnP', 'NG'].includes(t.instrument),
-      colorClass: "border rounded-3xl",
+      colorClass: "border rounded",
       icon: <Compass className="w-5 h-5 text-slate-300" />
     }
   ];
@@ -174,7 +174,7 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
 
       {/* Main overall stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="relative overflow-hidden rounded-3xl p-5 shadow-lg backdrop-blur-sm" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+        <div className="relative overflow-hidden rounded p-5 shadow-lg backdrop-blur-sm" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
           <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}>
             <Compass className="w-4 h-4" style={{ color: '#C9A84C' }} />
           </div>
@@ -186,7 +186,7 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
           </span>
         </div>
 
-        <div className="relative overflow-hidden rounded-3xl p-5 shadow-lg backdrop-blur-sm" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+        <div className="relative overflow-hidden rounded p-5 shadow-lg backdrop-blur-sm" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
           <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}>
             <TrendingUp className="w-4 h-4" style={{ color: '#C9A84C' }} />
           </div>
@@ -199,7 +199,7 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
           </span>
         </div>
 
-        <div className="relative overflow-hidden rounded-3xl p-5 shadow-lg backdrop-blur-sm" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+        <div className="relative overflow-hidden rounded p-5 shadow-lg backdrop-blur-sm" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
           <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C' }}>
             <Scale className="w-4 h-4" style={{ color: '#C9A84C' }} />
           </div>

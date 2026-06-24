@@ -317,7 +317,7 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
 
           {/* USD/INR rates */}
           {currency === 'USD' && (
-            <div className="p-4 rounded-2xl grid grid-cols-1 sm:grid-cols-2 gap-4" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.1)' }}>
+            <div className="p-4 rounded-lg grid grid-cols-1 sm:grid-cols-2 gap-4" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.1)' }}>
               <div>
                 <label className="block text-[13px] font-black uppercase tracking-widest font-mono mb-1.5" style={{ color: '#C9960C' }}>
                   USD/INR Rate (general)
@@ -338,7 +338,7 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
 
           {/* Per-week Friday closing prices + per-week FX (carry-forward weeks) */}
           {activeWeeks.length > 0 && (
-            <div className="p-4 rounded-2xl space-y-3" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.1)' }}>
+            <div className="p-4 rounded-lg space-y-3" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.1)' }}>
               <div className="flex items-center gap-2">
                 <AlertCircle className="w-3.5 h-3.5" style={{ color: '#C9A84C' }} />
                 <span className="text-[13px] font-black uppercase tracking-widest font-mono" style={{ color: '#C9A84C' }}>

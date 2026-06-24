@@ -407,7 +407,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
       }}
     >
       {/* Header + back */}
-      <div className="flex items-center justify-between bg-[#0a0a19cc] border border-white/10 px-4 py-3 rounded-2xl">
+      <div className="flex items-center justify-between bg-[#0a0a19cc] border border-white/10 px-4 py-3 rounded-lg">
         <button
           type="button"
           onClick={() => setCurrentView('menu')}
@@ -555,15 +555,15 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
         )}
 
         {loading ? (
-          <div className="bg-[#0a0a19cc] border border-dashed border-white/10 p-8 rounded-2xl text-center">
+          <div className="bg-[#0a0a19cc] border border-dashed border-white/10 p-8 rounded-lg text-center">
             <p className="text-[#8a9bb3] text-sm font-bold font-mono">Loading…</p>
           </div>
         ) : err ? (
-          <div className="bg-[#0a0a19cc] border border-[#e8a04d]/30 p-6 rounded-2xl text-center">
+          <div className="bg-[#0a0a19cc] border border-[#e8a04d]/30 p-6 rounded-lg text-center">
             <p className="text-[#e8a04d] text-xs font-bold font-mono">{err}</p>
           </div>
         ) : openTrades.length === 0 ? (
-          <div className="bg-[#0a0a19cc] border border-dashed border-white/10 p-8 rounded-2xl text-center">
+          <div className="bg-[#0a0a19cc] border border-dashed border-white/10 p-8 rounded-lg text-center">
             <p className="text-[#8a9bb3] text-sm font-bold font-mono">No open tracker trades.</p>
           </div>
         ) : (
@@ -817,11 +817,11 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
         </div>
 
         {closedTrades.length === 0 ? (
-          <div className="bg-[#0a0a19cc] border border-dashed border-white/10 p-8 rounded-2xl text-center">
+          <div className="bg-[#0a0a19cc] border border-dashed border-white/10 p-8 rounded-lg text-center">
             <p className="text-[#8a9bb3] text-sm font-bold font-mono">No closed tracker trades.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#0a0a19cc] shadow-lg">
+          <div className="overflow-x-auto rounded-lg border border-white/10 bg-[#0a0a19cc] shadow-lg">
             <table className="w-full min-w-[760px] text-left border-collapse">
               <thead>
                 <tr className="bg-[#0a0a19cc] text-[#8a9bb3] uppercase text-[10px] font-mono tracking-widest border-b border-white/10">
@@ -883,7 +883,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
       {/* Close modal */}
       {closeFor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="bg-[#0a0a19cc] border border-white/10 rounded-2xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
+          <div className="bg-[#0a0a19cc] border border-white/10 rounded-lg p-6 w-full max-w-sm space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-black text-[#7fb3d5] uppercase tracking-widest font-mono">Close Trade</h3>
               <button type="button" onClick={() => setCloseFor(null)} className="text-[#8a9bb3] hover:text-[#e8edf4] cursor-pointer">

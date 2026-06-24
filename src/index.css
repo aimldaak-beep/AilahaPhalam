@@ -251,3 +251,42 @@ input::placeholder { color: rgba(240,230,200,0.3); }
   color: #C9A84C;
   border: 1px solid rgba(201,168,76,0.25);
 }
+
+/* Inner page glass panels */
+.glass-panel {
+  background: rgba(255,255,255,0.03) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(201,168,76,0.12) !important;
+  border-radius: 8px !important;
+}
+
+/* Sharp professional borders for inner pages */
+.inner-card {
+  background: rgba(255,255,255,0.02);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(201,168,76,0.1);
+  border-radius: 6px;
+}
+
+/* Remove aggressive rounding on tables */
+table { border-radius: 0 !important; }
+
+/* Professional header line */
+.page-header-line {
+  border-bottom: 1px solid rgba(201,168,76,0.15);
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+
+/* Thin sharp dividers */
+.divider {
+  border: none;
+  border-top: 1px solid rgba(201,168,76,0.08);
+  margin: 12px 0;
+}
+
+@keyframes headerWave {
+  0%,100% { transform: translate(-50%,-50%) scaleX(1); opacity: 0.6; }
+  50% { transform: translate(-50%,-50%) scaleX(1.2); opacity: 1; }
+}

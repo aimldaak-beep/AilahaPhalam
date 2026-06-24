@@ -171,7 +171,7 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
 
           {/* Entry reference */}
           <div
-            className="grid grid-cols-2 gap-4 p-4 rounded-2xl"
+            className="grid grid-cols-2 gap-4 p-4 rounded-lg"
             style={{
               background: 'rgba(8,5,2,0.9)',
               border: '1px solid rgba(201,168,76,0.08)',
@@ -292,7 +292,7 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
           {/* Live evaluation */}
           {preview ? (
             <div
-              className="p-4 rounded-2xl border transition-all duration-200 shadow-sm"
+              className="p-4 rounded-lg border transition-all duration-200 shadow-sm"
               style={
                 preview.net >= 0
                   ? { background: 'rgba(103,122,103,0.1)', border: '1px solid rgba(103,122,103,0.3)' }
@@ -396,7 +396,7 @@ export default function WhatIfCloseModal({ trade, onClose }: WhatIfCloseModalPro
             </div>
           ) : (
             <div
-              className="p-6 rounded-2xl border border-dashed text-center text-xs font-medium leading-relaxed font-mono"
+              className="p-6 rounded-lg border border-dashed text-center text-xs font-medium leading-relaxed font-mono"
               style={{
                 background: 'rgba(4,2,0,0.95)',
                 borderColor: 'rgba(201,168,76,0.08)',

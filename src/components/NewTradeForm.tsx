@@ -128,8 +128,8 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/75 backdrop-blur-xl overflow-y-auto p-6">
       <div
         id="new-trade-form-card"
-        className="w-full max-w-3xl max-h-[92vh] overflow-y-auto shadow-2xl transition-all duration-200"
-        style={{background:'rgba(8,5,2,0.92)',backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:24,marginTop:'5vh'}}
+        className="w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl transition-all duration-200"
+        style={{background:'rgba(8,5,2,0.92)',backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:12,marginTop:'5vh',width:'90vw',maxWidth:680}}
       >
         <div className="flex items-center justify-between px-6 py-4.5" style={{borderBottom:'1px solid rgba(201,168,76,0.08)'}}>
           <div className="flex items-center gap-4">
@@ -155,9 +155,15 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} style={{
+          padding: '24px 28px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+          maxWidth: '100%',
+        }}>
           {/* Metadata Display */}
-          <div className="rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 text-sm" style={{background:'rgba(4,2,0,0.95)',border:'1px solid rgba(201,168,76,0.08)'}}>
+          <div className="rounded-lg p-4 flex flex-wrap items-center justify-between gap-4 text-sm" style={{background:'rgba(4,2,0,0.95)',border:'1px solid rgba(201,168,76,0.08)'}}>
             <div className="flex items-center gap-2 font-semibold font-mono text-[12px] uppercase tracking-wider" style={{color:'rgba(240,230,200,0.7)'}}>
               <Calendar className="w-4 h-4" style={{color:'#C9A84C'}} />
               <span>Initiation Date Week:</span>
@@ -340,7 +346,7 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
             <span className="text-[13px] font-black uppercase tracking-widest block font-mono" style={{color:'#C9A84C'}}>
               Accounting & Currency Parameters
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl" style={{background:'rgba(4,2,0,0.95)',border:'1px solid rgba(201,168,76,0.08)'}}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg" style={{background:'rgba(4,2,0,0.95)',border:'1px solid rgba(201,168,76,0.08)'}}>
               {/* Currency Select */}
               <div className="space-y-1.5">
                 <label className="block text-[13px] font-black uppercase tracking-widest font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
@@ -444,7 +450,7 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
 
           {/* Info Banner on Rollover */}
           <div className="pt-4 mt-2" style={{borderTop:'1px solid rgba(201,168,76,0.08)'}}>
-            <div className="p-4 rounded-2xl flex gap-4 text-[13px] leading-relaxed font-bold" style={{background:'rgba(103,122,103,0.06)',border:'1px solid rgba(103,122,103,0.2)',color:'#677A67'}}>
+            <div className="p-4 rounded-lg flex gap-4 text-[13px] leading-relaxed font-bold" style={{background:'rgba(103,122,103,0.06)',border:'1px solid rgba(103,122,103,0.2)',color:'#677A67'}}>
               <AlertOctagon className="w-5 h-5 shrink-0 mt-0.5 animate-pulse" style={{color:'#677A67'}} />
               <div>
                 <span className="font-black block mb-1 text-[12px] uppercase tracking-widest font-mono" style={{color:'#677A67'}}>

@@ -68,7 +68,7 @@ export default function CarryForwardModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)'}}>
       <div
         id="carry-forward-modal"
-        className="w-full max-w-md shadow-2xl transition-all overflow-hidden rounded-3xl"
+        className="w-full max-w-md shadow-2xl transition-all overflow-hidden rounded"
         style={{background:'rgba(8,5,2,0.92)',backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:24}}
       >
         <div className="flex items-center justify-between px-6 py-4.5" style={{borderBottom:'1px solid rgba(201,168,76,0.08)'}}>
@@ -97,7 +97,7 @@ export default function CarryForwardModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Reference Info card */}
-          <div className="p-4 rounded-2xl grid grid-cols-2 gap-4 text-xs" style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.1)',borderRadius:16}}>
+          <div className="p-4 rounded-lg grid grid-cols-2 gap-4 text-xs" style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.1)',borderRadius:16}}>
             <div>
               <span className="block text-[9px] uppercase font-black tracking-widest mb-1 font-mono" style={{color:'rgba(240,230,200,0.5)'}}>
                 {trade.direction === 'Long' ? 'Buy Entry Price' : 'Sell Entry Price'}
@@ -142,7 +142,7 @@ export default function CarryForwardModal({
 
           {/* USD to INR Exchange rate (if USD trade) */}
           {trade.currency === 'USD' && (
-            <div className="p-4 rounded-2xl space-y-2" style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.1)',borderRadius:16}}>
+            <div className="p-4 rounded-lg space-y-2" style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.1)',borderRadius:16}}>
               <label className="block text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 font-mono" style={{color:'#C9A84C'}}>
                 <span className="w-1.5 h-1.5 rounded-full inline-block" style={{background:'#C9A84C'}}></span>
                 Friday EOD USD/INR Exchange Rate
@@ -165,7 +165,7 @@ export default function CarryForwardModal({
             </div>
           )}
 
-          <div className="p-4 rounded-2xl text-[10px] leading-relaxed font-mono font-bold uppercase tracking-wider" style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.08)',borderRadius:16,color:'rgba(240,230,200,0.35)'}}>
+          <div className="p-4 rounded-lg text-[10px] leading-relaxed font-mono font-bold uppercase tracking-wider" style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.08)',borderRadius:16,color:'rgba(240,230,200,0.35)'}}>
             💡 Rolling positions forward retains them as open-position contracts into the subsequent active weeks.
           </div>
 

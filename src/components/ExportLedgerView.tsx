@@ -120,7 +120,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
         {/* Left column: Setup controls */}
         <div className="lg:col-span-2 space-y-6">
           {/* Card 1: Chronological bounds */}
-          <div className="rounded-3xl p-6 shadow-lg space-y-4" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+          <div className="rounded p-6 shadow-lg space-y-4" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" style={{ color: '#C9A84C' }} />
               <h3 className="text-xs font-extrabold uppercase tracking-wider font-mono" style={{ color: '#F0E6C8' }}>
@@ -194,7 +194,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
           </div>
 
           {/* Card 2: Instrument Type Filters */}
-          <div className="rounded-3xl p-6 shadow-lg space-y-4" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+          <div className="rounded p-6 shadow-lg space-y-4" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4" style={{ color: '#C9A84C' }} />
@@ -255,7 +255,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
 
         {/* Right column: Matched preview & export triggers */}
         <div className="space-y-6">
-          <div className="rounded-3xl p-6 shadow-lg flex flex-col justify-between min-h-[300px]" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+          <div className="rounded p-6 shadow-lg flex flex-col justify-between min-h-[300px]" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4" style={{ color: '#C9A84C' }} />
@@ -265,7 +265,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
               </div>
 
               {/* Status tally board */}
-              <div className="p-4 rounded-2xl space-y-3.5" style={{ background: 'rgba(4,2,0,0.95)', border: '1px solid rgba(201,168,76,0.08)' }}>
+              <div className="p-4 rounded-lg space-y-3.5" style={{ background: 'rgba(4,2,0,0.95)', border: '1px solid rgba(201,168,76,0.08)' }}>
                 <div className="flex items-center justify-between">
                   <span className="text-[9px] font-mono uppercase font-black" style={{ color: 'rgba(240,230,200,0.5)' }}>Matched Contracts:</span>
                   <span className="text-sm font-mono font-black" style={{ color: '#F0E6C8' }}>
@@ -308,7 +308,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                 type="button"
                 onClick={handleExport}
                 disabled={matchedTrades.length === 0}
-                className="w-full py-4 rounded-2xl text-xs font-black uppercase tracking-widest font-mono flex items-center justify-center gap-2 transition duration-200 cursor-pointer shadow-lg active:scale-[0.98]"
+                className="w-full py-4 rounded-lg text-xs font-black uppercase tracking-widest font-mono flex items-center justify-center gap-2 transition duration-200 cursor-pointer shadow-lg active:scale-[0.98]"
                 style={
                   matchedTrades.length > 0
                     ? { background: '#C9A84C', color: '#1A1200', fontWeight: 800, border: '1px solid rgba(201,168,76,0.4)' }
@@ -324,7 +324,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
               <button
                 type="button"
                 onClick={() => downloadReconciliationCsv(trades, weekOffsets)}
-                className="w-full py-3 rounded-2xl text-xs font-black uppercase tracking-widest font-mono flex items-center justify-center gap-2 transition duration-200 cursor-pointer shadow-md active:scale-[0.98]"
+                className="w-full py-3 rounded-lg text-xs font-black uppercase tracking-widest font-mono flex items-center justify-center gap-2 transition duration-200 cursor-pointer shadow-md active:scale-[0.98]"
                 style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.3)', color: '#C9A84C' }}
               >
                 <Download className="w-4 h-4" />
@@ -344,7 +344,7 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
 
       {/* Matched Positions Preview List */}
       {matchedTrades.length > 0 && (
-        <div className="rounded-3xl p-6 shadow-lg space-y-3" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
+        <div className="rounded p-6 shadow-lg space-y-3" style={{ background: 'rgba(12,8,3,0.9)', border: '1px solid rgba(201,168,76,0.15)' }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Briefcase className="w-4 h-4" style={{ color: 'rgba(240,230,200,0.7)' }} />
