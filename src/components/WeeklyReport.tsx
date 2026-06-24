@@ -446,21 +446,17 @@ export default function WeeklyReport({
       )}
 
       {/* Weekly performance grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16 }}>
         {/* Weekly Net PnL card */}
-        <div id="weekly-net-card" className="rounded p-5 relative overflow-hidden shadow-lg backdrop-blur-sm" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
-          <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
-            <Calculator className="w-4 h-4" style={{color:'#C9A84C'}} />
-          </div>
-          <span className="block text-[9px] font-black uppercase tracking-widest font-mono font-bold" style={{color:'rgba(240,230,200,0.7)'}}>
+        <div id="weekly-net-card" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 16, padding: '20px 24px', position: 'relative', overflow: 'hidden' }}>
+          <Calculator className="w-4 h-4" style={{ position: 'absolute', right: 18, top: 18, color: 'rgba(201,168,76,0.4)' }} />
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.5)', marginBottom: 10 }}>
             Weekly Net {savedOffsetAmount !== 0 ? 'Reconciled' : 'Realized'}
-          </span>
-          <span className={`block text-2xl font-black font-mono tracking-wide mt-3`} style={{color: adjustedWeeklyNet >= 0 ? '#677A67' : '#C9960C'}}>
-            {adjustedWeeklyNet >= 0 ? '+' : ''}
-            ₹{formatAmount(adjustedWeeklyNet)}
-          </span>
-          <div className="text-[10px] font-mono mt-3.5 flex items-center gap-1.5 font-bold" style={{color:'rgba(240,230,200,0.7)'}}>
-            <span className="w-1.5 h-1.5 rounded-full" style={{background: adjustedWeeklyNet >= 0 ? '#677A67' : '#C9960C'}} />
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.1, fontFamily: "'DM Sans', sans-serif", color: adjustedWeeklyNet >= 0 ? '#677A67' : '#C9960C' }}>
+            {adjustedWeeklyNet >= 0 ? '+' : ''}₹{formatAmount(adjustedWeeklyNet)}
+          </div>
+          <div style={{ fontSize: 10, color: 'rgba(240,230,200,0.35)', marginTop: 6, letterSpacing: '1px' }}>
             {savedOffsetAmount !== 0
               ? <>Calc ₹{formatAmount(weeklyNetSum)} {savedOffsetAmount >= 0 ? '+' : '−'} ₹{formatAmount(Math.abs(savedOffsetAmount))} offset</>
               : <>Net of Week {activeWeekInfo.weekNum}</>}
@@ -468,54 +464,43 @@ export default function WeeklyReport({
         </div>
 
         {/* Weekly Gross PnL card */}
-        <div id="weekly-gross-card" className="rounded p-5 relative overflow-hidden shadow-lg backdrop-blur-sm" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
-          <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
-            <SlidersHorizontal className="w-4 h-4" style={{color:'#C9A84C'}} />
-          </div>
-          <span className="block text-[9px] font-black uppercase tracking-widest font-mono font-bold" style={{color:'rgba(240,230,200,0.7)'}}>
+        <div id="weekly-gross-card" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 16, padding: '20px 24px', position: 'relative', overflow: 'hidden' }}>
+          <SlidersHorizontal className="w-4 h-4" style={{ position: 'absolute', right: 18, top: 18, color: 'rgba(201,168,76,0.4)' }} />
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.5)', marginBottom: 10 }}>
             Weekly Gross Profit
-          </span>
-          <span className="block text-2xl font-black font-mono tracking-wide mt-3" style={{color: weeklyGrossSum >= 0 ? '#677A67' : '#C9960C'}}>
-            {weeklyGrossSum >= 0 ? '+' : ''}
-            ₹{formatAmount(weeklyGrossSum)}
-          </span>
-          <div className="text-[10px] font-mono mt-3.5 flex items-center gap-1.5 font-bold" style={{color:'rgba(240,230,200,0.7)'}}>
-            <span className="w-1.5 h-1.5 rounded-full" style={{background:'#C9A84C'}} />
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.1, fontFamily: "'DM Sans', sans-serif", color: weeklyGrossSum >= 0 ? '#677A67' : '#C9960C' }}>
+            {weeklyGrossSum >= 0 ? '+' : ''}₹{formatAmount(weeklyGrossSum)}
+          </div>
+          <div style={{ fontSize: 10, color: 'rgba(240,230,200,0.35)', marginTop: 6, letterSpacing: '1px' }}>
             Gross of Week {activeWeekInfo.weekNum}
           </div>
         </div>
 
         {/* Weekly Brokerage card */}
-        <div id="weekly-brokerage-card" className="rounded p-5 relative overflow-hidden shadow-lg backdrop-blur-sm" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
-          <div className="absolute right-4 top-4 p-2 rounded-xl shadow-md" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
-            <Clock className="w-4 h-4" style={{color:'#C9A84C'}} />
-          </div>
-          <span className="block text-[9px] font-black uppercase tracking-widest font-mono font-bold" style={{color:'rgba(240,230,200,0.7)'}}>
+        <div id="weekly-brokerage-card" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 16, padding: '20px 24px', position: 'relative', overflow: 'hidden' }}>
+          <Clock className="w-4 h-4" style={{ position: 'absolute', right: 18, top: 18, color: 'rgba(201,168,76,0.4)' }} />
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.5)', marginBottom: 10 }}>
             Commissions Deductions
-          </span>
-          <span className="block text-2xl font-black font-mono tracking-wide mt-3" style={{color:'#C9960C'}}>
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.1, fontFamily: "'DM Sans', sans-serif", color: '#C9960C' }}>
             -₹{formatAmount(weeklyBrokerageSum)}
-          </span>
-          <div className="text-[10px] font-mono mt-3.5 flex items-center gap-1.5 font-bold" style={{color:'rgba(240,230,200,0.7)'}}>
-            <span className="w-1.5 h-1.5 rounded-full" style={{background:'#C9960C'}} />
+          </div>
+          <div style={{ fontSize: 10, color: 'rgba(240,230,200,0.35)', marginTop: 6, letterSpacing: '1px' }}>
             Charges for Week {activeWeekInfo.weekNum}
           </div>
         </div>
       </div>
 
       {/* Per-week reconciliation offset editor */}
-      <div id="week-offset-card" className="rounded p-5 shadow-lg backdrop-blur-sm space-y-4" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
-        <div className="flex items-center gap-2">
-          <span className="p-1.5 rounded-lg" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C'}}>
-            <Scale className="w-4 h-4" style={{color:'#C9A84C'}} />
-          </span>
-          <span className="text-xs font-black uppercase tracking-widest font-mono" style={{color:'#C9A84C'}}>
-            Broker Reconciliation — Week {activeWeekInfo.weekNum}
-          </span>
+      <div id="week-offset-card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(201,168,76,0.12)', borderRadius: 12, padding: '16px 20px', marginBottom: 16 }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Scale className="w-3.5 h-3.5" style={{ color: '#C9A84C' }} />
+          Broker Reconciliation — Week {activeWeekInfo.weekNum}
         </div>
 
         {/* Calculated → Offset → Adjusted breakdown */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
           <div className="rounded-lg p-3.5" style={{background:'rgba(5,3,1,0.95)',border:'1px solid rgba(201,168,76,0.15)'}}>
             <span className="block text-[9px] font-extrabold uppercase tracking-widest mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.7)'}}>Calculated Net</span>
             <span className="font-mono font-black text-sm" style={{color: weeklyNetSum >= 0 ? '#F0E6C8' : '#C9960C'}}>
@@ -540,70 +525,54 @@ export default function WeeklyReport({
         </div>
 
         {/* Editor */}
-        <div className="flex flex-col sm:flex-row gap-2.5 items-stretch">
-          <div className="sm:w-44">
-            <input
-              id="offset-amount-input"
-              type="text"
-              inputMode="decimal"
-              placeholder="Offset ± (INR)"
-              value={offsetAmountInput}
-              onChange={e => setOffsetAmountInput(sanitizeSigned(e.target.value))}
-              onFocus={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)'; }}
-              onBlur={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)'; }}
-              className="w-full rounded-xl px-3.5 py-2.5 text-xs focus:outline-none font-bold font-mono"
-              style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,color:'#F0E6C8'}}
-            />
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 8, marginTop: 10 }}>
+          <input
+            id="offset-amount-input"
+            type="text"
+            inputMode="decimal"
+            placeholder="Offset ± (INR)"
+            value={offsetAmountInput}
+            onChange={e => setOffsetAmountInput(sanitizeSigned(e.target.value))}
+            style={{ background: 'transparent', border: 'none', borderBottom: '1px solid rgba(201,168,76,0.3)', color: '#F0E6C8', fontSize: 13, fontWeight: 600, padding: '4px 8px', outline: 'none', width: 120, fontFamily: "'DM Sans', sans-serif" }}
+          />
           <input
             id="offset-note-input"
             type="text"
             placeholder="Note — what the broker said / why it differs"
             value={offsetNoteInput}
             onChange={e => setOffsetNoteInput(e.target.value)}
-            onFocus={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)'; }}
-            onBlur={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)'; }}
-            className="flex-1 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none font-mono"
-            style={{background:'rgba(201,168,76,0.04)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:12,color:'#F0E6C8'}}
+            style={{ background: 'transparent', border: 'none', borderBottom: '1px solid rgba(201,168,76,0.15)', color: 'rgba(240,230,200,0.6)', fontSize: 12, padding: '4px 8px', outline: 'none', flex: 1, fontFamily: "'DM Sans', sans-serif" }}
           />
-          <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleSaveOffsetClick}
+            style={{ background: '#C9A84C', color: '#1A1200', border: 'none', borderRadius: 6, padding: '6px 16px', fontSize: 10, fontWeight: 800, cursor: 'pointer', letterSpacing: '1px', fontFamily: "'DM Sans', sans-serif" }}
+          >
+            SAVE
+          </button>
+          {savedOffset && (
             <button
               type="button"
-              onClick={handleSaveOffsetClick}
-              className="px-5 py-2.5 rounded-xl text-xs font-black font-mono uppercase tracking-wider transition cursor-pointer shadow-md active:scale-[0.98]"
-              style={{background:'#C9A84C',color:'#1A1200',fontWeight:800}}
+              onClick={handleClearOffsetClick}
+              style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', color: 'rgba(240,230,200,0.7)', borderRadius: 6, padding: '6px 14px', fontSize: 10, fontWeight: 800, cursor: 'pointer', letterSpacing: '1px', fontFamily: "'DM Sans', sans-serif" }}
             >
-              Save
+              CLEAR
             </button>
-            {savedOffset && (
-              <button
-                type="button"
-                onClick={handleClearOffsetClick}
-                className="px-4 py-2.5 rounded-xl text-xs font-black font-mono uppercase tracking-wider transition cursor-pointer"
-                style={{background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'rgba(240,230,200,0.7)'}}
-              >
-                Clear
-              </button>
-            )}
-          </div>
+          )}
         </div>
-        <p className="text-[9px] font-mono leading-relaxed" style={{color:'rgba(240,230,200,0.5)'}}>
+        <p className="text-[9px] font-mono leading-relaxed" style={{color:'rgba(240,230,200,0.5)', marginTop: 10}}>
           Offset folds into this week's total only — it never changes the underlying trade/PnL math. Saved to your account and reloaded on login.
         </p>
       </div>
 
       {/* === ACTIVE POSITIONS — all open trades, any week (live blotter) === */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between pb-3" style={{borderBottom:'1px solid rgba(201,168,76,0.2)'}}>
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C'}}>
-              <TrendingUp className="w-4 h-4" style={{color:'#C9A84C'}} />
-            </span>
-            <span className="text-xs font-black uppercase tracking-widest font-mono" style={{color:'#C9A84C'}}>
-              Active Positions ({openTrades.length})
-            </span>
-          </div>
-          <span className="text-[10px] font-mono font-bold uppercase tracking-wider" style={{color:'rgba(240,230,200,0.5)'}}>Live · all weeks</span>
+      <div>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.5)', display: 'flex', alignItems: 'center', gap: 8, padding: '16px 20px 8px', borderBottom: '1px solid rgba(201,168,76,0.1)', marginBottom: 0, justifyContent: 'space-between' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <TrendingUp className="w-3.5 h-3.5" style={{ color: '#C9A84C' }} />
+            Active Positions ({openTrades.length})
+          </span>
+          <span style={{ color: 'rgba(240,230,200,0.35)', letterSpacing: '1px' }}>Live · all weeks</span>
         </div>
 
         {openTrades.length === 0 ? (
@@ -612,92 +581,76 @@ export default function WeeklyReport({
           </div>
         ) : (
           <div className="overflow-x-auto rounded-lg shadow-lg" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.25)'}}>
-            <table className="w-full min-w-[820px] text-left border-collapse">
-              <thead>
-                <tr className="uppercase text-[10px] font-mono tracking-widest" style={{background:'rgba(201,168,76,0.06)',color:'rgba(240,230,200,0.7)',borderBottom:'1px solid rgba(201,168,76,0.15)'}}>
-                  <th className="py-2.5 px-4 font-black">Symbol</th>
-                  <th className="py-2.5 px-3 font-black">Type</th>
-                  <th className="py-2.5 px-3 font-black">Lots</th>
-                  <th className="py-2.5 px-3 font-black text-right">Entry</th>
-                  <th className="py-2.5 px-3 font-black">Entry Date</th>
-                  <th className="py-2.5 px-3 font-black text-right">Current PnL</th>
-                  <th className="py-2.5 px-4 font-black text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {openTrades.map((trade) => {
-                  const sym = trade.currency === 'USD' ? '$' : '₹';
-                  const entryPrice = trade.direction === 'Long' ? trade.buyPrice : trade.sellPrice;
-                  const { value: curPnl, live } = currentPnLForOpenTrade(trade);
-                  return (
-                    <tr key={trade.id} id={`active-trade-${trade.id}`} className="hover:bg-white/5 transition">
-                      <td className="py-2.5 px-4 font-mono font-extrabold text-sm" style={{color:'#F0E6C8'}}>{trade.symbol}</td>
-                      <td className="py-2.5 px-3">
-                        <span className="text-[10px] font-black font-mono uppercase px-1.5 py-0.5 rounded" style={trade.direction === 'Long' ? {background:'rgba(103,122,103,0.1)',color:'#677A67',border:'1px solid rgba(103,122,103,0.25)'} : {background:'rgba(201,150,12,0.1)',color:'#C9960C',border:'1px solid rgba(201,150,12,0.25)'}}>
-                          {trade.direction}
+            <div style={{ minWidth: 900 }}>
+              {/* Header row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '160px 130px 100px 1fr 130px 160px 170px', padding: '8px 20px', background: 'rgba(201,168,76,0.06)', borderBottom: '1px solid rgba(201,168,76,0.15)', gap: 8 }}>
+                {['SYMBOL', 'TYPE', 'LOTS', 'ENTRY', 'ENTRY DATE', 'CURRENT PNL', 'ACTIONS'].map((h, i) => (
+                  <div key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', textAlign: i >= 5 ? 'right' : 'left' }}>{h}</div>
+                ))}
+              </div>
+              {/* Data rows */}
+              {openTrades.map((trade) => {
+                const sym = trade.currency === 'USD' ? '$' : '₹';
+                const entryPrice = trade.direction === 'Long' ? trade.buyPrice : trade.sellPrice;
+                const { value: curPnl, live } = currentPnLForOpenTrade(trade);
+                return (
+                  <div key={trade.id} id={`active-trade-${trade.id}`} style={{ display: 'grid', gridTemplateColumns: '160px 130px 100px 1fr 130px 160px 170px', padding: '12px 20px', borderBottom: '1px solid rgba(201,168,76,0.06)', alignItems: 'center', gap: 8 }}>
+                    <div className="font-mono" style={{ fontSize: 14, fontWeight: 700, color: '#F0E6C8', letterSpacing: '0.3px' }}>{trade.symbol}</div>
+                    <div>
+                      <span className="font-mono" style={{ fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 4, letterSpacing: '1px', display: 'inline-block', ...(trade.direction === 'Long' ? { background: 'rgba(103,122,103,0.1)', color: '#677A67', border: '1px solid rgba(103,122,103,0.25)' } : { background: 'rgba(201,150,12,0.1)', color: '#C9960C', border: '1px solid rgba(201,150,12,0.25)' }) }}>
+                        {trade.direction.toUpperCase()}
+                      </span>
+                      <span className="block font-mono mt-0.5" style={{ fontSize: 10, color: 'rgba(240,230,200,0.5)' }}>{trade.instrument}</span>
+                    </div>
+                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, color: 'rgba(240,230,200,0.7)' }}>{trade.numberOfLots} × {trade.lotSize}</div>
+                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, fontWeight: 700, color: '#F0E6C8' }}>{sym}{formatPrice(entryPrice)}</div>
+                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 11, color: 'rgba(240,230,200,0.5)' }}>{trade.dateInitiated}</div>
+                    <div className="font-mono" style={{ textAlign: 'right' }}>
+                      {curPnl === null ? (
+                        <span style={{ fontSize: 14, color: 'rgba(240,230,200,0.35)' }}>—</span>
+                      ) : (
+                        <span style={{ fontSize: 14, fontWeight: 700, color: curPnl >= 0 ? '#677A67' : '#C9960C' }} title={live ? 'Live — from your entered current price' : 'Mark-to-date — last recorded weekly closes'}>
+                          {curPnl >= 0 ? '+' : ''}₹{formatAmount(curPnl)}
+                          <span className="block" style={{ fontSize: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(240,230,200,0.35)' }}>{live ? 'live' : 'to date'}</span>
                         </span>
-                        <span className="block text-[10px] font-mono mt-0.5" style={{color:'rgba(240,230,200,0.5)'}}>{trade.instrument}</span>
-                      </td>
-                      <td className="py-2.5 px-3 font-mono text-sm whitespace-nowrap" style={{color:'rgba(240,230,200,0.7)'}}>{trade.numberOfLots} × {trade.lotSize}</td>
-                      <td className="py-2.5 px-3 font-mono text-sm text-right font-bold whitespace-nowrap" style={{color:'#F0E6C8'}}>{sym}{formatPrice(entryPrice)}</td>
-                      <td className="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style={{color:'rgba(240,230,200,0.5)'}}>{trade.dateInitiated}</td>
-                      <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                        {curPnl === null ? (
-                          <span className="font-mono text-sm" style={{color:'rgba(240,230,200,0.35)'}}>—</span>
-                        ) : (
-                          <span
-                            className="font-mono font-black text-sm"
-                            style={{color: curPnl >= 0 ? '#677A67' : '#C9960C'}}
-                            title={live ? 'Live — from your entered current price' : 'Mark-to-date — last recorded weekly closes'}
-                          >
-                            {curPnl >= 0 ? '+' : ''}₹{formatAmount(curPnl)}
-                            <span className="block text-[8px] font-bold uppercase tracking-wider" style={{color:'rgba(240,230,200,0.35)'}}>{live ? 'live' : 'to date'}</span>
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-4">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button type="button" title="Close trade" onClick={() => onOpenCloseTrade(trade)} className="p-1.5 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,150,12,0.08)',border:'1px solid rgba(201,150,12,0.2)',color:'#C9960C'}}>
-                            <Lock className="w-3.5 h-3.5" />
-                          </button>
-                          <button type="button" title="Check current PnL" onClick={() => onOpenCheckPnL(trade)} className="p-1.5 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,150,12,0.08)',border:'1px solid rgba(201,150,12,0.2)',color:'#C9960C'}}>
-                            <DollarSign className="w-3.5 h-3.5" />
-                          </button>
-                          <button type="button" title="What-if close (preview only)" onClick={() => onOpenWhatIf(trade)} className="p-1.5 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
-                            <Calculator className="w-3.5 h-3.5" />
-                          </button>
-                          <button type="button" title="Carry forward" onClick={() => onOpenCarryForward(trade, selectedWeekKey)} className="p-1.5 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
-                            <FastForward className="w-3.5 h-3.5" />
-                          </button>
-                          <button type="button" title="Edit / correct" onClick={() => onOpenEditTrade(trade)} className="p-1.5 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button type="button" title="Delete (PIN protected)" onClick={() => onDeleteTrade(trade)} className="p-1.5 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,150,12,0.08)',border:'1px solid rgba(201,150,12,0.2)',color:'#C9960C'}}>
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end', paddingRight: 8 }}>
+                      <button type="button" title="Close trade" onClick={() => onOpenCloseTrade(trade)} className="p-1 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,150,12,0.08)',border:'1px solid rgba(201,150,12,0.2)',color:'#C9960C'}}>
+                        <Lock className="w-3.5 h-3.5" />
+                      </button>
+                      <button type="button" title="Check current PnL" onClick={() => onOpenCheckPnL(trade)} className="p-1 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,150,12,0.08)',border:'1px solid rgba(201,150,12,0.2)',color:'#C9960C'}}>
+                        <DollarSign className="w-3.5 h-3.5" />
+                      </button>
+                      <button type="button" title="What-if close (preview only)" onClick={() => onOpenWhatIf(trade)} className="p-1 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
+                        <Calculator className="w-3.5 h-3.5" />
+                      </button>
+                      <button type="button" title="Carry forward" onClick={() => onOpenCarryForward(trade, selectedWeekKey)} className="p-1 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
+                        <FastForward className="w-3.5 h-3.5" />
+                      </button>
+                      <button type="button" title="Edit / correct" onClick={() => onOpenEditTrade(trade)} className="p-1 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button type="button" title="Delete (PIN protected)" onClick={() => onDeleteTrade(trade)} className="p-1 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,150,12,0.08)',border:'1px solid rgba(201,150,12,0.2)',color:'#C9960C'}}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
 
       {/* === CLOSED / SETTLED TRADES — selected week === */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between pb-3" style={{borderBottom:'1px solid rgba(201,168,76,0.08)'}}>
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg" style={{background:'rgba(5,3,1,0.95)',border:'1px solid rgba(201,168,76,0.15)',color:'rgba(240,230,200,0.7)'}}>
-              <CheckCircle className="w-4 h-4" style={{color:'#677A67'}} />
-            </span>
-            <span className="text-xs font-black uppercase tracking-widest font-mono" style={{color:'rgba(240,230,200,0.7)'}}>
-              Closed Trades — Week {activeWeekInfo.weekNum} ({closedInWeek.length})
-            </span>
-          </div>
-          <span className="text-[10px] font-mono font-bold uppercase tracking-wider" style={{color:'rgba(240,230,200,0.5)'}}>Settled</span>
+      <div>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.5)', display: 'flex', alignItems: 'center', gap: 8, padding: '16px 20px 8px', borderBottom: '1px solid rgba(201,168,76,0.1)', marginBottom: 0, justifyContent: 'space-between' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <CheckCircle className="w-3.5 h-3.5" style={{ color: '#677A67' }} />
+            Closed Trades — Week {activeWeekInfo.weekNum} ({closedInWeek.length})
+          </span>
+          <span style={{ color: 'rgba(240,230,200,0.35)', letterSpacing: '1px' }}>Settled</span>
         </div>
 
         {closedInWeek.length === 0 ? (
@@ -706,59 +659,50 @@ export default function WeeklyReport({
           </div>
         ) : (
           <div className="overflow-x-auto rounded-lg shadow-lg" style={{background:'rgba(12,8,3,0.9)',border:'1px solid rgba(201,168,76,0.15)'}}>
-            <table className="w-full min-w-[860px] text-left border-collapse">
-              <thead>
-                <tr className="uppercase text-[10px] font-mono tracking-widest" style={{background:'rgba(201,168,76,0.06)',color:'rgba(240,230,200,0.7)',borderBottom:'1px solid rgba(201,168,76,0.15)'}}>
-                  <th className="py-2.5 px-4 font-black">Symbol</th>
-                  <th className="py-2.5 px-3 font-black">Type</th>
-                  <th className="py-2.5 px-3 font-black">Lots</th>
-                  <th className="py-2.5 px-3 font-black text-right">Entry</th>
-                  <th className="py-2.5 px-3 font-black text-right">Close</th>
-                  <th className="py-2.5 px-3 font-black">Exit Date</th>
-                  <th className="py-2.5 px-3 font-black text-right">Net PnL</th>
-                  <th className="py-2.5 px-4 font-black text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {closedInWeek.map(({ trade }) => {
-                  const sym = trade.currency === 'USD' ? '$' : '₹';
-                  const entryPrice = trade.direction === 'Long' ? trade.buyPrice : trade.sellPrice;
-                  const exitPrice = trade.direction === 'Long' ? trade.sellPrice : trade.buyPrice;
-                  const exitDate = trade.direction === 'Long' ? trade.sellDate : trade.buyDate;
-                  const totNet = tradeTotalNet(trade);
-                  return (
-                    <tr key={trade.id} id={`closed-trade-${trade.id}`} className="hover:bg-white/5 transition">
-                      <td className="py-2.5 px-4 font-mono font-extrabold text-sm" style={{color:'#F0E6C8'}}>{trade.symbol}</td>
-                      <td className="py-2.5 px-3">
-                        <span className="text-[10px] font-black font-mono uppercase px-1.5 py-0.5 rounded" style={trade.direction === 'Long' ? {background:'rgba(103,122,103,0.1)',color:'#677A67',border:'1px solid rgba(103,122,103,0.25)'} : {background:'rgba(201,150,12,0.1)',color:'#C9960C',border:'1px solid rgba(201,150,12,0.25)'}}>
-                          {trade.direction}
-                        </span>
-                        <span className="block text-[10px] font-mono mt-0.5" style={{color:'rgba(240,230,200,0.5)'}}>{trade.instrument}</span>
-                      </td>
-                      <td className="py-2.5 px-3 font-mono text-sm whitespace-nowrap" style={{color:'rgba(240,230,200,0.7)'}}>{trade.numberOfLots} × {trade.lotSize}</td>
-                      <td className="py-2.5 px-3 font-mono text-sm text-right font-bold whitespace-nowrap" style={{color:'#F0E6C8'}}>{sym}{formatPrice(entryPrice)}</td>
-                      <td className="py-2.5 px-3 font-mono text-sm text-right font-bold whitespace-nowrap" style={{color:'#F0E6C8'}}>{sym}{formatPrice(exitPrice)}</td>
-                      <td className="py-2.5 px-3 font-mono text-xs whitespace-nowrap" style={{color:'rgba(240,230,200,0.5)'}}>{exitDate || '—'}</td>
-                      <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                        <span className="font-mono font-black text-sm" style={{color: totNet >= 0 ? '#677A67' : '#C9960C'}} title="Final realized net across the trade's life">
-                          {totNet >= 0 ? '+' : ''}₹{formatAmount(totNet)}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-4">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button type="button" title="Edit / correct" onClick={() => onOpenEditTrade(trade)} className="p-1.5 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button type="button" title="Delete (PIN protected)" onClick={() => onDeleteTrade(trade)} className="p-1.5 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,150,12,0.08)',border:'1px solid rgba(201,150,12,0.2)',color:'#C9960C'}}>
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div style={{ minWidth: 1010 }}>
+              {/* Header row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '160px 130px 100px 140px 140px 120px 160px 80px', padding: '8px 20px', background: 'rgba(201,168,76,0.06)', borderBottom: '1px solid rgba(201,168,76,0.15)', gap: 8 }}>
+                {['SYMBOL', 'TYPE', 'LOTS', 'ENTRY', 'CLOSE', 'EXIT DATE', 'NET PNL', 'ACTIONS'].map((h, i) => (
+                  <div key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', textAlign: i === 6 ? 'right' : i === 7 ? 'center' : 'left' }}>{h}</div>
+                ))}
+              </div>
+              {/* Data rows */}
+              {closedInWeek.map(({ trade }) => {
+                const sym = trade.currency === 'USD' ? '$' : '₹';
+                const entryPrice = trade.direction === 'Long' ? trade.buyPrice : trade.sellPrice;
+                const exitPrice = trade.direction === 'Long' ? trade.sellPrice : trade.buyPrice;
+                const exitDate = trade.direction === 'Long' ? trade.sellDate : trade.buyDate;
+                const totNet = tradeTotalNet(trade);
+                return (
+                  <div key={trade.id} id={`closed-trade-${trade.id}`} style={{ display: 'grid', gridTemplateColumns: '160px 130px 100px 140px 140px 120px 160px 80px', padding: '12px 20px', borderBottom: '1px solid rgba(201,168,76,0.06)', alignItems: 'center', gap: 8 }}>
+                    <div className="font-mono" style={{ fontSize: 14, fontWeight: 700, color: '#F0E6C8', letterSpacing: '0.3px' }}>{trade.symbol}</div>
+                    <div>
+                      <span className="font-mono" style={{ fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 4, letterSpacing: '1px', display: 'inline-block', ...(trade.direction === 'Long' ? { background: 'rgba(103,122,103,0.1)', color: '#677A67', border: '1px solid rgba(103,122,103,0.25)' } : { background: 'rgba(201,150,12,0.1)', color: '#C9960C', border: '1px solid rgba(201,150,12,0.25)' }) }}>
+                        {trade.direction.toUpperCase()}
+                      </span>
+                      <span className="block font-mono mt-0.5" style={{ fontSize: 10, color: 'rgba(240,230,200,0.5)' }}>{trade.instrument}</span>
+                    </div>
+                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, color: 'rgba(240,230,200,0.7)' }}>{trade.numberOfLots} × {trade.lotSize}</div>
+                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, fontWeight: 700, color: '#F0E6C8' }}>{sym}{formatPrice(entryPrice)}</div>
+                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, fontWeight: 700, color: '#F0E6C8' }}>{sym}{formatPrice(exitPrice)}</div>
+                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 11, color: 'rgba(240,230,200,0.45)', letterSpacing: '0.3px' }}>{exitDate || '—'}</div>
+                    <div className="font-mono" style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: totNet >= 0 ? '#677A67' : '#C9960C' }} title="Final realized net across the trade's life">
+                        {totNet >= 0 ? '+' : ''}₹{formatAmount(totNet)}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
+                      <button type="button" title="Edit / correct" onClick={() => onOpenEditTrade(trade)} className="p-1 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button type="button" title="Delete (PIN protected)" onClick={() => onDeleteTrade(trade)} className="p-1 rounded-lg transition cursor-pointer active:scale-95" style={{background:'rgba(201,150,12,0.08)',border:'1px solid rgba(201,150,12,0.2)',color:'#C9960C'}}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
