@@ -153,6 +153,117 @@ export default function App() {
     };
   }, [session]);
 
+  // Aurora canvas — gilded particle/stream field behind the hub. Re-binds whenever the
+  // menu view (and its <canvas>) actually mounts, since the canvas only exists on the hub.
+  useEffect(() => {
+    if (currentView !== 'menu' || !session) return;
+    const canvas = document.getElementById('aurora-canvas') as HTMLCanvasElement | null;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d')!;
+    let animId: number;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const particles: any[] = [];
+    const streams: any[] = [];
+
+    for (let i = 0; i < 150; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 1.8 + 0.3,
+        speedX: (Math.random() - 0.5) * 0.35,
+        speedY: (Math.random() - 0.5) * 0.35,
+        life: Math.random() * 200,
+        maxLife: Math.random() * 200 + 100,
+        gold: Math.random() > 0.35,
+        alpha: Math.random() * 0.5 + 0.15,
+      });
+    }
+
+    for (let i = 0; i < 30; i++) {
+      streams.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        len: Math.random() * 130 + 60,
+        speed: Math.random() * 0.7 + 0.25,
+        angle: Math.PI / 2 + (Math.random() - 0.5) * 0.5,
+        gold: Math.random() > 0.4,
+        width: Math.random() * 1.0 + 0.3,
+        alpha: Math.random() * 0.35 + 0.08,
+        points: [] as { x: number; y: number }[],
+      });
+    }
+
+    const draw = () => {
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      const g1 = ctx.createRadialGradient(W * 0.7, H * 0.2, 0, W * 0.7, H * 0.2, W * 0.55);
+      g1.addColorStop(0, 'rgba(180,130,30,0.07)');
+      g1.addColorStop(1, 'transparent');
+      ctx.fillStyle = g1; ctx.globalAlpha = 1; ctx.fillRect(0, 0, W, H);
+
+      const g2 = ctx.createRadialGradient(W * 0.2, H * 0.8, 0, W * 0.2, H * 0.8, W * 0.45);
+      g2.addColorStop(0, 'rgba(180,180,200,0.05)');
+      g2.addColorStop(1, 'transparent');
+      ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H);
+
+      streams.forEach(s => {
+        s.y += s.speed * Math.sin(s.angle);
+        s.x += s.speed * Math.cos(s.angle);
+        s.points.push({ x: s.x, y: s.y });
+        if (s.points.length > s.len) s.points.shift();
+        if (s.y > H + 40 || s.x < -40 || s.x > W + 40) {
+          s.x = Math.random() * W; s.y = -20; s.points = [];
+        }
+        if (s.points.length < 2) return;
+        for (let i = 1; i < s.points.length; i++) {
+          const t = i / s.points.length;
+          ctx.globalAlpha = s.alpha * t * t;
+          ctx.strokeStyle = s.gold
+            ? `rgba(${200 + Math.floor(t * 40)},${145 + Math.floor(t * 40)},${25 + Math.floor(t * 20)},1)`
+            : `rgba(${175 + Math.floor(t * 65)},${175 + Math.floor(t * 65)},${195 + Math.floor(t * 45)},1)`;
+          ctx.lineWidth = s.width * t;
+          ctx.beginPath();
+          ctx.moveTo(s.points[i - 1].x, s.points[i - 1].y);
+          ctx.lineTo(s.points[i].x, s.points[i].y);
+          ctx.stroke();
+        }
+      });
+
+      particles.forEach(p => {
+        p.x += p.speedX; p.y += p.speedY; p.life++;
+        if (p.life > p.maxLife || p.x < 0 || p.x > W || p.y < 0 || p.y > H) {
+          p.x = Math.random() * W; p.y = Math.random() * H; p.life = 0;
+        }
+        const t = p.life / p.maxLife;
+        const a = t < 0.1 ? t / 0.1 : t > 0.9 ? (1 - t) / 0.1 : 1;
+        ctx.globalAlpha = p.alpha * a;
+        ctx.fillStyle = p.gold
+          ? `rgb(${180 + Math.floor(Math.random() * 40)},${138 + Math.floor(Math.random() * 30)},${28 + Math.floor(Math.random() * 35)})`
+          : `rgb(${178 + Math.floor(Math.random() * 60)},${178 + Math.floor(Math.random() * 60)},${195 + Math.floor(Math.random() * 40)})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.globalAlpha = 1;
+      animId = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', resize);
+    };
+  }, [currentView, session]);
+
   // Persist a state mutation to Supabase by diffing the previous list against the next.
   // Each Trade object is stored in the `data` jsonb column; rows are keyed by data->>id
   // (the in-memory Trade.id), so adds insert, edits update, and removals delete the row.
@@ -377,6 +488,11 @@ export default function App() {
 
   const activeTradesCount = trades.filter(t => t.status === 'CarryForwardLong' || t.status === 'CarryForwardShort').length;
 
+  // Open (carry-forward) positions — drive the hub's "active trades" badge.
+  const openTrades = trades.filter(t => t.status === 'CarryForwardLong' || t.status === 'CarryForwardShort');
+  const openCount = openTrades.length;
+  const instrumentForOpen = openTrades[0]?.symbol ?? '—';
+
   // While the initial session check is in flight, hold a minimal splash to avoid flashing the login screen.
   if (authLoading) {
     return (
@@ -422,7 +538,8 @@ export default function App() {
       <div className="absolute bottom-[-10%] left-[10%] w-[550px] h-[550px] bg-[#7fb3d5]/4 rounded-full blur-[150px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '5s' }} />
 
       <div className="relative z-10">
-        {/* Premium High-Density Navigation/Header with Magi Colors */}
+        {/* Premium High-Density Navigation/Header with Magi Colors — hidden on the revamped hub (it has its own header). */}
+        {currentView !== 'menu' && (
         <header className="border-b border-[#9B5DE5]/20 bg-[#05050F]/90 backdrop-blur-md sticky top-0 z-40 px-6 py-4 shadow-xl">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-5">
@@ -490,49 +607,119 @@ export default function App() {
             </div>
           </div>
         </header>
+        )}
 
         {/* Main Content Stage */}
         <main className="max-w-7xl mx-auto px-6 py-6 space-y-6">
           {currentView === 'menu' ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.2 }}
-              className="max-w-4xl mx-auto py-10 px-2 space-y-12"
-              style={{ background: 'rgba(5,5,15,0.95)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderRadius: 24 }}
-            >
-              {/* Minimal Branding Name in clean solid Magi color */}
-              <div className="text-center py-6 space-y-2">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 rounded-full text-[9px] text-[#7fb3d5] font-mono tracking-widest uppercase font-black">
-                  ✦ Celestial Position Ledger ✦
-                </div>
-                <h2 className="text-3xl md:text-4xl font-black text-[#7fb3d5] tracking-widest uppercase font-sans select-none">
-                  AILAHA PHALAM
-                </h2>
-              </div>
+            <>
+              {/* Aurora Canvas */}
+              <canvas id="aurora-canvas" />
 
-              {/* Grand Card Grid (Sleek minimalist high density control cards) */}
-              <div id="home-dashboard-grid" className="grid grid-cols-2 md:grid-cols-6 gap-3 max-w-5xl mx-auto">
-                {/* 1. Add Trade card */}
-                <button
-                  type="button"
-                  id="action-card-add"
-                  onClick={() => setShowAddForm(true)}
-                  className="group relative bg-[#222e42] hover:bg-[#2a3a52] border border-white/5 hover:border-[#7fb3d5]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
-                >
-                  <div className="p-2.5 bg-[#172234] text-[#7fb3d5] rounded-xl border border-white/5 shadow-inner mb-2.5">
-                    <BookPlus className="w-5 h-5 text-[#7fb3d5]" />
+              {/* Hub */}
+              <div style={{
+                position: 'relative',
+                zIndex: 1,
+                minHeight: '100vh',
+                padding: '0 24px 40px',
+              }}>
+                {/* Header */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '24px 0 32px',
+                  borderBottom: '1px solid rgba(201,168,76,0.1)',
+                  marginBottom: '40px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{
+                      width: 42, height: 42,
+                      background: 'linear-gradient(135deg,#C9A84C,#E8D5A3)',
+                      borderRadius: 12,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 18, fontWeight: 900, color: '#1A1200',
+                      fontFamily: "'DM Serif Display', serif",
+                      flexShrink: 0,
+                    }}>A</div>
+                    <div>
+                      <div style={{
+                        fontSize: 20, fontWeight: 800, color: '#F0E6C8',
+                        fontFamily: "'DM Serif Display', serif",
+                        letterSpacing: '-0.3px',
+                      }}>Ailaha Phalam</div>
+                      <div style={{
+                        fontSize: 9, letterSpacing: '3px',
+                        color: 'rgba(201,168,76,0.5)',
+                        textTransform: 'uppercase', marginTop: 2,
+                      }}>Celestial Metrics</div>
+                    </div>
                   </div>
-                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#7fb3d5] font-sans">
-                    Initiate Trade
-                  </h3>
-                </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      background: 'rgba(201,168,76,0.08)',
+                      border: '1px solid rgba(201,168,76,0.2)',
+                      borderRadius: 20, padding: '5px 14px',
+                      fontSize: 11, color: '#C9A84C', fontWeight: 700,
+                    }}>
+                      <div style={{
+                        width: 6, height: 6,
+                        background: '#C9A84C', borderRadius: '50%',
+                        animation: 'pulse 1.5s infinite',
+                      }} />
+                      {session?.user?.email?.split('@')[0] || 'AKS'}
+                    </div>
+                    <button
+                      onClick={() => supabase.auth.signOut()}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid rgba(201,168,76,0.2)',
+                        borderRadius: 8, padding: '6px 14px',
+                        fontSize: 11, color: 'rgba(240,230,200,0.5)',
+                        cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                      }}
+                    >Sign out</button>
+                  </div>
+                </div>
 
-                {/* 2. Current Week Status card */}
-                <button
-                  type="button"
-                  id="action-card-current"
-                  onClick={() => {
+                {/* Active trades badge */}
+                {openCount > 0 && (
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    background: 'rgba(201,168,76,0.06)',
+                    border: '1px solid rgba(201,168,76,0.15)',
+                    borderRadius: 12, padding: '8px 16px',
+                    marginBottom: 32, fontSize: 12, color: '#C9A84C', fontWeight: 600,
+                  }}>
+                    <span style={{
+                      width: 8, height: 8, background: '#C9A84C',
+                      borderRadius: '50%', display: 'inline-block',
+                      animation: 'pulse 1.5s infinite',
+                    }} />
+                    {openCount} active trade{openCount !== 1 ? 's' : ''} · CF {instrumentForOpen}
+                  </div>
+                )}
+
+                {/* 8 Tiles Grid */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: 16,
+                  maxWidth: 960,
+                  margin: '0 auto',
+                }}>
+
+                  {/* Tile 1 — Initiate Trade */}
+                  <div className="tile tile-1" onClick={() => setShowAddForm(true)}>
+                    <div className="tile-badge">New</div>
+                    <div className="tile-icon">✦</div>
+                    <div className="tile-title">Initiate Trade</div>
+                    <div className="tile-desc">Open a new position in the ledger</div>
+                  </div>
+
+                  {/* Tile 2 — Current Week */}
+                  <div className="tile tile-2" onClick={() => {
                     const todayKey = getWeekInfo(new Date().toISOString().split('T')[0]).weekKey;
                     if (weekKeysList.includes(todayKey)) {
                       setSelectedWeekKey(todayKey);
@@ -540,22 +727,14 @@ export default function App() {
                       setSelectedWeekKey(weekKeysList[weekKeysList.length - 1]);
                     }
                     setCurrentView('weekly');
-                  }}
-                  className="group relative bg-[#222e42] hover:bg-[#2a3a52] border border-white/5 hover:border-[#7fb3d5]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
-                >
-                  <div className="p-2.5 bg-[#172234] text-[#7fb3d5] rounded-xl border border-white/5 shadow-inner mb-2.5">
-                    <CandlestickChart className="w-5 h-5 text-[#7fb3d5]" />
+                  }}>
+                    <div className="tile-icon">◎</div>
+                    <div className="tile-title">Current Week</div>
+                    <div className="tile-desc">This week's trades and P&L</div>
                   </div>
-                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#7fb3d5] font-sans">
-                    Current Week
-                  </h3>
-                </button>
 
-                {/* 3. Last Week Status card */}
-                <button
-                  type="button"
-                  id="action-card-last"
-                  onClick={() => {
+                  {/* Tile 3 — Last Week */}
+                  <div className="tile tile-3" onClick={() => {
                     if (weekKeysList.length >= 2) {
                       setSelectedWeekKey(weekKeysList[weekKeysList.length - 2]);
                     } else {
@@ -564,99 +743,66 @@ export default function App() {
                       setSelectedWeekKey(getWeekInfo(today.toISOString().split('T')[0]).weekKey);
                     }
                     setCurrentView('weekly');
-                  }}
-                  className="group relative bg-[#222e42] hover:bg-[#2a3a52] border border-white/5 hover:border-[#7fb3d5]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
-                >
-                  <div className="p-2.5 bg-[#172234] text-[#7fb3d5] rounded-xl border border-white/5 shadow-inner mb-2.5">
-                    <CalendarClock className="w-5 h-5 text-[#7fb3d5]" />
+                  }}>
+                    <div className="tile-icon">◷</div>
+                    <div className="tile-title">Last Week</div>
+                    <div className="tile-desc">Previous week performance</div>
                   </div>
-                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#7fb3d5] font-sans">
-                    Last Week
-                  </h3>
-                </button>
 
-                {/* 4. History card */}
-                <button
-                  type="button"
-                  id="action-card-history"
-                  onClick={() => setCurrentView('cumulative')}
-                  className="group relative bg-[#222e42] hover:bg-[#2a3a52] border border-white/5 hover:border-[#7fb3d5]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
-                >
-                  <div className="p-2.5 bg-[#172234] text-[#7fb3d5] rounded-xl border border-white/5 shadow-inner mb-2.5">
-                    <Calendar className="w-5 h-5 text-[#7fb3d5]" />
+                  {/* Tile 4 — History */}
+                  <div className="tile tile-4" onClick={() => setCurrentView('cumulative')}>
+                    <div className="tile-icon">⊛</div>
+                    <div className="tile-title">History</div>
+                    <div className="tile-desc">Full trade archive and search</div>
                   </div>
-                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#7fb3d5] font-sans">
-                    History
-                  </h3>
-                </button>
 
-                {/* 5. Summary card */}
-                <button
-                  type="button"
-                  id="action-card-summary"
-                  onClick={() => setCurrentView('summary')}
-                  className="group relative bg-[#222e42] hover:bg-[#2a3a52] border border-white/5 hover:border-[#7fb3d5]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
-                >
-                  <div className="p-2.5 bg-[#172234] text-[#7fb3d5] rounded-xl border border-white/5 shadow-inner mb-2.5">
-                    <Activity className="w-5 h-5 text-[#7fb3d5]" />
+                  {/* Tile 5 — Summary */}
+                  <div className="tile tile-5" onClick={() => setCurrentView('summary')}>
+                    <div className="tile-icon">◈</div>
+                    <div className="tile-title">Summary</div>
+                    <div className="tile-desc">Cumulative stats and insights</div>
                   </div>
-                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#7fb3d5] font-sans">
-                    Summary
-                  </h3>
-                </button>
 
-                {/* 6. Export CSV card */}
-                <button
-                  type="button"
-                  id="action-card-export"
-                  onClick={() => setCurrentView('export')}
-                  className="group relative bg-[#222e42] hover:bg-[#2a3a52] border border-[#7fb3d5]/20 hover:border-[#7fb3d5]/40 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
-                >
-                  <div className="p-2.5 bg-[#172234] text-[#7fb3d5] rounded-xl border-[#7fb3d5]/20 shadow-inner mb-2.5">
-                    <Download className="w-5 h-5 text-[#7fb3d5]" />
+                  {/* Tile 6 — Export CSV */}
+                  <div className="tile tile-6" onClick={() => setCurrentView('export')}>
+                    <div className="tile-icon">⇣</div>
+                    <div className="tile-title">Export CSV</div>
+                    <div className="tile-desc">Download ledger data</div>
                   </div>
-                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#7fb3d5] font-sans">
-                    Export CSV
-                  </h3>
-                </button>
 
-                {/* 7. Trade Tracker card (isolated section) */}
-                <button
-                  type="button"
-                  id="action-card-tracker"
-                  onClick={() => setCurrentView('tracker')}
-                  className="group relative bg-[#222e42] hover:bg-[#2a3a52] border border-white/5 hover:border-[#7fb3d5]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
-                >
-                  <div className="p-2.5 bg-[#172234] text-[#7fb3d5] rounded-xl border border-white/5 shadow-inner mb-2.5">
-                    <Layers className="w-5 h-5 text-[#7fb3d5]" />
+                  {/* Tile 7 — Trade Tracker */}
+                  <div className="tile tile-7" onClick={() => setCurrentView('tracker')}>
+                    {openCount > 0 && (
+                      <div className="tile-badge">{openCount} open</div>
+                    )}
+                    <div className="tile-icon">⊕</div>
+                    <div className="tile-title">Trade Tracker</div>
+                    <div className="tile-desc">Signal outcome with OHLC</div>
                   </div>
-                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#7fb3d5] font-sans">
-                    Trade Tracker
-                  </h3>
-                  <span className="text-[8px] uppercase tracking-widest font-mono text-[#7fb3d5]/60 font-bold mt-1">
-                    Signal outcome tracking
-                  </span>
-                </button>
 
-                {/* 8. Signal Intelligence card */}
-                <button
-                  type="button"
-                  id="action-card-signals"
-                  onClick={() => setCurrentView('signals')}
-                  className="group relative bg-[#222e42] hover:bg-[#2a3a52] border border-white/5 hover:border-[#7fb3d5]/30 rounded-2xl transition duration-200 cursor-pointer p-4 min-h-[110px] sm:min-h-[125px] flex flex-col items-center justify-center text-center active:scale-[0.98] shadow-md"
-                >
-                  <div className="p-2.5 bg-[#172234] text-[#7fb3d5] rounded-xl border border-white/5 shadow-inner mb-2.5">
-                    <Activity className="w-5 h-5 text-[#7fb3d5]" />
+                  {/* Tile 8 — Signal Intelligence */}
+                  <div className="tile tile-8" onClick={() => setCurrentView('signals')}>
+                    <div className="tile-badge">Live</div>
+                    <div className="tile-icon">⟡</div>
+                    <div className="tile-title">Signal Intelligence</div>
+                    <div className="tile-desc">208 symbols · Manidhari signals</div>
                   </div>
-                  <h3 className="font-extrabold text-[11px] sm:text-xs uppercase tracking-widest text-[#7fb3d5] font-sans">
-                    Signal Intelligence
-                  </h3>
-                  <span className="text-[8px] uppercase tracking-widest font-mono text-[#7fb3d5]/60 font-bold mt-1">
-                    Live multi-TF signals
-                  </span>
-                </button>
+
+                </div>
+
+                {/* Bottom brand */}
+                <div style={{
+                  textAlign: 'center',
+                  marginTop: 48,
+                  fontSize: 10,
+                  color: 'rgba(201,168,76,0.25)',
+                  letterSpacing: '2px',
+                  textTransform: 'uppercase',
+                }}>
+                  Pragatprabhavi Intelligence System
+                </div>
               </div>
-            </motion.div>
+            </>
           ) : currentView === 'tracker' ? (
             <TradeTracker session={session} setCurrentView={setCurrentView} />
           ) : currentView === 'signals' ? (
@@ -755,10 +901,12 @@ export default function App() {
         </main>
       </div>
 
-      {/* Humble Aesthetic Footer */}
+      {/* Humble Aesthetic Footer — hidden on the revamped hub (it has its own bottom brand). */}
+      {currentView !== 'menu' && (
       <footer className="border-t border-white/5 bg-slate-950/40 py-6 text-slate-500 text-center text-[10px] font-mono tracking-wider">
         <p className="font-extrabold text-slate-400">AILAHA PHALAM • POSITION LEDGER LOGISTICS ENGINE</p>
       </footer>
+      )}
 
 
       {/* Modals & Popups */}
