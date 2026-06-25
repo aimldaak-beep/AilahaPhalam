@@ -180,68 +180,112 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
     <div style={{
       width: '100%',
       minHeight: 'calc(100vh - 56px)',
-      padding: '20px 28px 40px',
+      padding: '20px 28px 60px',
       color: '#F0E6C8',
       fontFamily: "'DM Sans', sans-serif",
     }}>
 
-      {/* Local bar (Ailaha Phalam has its own header — this is just back + status) */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
-        <button
-          type="button"
-          onClick={() => setCurrentView('menu')}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(10,10,25,0.8)', border: '1.5px solid rgba(255,255,255,0.1)', color: '#E8E8F0', borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
-        >
-          <ArrowLeft style={{ width: 14, height: 14 }} /> Back to Hub Menu
-        </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      {/* TOP BAR */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 24,
+        flexWrap: 'wrap',
+        gap: 10,
+      }}>
+        <div style={{
+          fontSize: 9, fontWeight: 700,
+          letterSpacing: '3px',
+          textTransform: 'uppercase',
+          color: 'rgba(201,168,76,0.4)',
+        }}>Signal Intelligence · 208 Symbols</div>
+
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          gap: 10, flexWrap: 'wrap',
+        }}>
+          {/* Stale warning */}
           {dataDate && dataDate !== todayStr && (
             <div style={{
-              background: 'rgba(232,160,77,0.15)',
-              border: '1px solid rgba(232,160,77,0.3)',
-              borderRadius: 8,
-              padding: '4px 12px',
-              fontSize: 11,
-              color: '#e8a04d',
-              fontWeight: 600
+              background: 'rgba(232,160,77,0.08)',
+              border: '1px solid rgba(232,160,77,0.25)',
+              borderRadius: 6, padding: '4px 12px',
+              fontSize: 10, color: '#e8a04d',
+              fontWeight: 600, letterSpacing: '0.5px',
             }}>
-              ⚠️ Data as of {new Date(dataDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-              {' '}— today's scan not yet synced
+              ⚠ Data: {new Date(dataDate)
+                .toLocaleDateString('en-IN',
+                {day:'numeric',month:'short'})}
             </div>
           )}
+          {/* Live badge */}
           {dataDate && dataDate === todayStr && (
             <div style={{
-              background: 'rgba(131,131,104,0.15)',
-              border: '1px solid rgba(131,131,104,0.4)',
-              borderRadius: 8,
-              padding: '4px 12px',
-              fontSize: 11,
-              color: '#838368',
-              fontWeight: 700
+              display: 'flex', alignItems: 'center',
+              gap: 5,
+              background: 'rgba(131,131,104,0.1)',
+              border: '1px solid rgba(131,131,104,0.3)',
+              borderRadius: 6, padding: '4px 12px',
+              fontSize: 10, color: '#838368',
+              fontWeight: 700,
             }}>
-              ● LIVE
+              <div style={{
+                width: 5, height: 5,
+                background: '#838368',
+                borderRadius: '50%',
+                animation: 'pulse 1.5s infinite',
+              }} />
+              LIVE
             </div>
           )}
-          <span style={{ fontSize: 11, color: '#8888AA', fontFamily: 'monospace' }}>
-            {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : '—'}
+          {/* Last updated */}
+          <span style={{
+            fontSize: 10,
+            color: 'rgba(240,230,200,0.3)',
+            fontFamily: 'monospace',
+          }}>
+            {lastUpdated
+              ? `Updated ${lastUpdated
+                  .toLocaleTimeString()}`
+              : '—'}
           </span>
+          {/* Refresh */}
           <button
             type="button"
-            onClick={() => { void load(selectedDate || undefined); }}
-            title="Refresh now"
-            style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#864A4F', border: 'none', color: '#EFEBE0', borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+            onClick={() => {
+              void load(selectedDate || undefined);
+            }}
+            style={{
+              display: 'flex', alignItems: 'center',
+              gap: 5,
+              background: 'rgba(201,168,76,0.08)',
+              border: '1px solid rgba(201,168,76,0.2)',
+              borderRadius: 6, padding: '5px 12px',
+              fontSize: 10, color: '#C9A84C',
+              fontWeight: 700, cursor: 'pointer',
+              fontFamily: "'DM Sans', sans-serif",
+            }}
           >
-            <RefreshCw style={{ width: 13, height: 13 }} /> Refresh
+            <RefreshCw style={{width:11,height:11}} />
+            Refresh
           </button>
         </div>
       </div>
 
-      {/* Date navigation — pick any day that has signals */}
+      {/* DATE NAV */}
       {availableDates.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#8888AA', marginRight: 4 }}>
-            History
-          </span>
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          gap: 6, flexWrap: 'wrap', marginBottom: 20,
+        }}>
+          <span style={{
+            fontSize: 9, fontWeight: 700,
+            letterSpacing: '2px',
+            textTransform: 'uppercase',
+            color: 'rgba(201,168,76,0.35)',
+            marginRight: 4,
+          }}>History</span>
           {availableDates.map((d) => {
             const isSel = d === selectedDate;
             const isToday = d === todayStr;
@@ -251,129 +295,518 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
                 type="button"
                 onClick={() => setSelectedDate(d)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  background: isSel ? '#C9A84C' : 'rgba(10,10,25,0.8)',
-                  color: isSel ? '#fff' : '#E8E8F0',
-                  border: `1.5px solid ${isSel ? '#C9A84C' : 'rgba(255,255,255,0.1)'}`,
-                  borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer'
+                  display: 'flex',
+                  alignItems: 'center', gap: 4,
+                  background: isSel
+                    ? 'rgba(201,168,76,0.15)'
+                    : 'transparent',
+                  border: isSel
+                    ? '1px solid rgba(201,168,76,0.4)'
+                    : '1px solid rgba(201,168,76,0.1)',
+                  borderRadius: 6,
+                  padding: '4px 10px',
+                  fontSize: 10, fontWeight: 700,
+                  color: isSel
+                    ? '#C9A84C'
+                    : 'rgba(240,230,200,0.4)',
+                  cursor: 'pointer',
+                  fontFamily: "'DM Sans', sans-serif",
                 }}
               >
                 {isToday && (
-                  <span style={{ color: isSel ? '#fff' : '#8888AA', fontSize: 13, lineHeight: 1 }}>•</span>
+                  <span style={{
+                    color: isSel
+                      ? '#C9A84C'
+                      : 'rgba(201,168,76,0.4)',
+                    fontSize: 10,
+                  }}>●</span>
                 )}
-                {new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                {new Date(d).toLocaleDateString(
+                  'en-IN',
+                  {day:'numeric', month:'short'}
+                )}
               </button>
             );
           })}
         </div>
       )}
 
-      {/* Summary stat cards (computed from live data) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 22 }}>
-        {[
-          { bg: '#864A4F', label: 'Aligned / mostly long', val: counts.long, textColor: '#EFEBE0', sub: 'rgba(239,235,224,0.65)' },
-          { bg: '#838368', label: 'Aligned / mostly short', val: counts.short, textColor: '#EFEBE0', sub: 'rgba(239,235,224,0.65)' },
-          { bg: '#F7C680', label: 'Conflicting', val: counts.conflict, textColor: '#fff', sub: 'rgba(255,255,255,0.7)' }
-        ].map((h, i) => (
-          <div key={i} style={{ background: h.bg, borderRadius: 16, padding: '18px 22px' }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: h.sub, marginBottom: 8 }}>{h.label}</div>
-            <div style={{ fontSize: 40, fontWeight: 800, lineHeight: 1, color: h.textColor }}>{h.val}</div>
-          </div>
-        ))}
+      {/* 3 SUMMARY TILES */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3,1fr)',
+        gap: 12,
+        marginBottom: 24,
+      }}>
+        {/* Aligned Long */}
+        <div style={{
+          background: 'rgba(131,131,104,0.08)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(131,131,104,0.25)',
+          borderRadius: 16,
+          padding: '20px 24px',
+          position: 'relative',
+        }}>
+          <div style={{
+            fontSize: 9, fontWeight: 700,
+            letterSpacing: '2.5px',
+            textTransform: 'uppercase',
+            color: 'rgba(131,131,104,0.6)',
+            marginBottom: 10,
+            fontFamily: "'DM Sans', sans-serif",
+          }}>Aligned / Mostly Long</div>
+          <div style={{
+            fontSize: 42, fontWeight: 800,
+            color: '#838368', lineHeight: 1,
+            letterSpacing: '-1px',
+          }}>{counts.long}</div>
+          <div style={{
+            fontSize: 10, marginTop: 8,
+            color: 'rgba(131,131,104,0.5)',
+            letterSpacing: '0.5px',
+          }}>symbols bullish</div>
+        </div>
+
+        {/* Aligned Short */}
+        <div style={{
+          background: 'rgba(201,150,12,0.07)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(201,150,12,0.2)',
+          borderRadius: 16,
+          padding: '20px 24px',
+          position: 'relative',
+        }}>
+          <div style={{
+            fontSize: 9, fontWeight: 700,
+            letterSpacing: '2.5px',
+            textTransform: 'uppercase',
+            color: 'rgba(201,150,12,0.5)',
+            marginBottom: 10,
+            fontFamily: "'DM Sans', sans-serif",
+          }}>Aligned / Mostly Short</div>
+          <div style={{
+            fontSize: 42, fontWeight: 800,
+            color: '#C9960C', lineHeight: 1,
+            letterSpacing: '-1px',
+          }}>{counts.short}</div>
+          <div style={{
+            fontSize: 10, marginTop: 8,
+            color: 'rgba(201,150,12,0.4)',
+            letterSpacing: '0.5px',
+          }}>symbols bearish</div>
+        </div>
+
+        {/* Conflict */}
+        <div style={{
+          background: 'rgba(201,168,76,0.05)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(201,168,76,0.15)',
+          borderRadius: 16,
+          padding: '20px 24px',
+          position: 'relative',
+        }}>
+          <div style={{
+            fontSize: 9, fontWeight: 700,
+            letterSpacing: '2.5px',
+            textTransform: 'uppercase',
+            color: 'rgba(201,168,76,0.4)',
+            marginBottom: 10,
+            fontFamily: "'DM Sans', sans-serif",
+          }}>Conflicting Signals</div>
+          <div style={{
+            fontSize: 42, fontWeight: 800,
+            color: '#C9A84C', lineHeight: 1,
+            letterSpacing: '-1px',
+          }}>{counts.conflict}</div>
+          <div style={{
+            fontSize: 10, marginTop: 8,
+            color: 'rgba(201,168,76,0.3)',
+            letterSpacing: '0.5px',
+          }}>mixed direction</div>
+        </div>
       </div>
 
       {loading && symbols.length === 0 ? (
-        <div style={{ background: 'rgba(10,10,25,0.8)', borderRadius: 16, padding: 40, textAlign: 'center', color: '#8888AA', fontWeight: 700, fontSize: 13 }}>Loading signals…</div>
+        <div style={{
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(201,168,76,0.1)',
+          borderRadius: 12,
+          padding: 40,
+          textAlign: 'center',
+          color: 'rgba(240,230,200,0.3)',
+          fontWeight: 600, fontSize: 13,
+        }}>Loading signals…</div>
       ) : err ? (
-        <div style={{ background: 'rgba(10,10,25,0.8)', border: '1.5px solid #E8D090', borderRadius: 16, padding: 24, textAlign: 'center', color: '#7a6020', fontWeight: 700, fontSize: 12 }}>
+        <div style={{
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(201,168,76,0.15)',
+          borderRadius: 12,
+          padding: 24,
+          textAlign: 'center',
+          color: '#C9A84C',
+          fontWeight: 600, fontSize: 12,
+        }}>
           {err}
-          <div style={{ fontSize: 11, color: '#8888AA', marginTop: 8, fontWeight: 400 }}>
-            (If the `signals` table doesn't exist yet or has no rows for today, this will be empty.)
+          <div style={{
+            fontSize: 11,
+            color: 'rgba(240,230,200,0.3)',
+            marginTop: 8, fontWeight: 400,
+          }}>
+            Signals table may be empty for today.
           </div>
         </div>
       ) : (
         <>
-          {/* TOP SIGNALS PER TF */}
-          <div style={sectionTitle}>
-            <div style={{ width: 3, height: 14, background: '#864A4F', borderRadius: 3 }} />
-            Top signals — latest scan
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 10, marginBottom: 22 }}>
+          {/* 5 TF TILES — each contains top 5 */}
+          <div style={{
+            fontSize: 9, fontWeight: 700,
+            letterSpacing: '3px',
+            textTransform: 'uppercase',
+            color: 'rgba(201,168,76,0.4)',
+            marginBottom: 12,
+            fontFamily: "'DM Sans', sans-serif",
+          }}>Top Signals · Latest Scan</div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(5,1fr)',
+            gap: 12,
+            marginBottom: 28,
+          }}>
             {TF_LABELS.map((tf) => (
-              <div key={tf} style={{ borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(92,83,77,0.1)' }}>
-                <div style={{ background: TF_COLORS[tf], padding: '11px 13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: TF_TEXT[tf], letterSpacing: '0.5px' }}>{tf === 'D' ? 'Daily' : tf + 'm'}</span>
-                  <span style={{ fontSize: 9, color: TF_TEXT[tf], opacity: 0.6, background: 'rgba(255,255,255,0.18)', padding: '2px 7px', borderRadius: 7, fontWeight: 600 }}>TOP 5</span>
+              <div key={tf} style={{
+                background: 'rgba(255,255,255,0.03)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid rgba(201,168,76,0.12)',
+                borderRadius: 16,
+                overflow: 'hidden',
+              }}>
+                {/* TF Header */}
+                <div style={{
+                  padding: '12px 16px',
+                  borderBottom:
+                    '1px solid rgba(201,168,76,0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: 'rgba(0,0,0,0.2)',
+                }}>
+                  <span style={{
+                    fontSize: 15, fontWeight: 800,
+                    color: TF_COLORS[tf],
+                    letterSpacing: '0.5px',
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}>
+                    {tf === 'D' ? 'Daily' : tf + 'm'}
+                  </span>
+                  <span style={{
+                    fontSize: 8, fontWeight: 700,
+                    letterSpacing: '2px',
+                    textTransform: 'uppercase',
+                    color: 'rgba(201,168,76,0.35)',
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}>TOP 5</span>
                 </div>
-                <div style={{ background: 'rgba(10,10,25,0.8)', padding: 8, minHeight: 60 }}>
-                  {topByTF[tf] && topByTF[tf].length > 0 ? topByTF[tf].map((s, i) => {
-                    const st = getSignalStyle(s.signal);
-                    return (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 9px', borderRadius: 9, marginBottom: i < topByTF[tf].length - 1 ? 5 : 0, background: st.bg, border: `1.5px solid ${st.border}` }}>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: st.color }}>{s.symbol}</div>
-                          <div style={{ fontSize: 11, marginTop: 1, fontFamily: 'monospace', color: st.color, opacity: 0.55 }}>₹{Number(s.price || 0).toLocaleString('en-IN')}</div>
+
+                {/* Top 5 list */}
+                <div style={{padding: '8px 0'}}>
+                  {topByTF[tf] &&
+                   topByTF[tf].length > 0
+                    ? topByTF[tf].map((s, i) => {
+                      const isLong =
+                        s.signal.includes('LONG');
+                      const isShort =
+                        s.signal.includes('SHORT');
+                      const sigColor = isLong
+                        ? '#838368'
+                        : isShort
+                        ? '#C9960C'
+                        : 'rgba(240,230,200,0.3)';
+                      return (
+                        <div key={i} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent:
+                            'space-between',
+                          padding: '8px 14px',
+                          borderBottom:
+                            i < topByTF[tf].length-1
+                            ? '1px solid rgba(201,168,76,0.06)'
+                            : 'none',
+                        }}>
+                          <div>
+                            <div style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: '#F0E6C8',
+                              letterSpacing: '0.2px',
+                            }}>{s.symbol}</div>
+                            <div style={{
+                              fontSize: 9,
+                              color: 'rgba(240,230,200,0.3)',
+                              marginTop: 2,
+                              fontFamily: 'monospace',
+                            }}>
+                              ₹{Number(s.price || 0)
+                                .toLocaleString('en-IN')}
+                            </div>
+                          </div>
+                          <span style={{
+                            fontSize: 10,
+                            fontWeight: 800,
+                            color: sigColor,
+                            letterSpacing: '0.5px',
+                            fontFamily: "'DM Sans',sans-serif",
+                          }}>
+                            {getShortLabel(s.signal)}
+                          </span>
                         </div>
-                        <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 9px', borderRadius: 7, background: st.badgeBg, color: st.badgeColor }}>{getShortLabel(s.signal)}</span>
-                      </div>
-                    );
-                  }) : (
-                    <div style={{ padding: 14, textAlign: 'center', color: '#8888AA', fontSize: 11, fontWeight: 600 }}>No signals</div>
-                  )}
+                      );
+                    })
+                    : (
+                      <div style={{
+                        padding: '20px 14px',
+                        textAlign: 'center',
+                        color: 'rgba(240,230,200,0.2)',
+                        fontSize: 11,
+                      }}>No signals</div>
+                    )
+                  }
                 </div>
               </div>
             ))}
           </div>
 
           {/* SIGNAL MATRIX */}
-          <div style={sectionTitle}>
-            <div style={{ width: 3, height: 14, background: '#864A4F', borderRadius: 3 }} />
-            All symbols — signal matrix
-            <span style={{ background: '#fdf5f5', color: '#864A4F', border: '1.5px solid #e8c8ca', borderRadius: 10, padding: '2px 9px', fontSize: 9, fontWeight: 700 }}>{filtered.length} shown</span>
+          <div style={{
+            fontSize: 9, fontWeight: 700,
+            letterSpacing: '3px',
+            textTransform: 'uppercase',
+            color: 'rgba(201,168,76,0.4)',
+            marginBottom: 12,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            fontFamily: "'DM Sans', sans-serif",
+          }}>
+            All Symbols · Signal Matrix
+            <span style={{
+              background: 'rgba(201,168,76,0.08)',
+              border: '1px solid rgba(201,168,76,0.2)',
+              borderRadius: 4,
+              padding: '2px 8px',
+              fontSize: 9,
+              color: '#C9A84C',
+              fontWeight: 700,
+            }}>{filtered.length} shown</span>
           </div>
 
-          <div style={{ background: 'rgba(10,10,25,0.8)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(92,83,77,0.1)' }}>
-            <div style={{ padding: '14px 18px', borderBottom: '1.5px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-              <span style={{ fontSize: 9, fontWeight: 700, color: '#8888AA', letterSpacing: '2px', textTransform: 'uppercase' }}>{symbols.length} symbols</span>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search symbol..."
-                  style={{ background: 'transparent', border: '1.5px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '5px 10px', color: '#E8E8F0', fontSize: 11, outline: 'none', width: 130, fontFamily: "'DM Sans', 'Inter', sans-serif" }} />
-                {(['ALL', 'LONG', 'SHORT', 'CONFLICT'] as const).map((f) => (
-                  <button key={f} onClick={() => setFilter(f)}
-                    style={{ padding: '5px 12px', borderRadius: 8, fontSize: 10, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.3px',
-                      border: `1.5px solid ${filter === f ? '#864A4F' : 'rgba(255,255,255,0.1)'}`, background: filter === f ? '#864A4F' : 'rgba(10,10,25,0.8)', color: filter === f ? '#EFEBE0' : '#8888AA', fontFamily: "'DM Sans', 'Inter', sans-serif" }}>{f}</button>
+          <div style={{
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(201,168,76,0.12)',
+            borderRadius: 12,
+            overflow: 'hidden',
+          }}>
+            {/* Matrix toolbar */}
+            <div style={{
+              padding: '12px 18px',
+              borderBottom:
+                '1px solid rgba(201,168,76,0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap', gap: 8,
+              background: 'rgba(0,0,0,0.15)',
+            }}>
+              <span style={{
+                fontSize: 9, fontWeight: 700,
+                letterSpacing: '2px',
+                textTransform: 'uppercase',
+                color: 'rgba(240,230,200,0.3)',
+              }}>{symbols.length} symbols</span>
+              <div style={{
+                display: 'flex', gap: 6,
+                alignItems: 'center',
+                flexWrap: 'wrap',
+              }}>
+                <input
+                  value={search}
+                  onChange={(e) =>
+                    setSearch(e.target.value)}
+                  placeholder="Search symbol..."
+                  style={{
+                    background:
+                      'rgba(201,168,76,0.04)',
+                    border:
+                      '1px solid rgba(201,168,76,0.15)',
+                    borderRadius: 6,
+                    padding: '5px 10px',
+                    color: '#F0E6C8',
+                    fontSize: 11,
+                    outline: 'none',
+                    width: 130,
+                    fontFamily:
+                      "'DM Sans', sans-serif",
+                  }}
+                />
+                {(['ALL','LONG','SHORT','CONFLICT'] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 5,
+                      fontSize: 9,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      letterSpacing: '0.5px',
+                      fontFamily:
+                        "'DM Sans', sans-serif",
+                      border: filter === f
+                        ? '1px solid rgba(201,168,76,0.4)'
+                        : '1px solid rgba(201,168,76,0.1)',
+                      background: filter === f
+                        ? 'rgba(201,168,76,0.12)'
+                        : 'transparent',
+                      color: filter === f
+                        ? '#C9A84C'
+                        : 'rgba(240,230,200,0.35)',
+                    }}
+                  >{f}</button>
                 ))}
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '150px repeat(5,1fr) 155px', padding: '10px 18px', background: 'transparent', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-              {['SYMBOL', '15m', '44m', '60m', '75m', 'Daily', 'STATUS'].map((h, i) => (
+            {/* Matrix header row */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns:
+                '160px repeat(5,1fr) 160px',
+              padding: '8px 18px',
+              background:
+                'rgba(201,168,76,0.04)',
+              borderBottom:
+                '1px solid rgba(201,168,76,0.08)',
+            }}>
+              {['SYMBOL','15m','44m','60m',
+                '75m','Daily','STATUS']
+                .map((h, i) => (
                 <div key={h} style={{
-                  fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase',
-                  textAlign: i === 0 || i === 6 ? 'left' : 'center',
-                  color: i === 0 || i === 6 ? '#8888AA' : i === 1 ? '#2D5283' : i === 2 ? '#B0785D' : i === 3 ? '#748794' : i === 4 ? '#5C534D' : '#A09080'
+                  fontSize: 9, fontWeight: 700,
+                  letterSpacing: '2px',
+                  textTransform: 'uppercase',
+                  textAlign: i===0||i===6
+                    ? 'left' : 'center',
+                  color: i===0||i===6
+                    ? 'rgba(240,230,200,0.3)'
+                    : i===1 ? '#2D5283'
+                    : i===2 ? '#B0785D'
+                    : i===3 ? '#748794'
+                    : i===4 ? '#5C534D'
+                    : '#A09080',
                 }}>{h}</div>
               ))}
             </div>
 
+            {/* Matrix rows */}
             {filtered.length === 0 ? (
-              <div style={{ padding: 30, textAlign: 'center', color: '#8888AA', fontSize: 12, fontWeight: 600 }}>No symbols match.</div>
+              <div style={{
+                padding: 30,
+                textAlign: 'center',
+                color: 'rgba(240,230,200,0.2)',
+                fontSize: 12,
+              }}>No symbols match.</div>
             ) : filtered.map((row, i) => {
               const st = getStatusStyle(row.status);
               return (
-                <div key={row.symbol} style={{ display: 'grid', gridTemplateColumns: '150px repeat(5,1fr) 155px', padding: '10px 18px', alignItems: 'center', borderBottom: i < filtered.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#E8E8F0' }}>{row.symbol}</div>
+                <div key={row.symbol} style={{
+                  display: 'grid',
+                  gridTemplateColumns:
+                    '160px repeat(5,1fr) 160px',
+                  padding: '10px 18px',
+                  alignItems: 'center',
+                  borderBottom:
+                    i < filtered.length-1
+                    ? '1px solid rgba(201,168,76,0.05)'
+                    : 'none',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLDivElement)
+                    .style.background =
+                    'rgba(201,168,76,0.03)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLDivElement)
+                    .style.background = 'transparent';
+                }}
+                >
+                  <div style={{
+                    fontSize: 12, fontWeight: 700,
+                    color: '#F0E6C8',
+                    letterSpacing: '0.2px',
+                  }}>{row.symbol}</div>
                   {TF_LABELS.map((tf) => {
-                    const sig = perTF[row.symbol]?.[tf]?.signal || 'NEUTRAL';
+                    const sig =
+                      perTF[row.symbol]?.[tf]
+                        ?.signal || 'NEUTRAL';
+                    const isL = sig.includes('LONG');
+                    const isS =sig.includes('SHORT');
                     return (
-                      <div key={tf} style={{ textAlign: 'center' }}>
-                        <span style={{ color: TF_COLORS[tf], fontSize: 13, fontWeight: 700 }}>{getSignalType(sig)}</span>
-                        <span style={{ color: sig.includes('LONG') ? '#838368' : sig.includes('SHORT') ? '#C9960C' : '#A09080', fontSize: 14, fontWeight: 800, marginLeft: 2 }}>{getArrow(sig)}</span>
+                      <div key={tf} style={{
+                        textAlign: 'center',
+                      }}>
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: isL
+                            ? '#838368'
+                            : isS
+                            ? '#C9960C'
+                            : 'rgba(240,230,200,0.15)',
+                        }}>
+                          {getShortLabel(sig)}
+                        </span>
                       </div>
                     );
                   })}
                   <div>
-                    <span style={{ display: 'inline-block', padding: '4px 11px', borderRadius: 8, fontSize: 10, fontWeight: 700, background: st.bg, color: st.color, border: `1.5px solid ${st.border}` }}>{st.label}</span>
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '3px 8px',
+                      borderRadius: 4,
+                      fontSize: 9,
+                      fontWeight: 700,
+                      letterSpacing: '0.5px',
+                      background: row.status ===
+                        'ALIGNED_LONG' ||
+                        row.status === 'MOSTLY_LONG'
+                        ? 'rgba(131,131,104,0.12)'
+                        : row.status ===
+                          'ALIGNED_SHORT' ||
+                          row.status ===
+                          'MOSTLY_SHORT'
+                        ? 'rgba(201,150,12,0.1)'
+                        : row.status === 'CONFLICT'
+                        ? 'rgba(201,168,76,0.08)'
+                        : 'transparent',
+                      color: row.status ===
+                        'ALIGNED_LONG' ||
+                        row.status === 'MOSTLY_LONG'
+                        ? '#838368'
+                        : row.status ===
+                          'ALIGNED_SHORT' ||
+                          row.status ===
+                          'MOSTLY_SHORT'
+                        ? '#C9960C'
+                        : row.status === 'CONFLICT'
+                        ? '#C9A84C'
+                        : 'rgba(240,230,200,0.2)',
+                      border: '1px solid currentColor',
+                    }}>{st.label}</span>
                   </div>
                 </div>
               );
