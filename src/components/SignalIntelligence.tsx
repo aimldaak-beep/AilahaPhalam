@@ -556,7 +556,7 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
                             </div>
                           </div>
                           <span style={{
-                            fontSize: 10,
+                            fontSize: 13,
                             fontWeight: 800,
                             color: sigColor,
                             letterSpacing: '0.5px',
@@ -760,7 +760,7 @@ export default function SignalIntelligence({ setCurrentView }: Props) {
                         textAlign: 'center',
                       }}>
                         <span style={{
-                          fontSize: 11,
+                          fontSize: 13,
                           fontWeight: 700,
                           color: isL
                             ? '#838368'
