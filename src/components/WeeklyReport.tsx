@@ -12,7 +12,9 @@ import {
   getWeekInfo,
   getIsClosedInOrBeforeWeek,
   getWeekKeyForClose,
-  estimateInstantPnL
+  estimateInstantPnL,
+  calculateWeeklyStanding,
+  hasLegBrokerage
 } from '../types';
 import type { WeekOffset } from '../lib/offsets';
 import {
@@ -161,6 +163,10 @@ export default function WeeklyReport({
   // Keep track of Saturday Price Demands list (trades overlapping target weeks requiring inputs)
   const pendingSaturdayDemands = activeTradesInWeek.filter(t => t.isMissingFridayClose);
 
+  // Weekly Standing — settled vs open money for the selected week (engine math only).
+  // standing.net === weeklyNetSum; the reconciliation offset keeps applying on top of Net.
+  const weeklyStanding = calculateWeeklyStanding(trades, selectedWeekKey);
+
   // Quick inputs state for Friday closing inputs inside the widget
   const [fridayCloseInputs, setFridayCloseInputs] = useState<Record<string, string>>({});
   const [usdToInrInputs, setUsdToInrInputs] = useState<Record<string, string>>({});
@@ -223,6 +229,40 @@ export default function WeeklyReport({
     setUsdToInrInputs(prev => {
       const copy = { ...prev };
       delete copy[tradeId];
+      return copy;
+    });
+  };
+
+  // Inline week-close save from the Active Positions blotter. Same chokepoint as the
+  // Saturday banner / CarryForwardModal (onUpdateFridayClosingPrice -> updateTradesState),
+  // so later edits ripple forward with the same carry-forward correctness as edit-trade.
+  const handleInlineMarkSave = (trade: Trade) => {
+    const existingMark = trade.fridayClosingPrices[selectedWeekKey];
+    const existingFx = trade.fridayUsdToInrRates?.[selectedWeekKey];
+    const priceStr = fridayCloseInputs[trade.id] ?? (existingMark !== undefined ? String(existingMark) : '');
+    const val = parseFloat(priceStr);
+    if (isNaN(val) || val <= 0) {
+      alert('Please enter a valid closing price value.');
+      return;
+    }
+    let exchangeRate: number | undefined = undefined;
+    if (trade.currency === 'USD') {
+      const fxStr = usdToInrInputs[trade.id] ?? (existingFx !== undefined ? String(existingFx) : '');
+      exchangeRate = parseFloat(fxStr);
+      if (isNaN(exchangeRate) || exchangeRate <= 0) {
+        alert('Please enter a valid USD to INR exchange rate.');
+        return;
+      }
+    }
+    onUpdateFridayClosingPrice(trade.id, selectedWeekKey, val, exchangeRate);
+    setFridayCloseInputs(prev => {
+      const copy = { ...prev };
+      delete copy[trade.id];
+      return copy;
+    });
+    setUsdToInrInputs(prev => {
+      const copy = { ...prev };
+      delete copy[trade.id];
       return copy;
     });
   };
@@ -492,6 +532,37 @@ export default function WeeklyReport({
         </div>
       </div>
 
+      {/* Weekly Standing — Realized | MTM | Net for the selected week */}
+      <div id="weekly-standing-card" style={{ margin: '0 28px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 12, padding: '16px 20px' }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <BookOpen className="w-3.5 h-3.5" style={{ color: '#C9A84C' }} />
+          Weekly Standing — Week {activeWeekInfo.weekNum}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+          <div className="rounded-lg p-3.5" style={{background:'rgba(5,3,1,0.95)',border:'1px solid rgba(201,168,76,0.15)'}}>
+            <span className="block text-[9px] font-extrabold uppercase tracking-widest mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.7)'}}>Realized (settled this week)</span>
+            <span id="standing-realized" className="font-mono font-black text-sm" style={{color: weeklyStanding.realized >= 0 ? '#F0E6C8' : '#C9960C'}}>
+              {weeklyStanding.realized >= 0 ? '+' : ''}₹{formatAmount(weeklyStanding.realized)}
+            </span>
+          </div>
+          <div className="rounded-lg p-3.5" style={{background:'rgba(5,3,1,0.95)',border:'1px solid rgba(201,168,76,0.15)'}}>
+            <span className="block text-[9px] font-extrabold uppercase tracking-widest mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.7)'}}>MTM (open carry marks)</span>
+            <span id="standing-mtm" className="font-mono font-black text-sm" style={{color: weeklyStanding.mtm >= 0 ? '#F0E6C8' : '#C9960C'}}>
+              {weeklyStanding.mtm >= 0 ? '+' : ''}₹{formatAmount(weeklyStanding.mtm)}
+            </span>
+          </div>
+          <div className="rounded-lg p-3.5" style={{background:'rgba(201,168,76,0.05)',border:'1px solid rgba(201,168,76,0.3)'}}>
+            <span className="block text-[9px] font-extrabold uppercase tracking-widest mb-1.5 font-mono" style={{color:'#C9A84C'}}>Net Standing</span>
+            <span id="standing-net" className="font-mono font-black text-base" style={{color: weeklyStanding.net >= 0 ? '#677A67' : '#C9960C'}}>
+              {weeklyStanding.net >= 0 ? '+' : ''}₹{formatAmount(weeklyStanding.net)}
+            </span>
+          </div>
+        </div>
+        <p className="text-[9px] font-mono leading-relaxed" style={{color:'rgba(240,230,200,0.5)', marginTop: 10}}>
+          Entry-leg brokerage lands in the entry week, exit-leg in the close week. Legacy trades (no entered brokerage) keep formula charges and carry a "legacy" tag. Net = Realized + MTM; the broker offset applies on top of Net as before.
+        </p>
+      </div>
+
       {/* Per-week reconciliation offset editor — 3D */}
       <div id="week-offset-card" style={{ margin: '0 28px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 12, padding: '16px 20px' }}>
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -581,11 +652,11 @@ export default function WeeklyReport({
           </div>
         ) : (
           <div style={{ background: 'rgba(0,0,0,0.15)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 12, overflow: 'hidden', marginTop: 12 }}>
-            <div style={{ minWidth: 900 }}>
-              {/* Header row — 6 columns */}
-              <div style={{ display: 'grid', gridTemplateColumns: '180px 120px 120px 1fr 160px 160px', padding: '8px 20px', background: 'rgba(201,168,76,0.05)', borderBottom: '1px solid rgba(201,168,76,0.12)', gap: 8 }}>
-                {['SYMBOL', 'TYPE', 'LOTS', 'ENTRY + DATE', 'CURRENT PNL', 'ACTIONS'].map((h, i) => (
-                  <div key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', textAlign: i >= 4 ? 'right' : 'left' }}>{h}</div>
+            <div style={{ minWidth: 1150 }}>
+              {/* Header row — 8 columns */}
+              <div style={{ display: 'grid', gridTemplateColumns: '160px 110px 90px 1fr 190px 120px 140px 160px', padding: '8px 20px', background: 'rgba(201,168,76,0.05)', borderBottom: '1px solid rgba(201,168,76,0.12)', gap: 8 }}>
+                {['SYMBOL', 'TYPE', 'LOTS', 'ENTRY + DATE', 'WEEK CLOSE', 'WK MTM', 'CURRENT PNL', 'ACTIONS'].map((h, i) => (
+                  <div key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', textAlign: i >= 5 ? 'right' : 'left' }}>{h}</div>
                 ))}
               </div>
               {/* Data rows */}
@@ -593,20 +664,71 @@ export default function WeeklyReport({
                 const sym = trade.currency === 'USD' ? '$' : '₹';
                 const entryPrice = trade.direction === 'Long' ? trade.buyPrice : trade.sellPrice;
                 const { value: curPnl, live } = currentPnLForOpenTrade(trade);
+                // Selected week's slice of this open trade (engine math; inactive = no overlap).
+                const wkCalc = calculateTradeForWeek(trade, selectedWeekKey);
+                const existingMark = trade.fridayClosingPrices[selectedWeekKey];
+                const existingFx = trade.fridayUsdToInrRates?.[selectedWeekKey];
                 return (
-                  <div key={trade.id} id={`active-trade-${trade.id}`} style={{ display: 'grid', gridTemplateColumns: '180px 120px 120px 1fr 160px 160px', padding: '12px 20px', borderBottom: '1px solid rgba(201,168,76,0.06)', alignItems: 'center', gap: 8 }}>
+                  <div key={trade.id} id={`active-trade-${trade.id}`} style={{ display: 'grid', gridTemplateColumns: '160px 110px 90px 1fr 190px 120px 140px 160px', padding: '12px 20px', borderBottom: '1px solid rgba(201,168,76,0.06)', alignItems: 'center', gap: 8 }}>
                     <div className="font-mono" style={{ fontSize: 14, fontWeight: 700, color: '#F0E6C8', letterSpacing: '0.3px' }}>{trade.symbol}</div>
                     <div>
                       <span className="font-mono" style={{ fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 4, letterSpacing: '1px', display: 'inline-block', ...(trade.direction === 'Long' ? { background: 'rgba(103,122,103,0.1)', color: '#677A67', border: '1px solid rgba(103,122,103,0.25)' } : { background: 'rgba(201,150,12,0.1)', color: '#C9960C', border: '1px solid rgba(201,150,12,0.25)' }) }}>
                         {trade.direction.toUpperCase()}
                       </span>
                       <span className="block font-mono mt-0.5" style={{ fontSize: 10, color: 'rgba(240,230,200,0.5)' }}>{trade.instrument}</span>
+                      {!hasLegBrokerage(trade) && (
+                        <span className="font-mono" title="No entered leg brokerage — formula charges apply" style={{ fontSize: 8, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(240,230,200,0.35)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 3, padding: '1px 4px', display: 'inline-block', marginTop: 2 }}>legacy</span>
+                      )}
                     </div>
                     <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, color: 'rgba(240,230,200,0.7)' }}>{trade.numberOfLots} × {trade.lotSize}</div>
                     {/* Merged entry price + entry date cell */}
                     <div>
                       <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, fontWeight: 700, color: '#F0E6C8' }}>{sym}{formatPrice(entryPrice)}</div>
                       <div className="font-mono whitespace-nowrap" style={{ fontSize: 11, color: 'rgba(240,230,200,0.5)' }}>{trade.dateInitiated}</div>
+                    </div>
+                    {/* Week close mark input for the selected week — persists to weekly_marks */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {wkCalc.isActive ? (
+                        <>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="wk close"
+                            title={`Week close mark for ${selectedWeekKey} (editable — edits ripple forward)`}
+                            value={fridayCloseInputs[trade.id] ?? (existingMark !== undefined ? String(existingMark) : '')}
+                            onChange={e => setFridayCloseInputs(prev => ({ ...prev, [trade.id]: e.target.value }))}
+                            className="font-mono"
+                            style={{ width: 76, background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 8, padding: '5px 8px', color: '#F0E6C8', fontSize: 11, outline: 'none' }}
+                          />
+                          {trade.currency === 'USD' && (
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              placeholder="fx"
+                              title={`Friday USD/INR rate for ${selectedWeekKey}`}
+                              value={usdToInrInputs[trade.id] ?? (existingFx !== undefined ? String(existingFx) : '')}
+                              onChange={e => setUsdToInrInputs(prev => ({ ...prev, [trade.id]: e.target.value }))}
+                              className="font-mono"
+                              style={{ width: 46, background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 8, padding: '5px 6px', color: '#F0E6C8', fontSize: 11, outline: 'none' }}
+                            />
+                          )}
+                          <button type="button" title="Save week close" onClick={() => handleInlineMarkSave(trade)} className="p-1 rounded-lg transition cursor-pointer active:scale-95" style={{ background: 'rgba(201,150,12,0.2)', border: '1px solid rgba(201,150,12,0.4)', color: '#C9960C' }}>
+                            <CheckCircle className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      ) : (
+                        <span style={{ fontSize: 13, color: 'rgba(240,230,200,0.35)' }}>—</span>
+                      )}
+                    </div>
+                    {/* This-week MTM beside the lifetime/current figure */}
+                    <div className="font-mono" style={{ textAlign: 'right' }}>
+                      {wkCalc.isActive ? (
+                        <span style={{ fontSize: 13, fontWeight: 700, color: wkCalc.netProfit >= 0 ? '#677A67' : '#C9960C' }} title={`Week ${activeWeekInfo.weekNum} mark-to-market net`}>
+                          {wkCalc.netProfit >= 0 ? '+' : ''}₹{formatAmount(wkCalc.netProfit)}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 13, color: 'rgba(240,230,200,0.35)' }}>—</span>
+                      )}
                     </div>
                     <div className="font-mono" style={{ textAlign: 'right' }}>
                       {curPnl === null ? (
@@ -662,33 +784,42 @@ export default function WeeklyReport({
           </div>
         ) : (
           <div style={{ background: 'rgba(0,0,0,0.15)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 12, overflow: 'hidden', marginTop: 12 }}>
-            <div style={{ minWidth: 1010 }}>
-              {/* Header row — 8 columns */}
-              <div style={{ display: 'grid', gridTemplateColumns: '180px 120px 100px 140px 130px 110px 150px 80px', padding: '8px 20px', background: 'rgba(201,168,76,0.05)', borderBottom: '1px solid rgba(201,168,76,0.12)', gap: 8 }}>
-                {['SYMBOL', 'TYPE', 'LOTS', 'ENTRY', 'CLOSE', 'DATE', 'NET PNL', 'ACTIONS'].map((h, i) => (
-                  <div key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', textAlign: i === 6 ? 'right' : i === 7 ? 'center' : 'left' }}>{h}</div>
+            <div style={{ minWidth: 1120 }}>
+              {/* Header row — 9 columns */}
+              <div style={{ display: 'grid', gridTemplateColumns: '170px 120px 90px 120px 120px 100px 130px 140px 80px', padding: '8px 20px', background: 'rgba(201,168,76,0.05)', borderBottom: '1px solid rgba(201,168,76,0.12)', gap: 8 }}>
+                {['SYMBOL', 'TYPE', 'LOTS', 'ENTRY', 'CLOSE', 'DATE', 'WK NET', 'NET PNL', 'ACTIONS'].map((h, i) => (
+                  <div key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', textAlign: i === 6 || i === 7 ? 'right' : i === 8 ? 'center' : 'left' }}>{h}</div>
                 ))}
               </div>
               {/* Data rows */}
-              {closedInWeek.map(({ trade }) => {
+              {closedInWeek.map((item) => {
+                const trade = item.trade;
                 const sym = trade.currency === 'USD' ? '$' : '₹';
                 const entryPrice = trade.direction === 'Long' ? trade.buyPrice : trade.sellPrice;
                 const exitPrice = trade.direction === 'Long' ? trade.sellPrice : trade.buyPrice;
                 const exitDate = trade.direction === 'Long' ? trade.sellDate : trade.buyDate;
                 const totNet = tradeTotalNet(trade);
                 return (
-                  <div key={trade.id} id={`closed-trade-${trade.id}`} style={{ display: 'grid', gridTemplateColumns: '180px 120px 100px 140px 130px 110px 150px 80px', padding: '12px 20px', borderBottom: '1px solid rgba(201,168,76,0.06)', alignItems: 'center', gap: 8 }}>
+                  <div key={trade.id} id={`closed-trade-${trade.id}`} style={{ display: 'grid', gridTemplateColumns: '170px 120px 90px 120px 120px 100px 130px 140px 80px', padding: '12px 20px', borderBottom: '1px solid rgba(201,168,76,0.06)', alignItems: 'center', gap: 8 }}>
                     <div className="font-mono" style={{ fontSize: 14, fontWeight: 700, color: '#F0E6C8', letterSpacing: '0.3px' }}>{trade.symbol}</div>
                     <div>
                       <span className="font-mono" style={{ fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 4, letterSpacing: '1px', display: 'inline-block', ...(trade.direction === 'Long' ? { background: 'rgba(103,122,103,0.1)', color: '#677A67', border: '1px solid rgba(103,122,103,0.25)' } : { background: 'rgba(201,150,12,0.1)', color: '#C9960C', border: '1px solid rgba(201,150,12,0.25)' }) }}>
                         {trade.direction.toUpperCase()}
                       </span>
                       <span className="block font-mono mt-0.5" style={{ fontSize: 10, color: 'rgba(240,230,200,0.5)' }}>{trade.instrument}</span>
+                      {!hasLegBrokerage(trade) && (
+                        <span className="font-mono" title="No entered leg brokerage — formula charges apply" style={{ fontSize: 8, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(240,230,200,0.35)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 3, padding: '1px 4px', display: 'inline-block', marginTop: 2 }}>legacy</span>
+                      )}
                     </div>
                     <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, color: 'rgba(240,230,200,0.7)' }}>{trade.numberOfLots} × {trade.lotSize}</div>
                     <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, fontWeight: 700, color: '#F0E6C8' }}>{sym}{formatPrice(entryPrice)}</div>
                     <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, fontWeight: 700, color: '#F0E6C8' }}>{sym}{formatPrice(exitPrice)}</div>
                     <div className="font-mono whitespace-nowrap" style={{ fontSize: 11, color: 'rgba(240,230,200,0.45)', letterSpacing: '0.3px' }}>{exitDate || '—'}</div>
+                    <div className="font-mono" style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: item.netProfit >= 0 ? '#677A67' : '#C9960C' }} title={`Week ${activeWeekInfo.weekNum} piece of this trade`}>
+                        {item.netProfit >= 0 ? '+' : ''}₹{formatAmount(item.netProfit)}
+                      </span>
+                    </div>
                     <div className="font-mono" style={{ textAlign: 'right' }}>
                       <span style={{ fontSize: 13, fontWeight: 700, color: totNet >= 0 ? '#677A67' : '#C9960C' }} title="Final realized net across the trade's life">
                         {totNet >= 0 ? '+' : ''}₹{formatAmount(totNet)}

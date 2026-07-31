@@ -44,9 +44,20 @@ export interface Trade {
   
   // Record of week identifier (e.g. "2026-W23") -> Friday closing price
   fridayClosingPrices: Record<string, number>;
-  
+
   // User check-transient trading price for evaluating PnL at "this moment"
   currentTradingPrice?: number | null;
+
+  // Actual per-leg brokerage in the trade's currency. When present, the amount replaces
+  // the formula-derived charge for that leg (entry leg = the initiating side: Long buy,
+  // Short sell). Absent/null on both legs = legacy trade: formula-derived charges apply.
+  entryBrokerage?: number | null;
+  exitBrokerage?: number | null;
+}
+
+/** True when the trade carries actual per-leg brokerage; false = legacy (formula-derived). */
+export function hasLegBrokerage(trade: Trade): boolean {
+  return trade.entryBrokerage != null || trade.exitBrokerage != null;
 }
 
 export interface WeekInfo {
@@ -228,6 +239,17 @@ export function calculateTradeForWeek(trade: Trade, targetWeekKey: string): Week
   let buyBrokerage = buyTurnCalc.brokerage;
   let sellBrokerage = sellTurnCalc.brokerage;
 
+  // Actual per-leg brokerage overrides. Entry leg = initiating side (Long: buy, Short:
+  // sell), exit leg = the other. A null/absent leg keeps the formula-derived charge, so
+  // legacy trades (both absent) follow the identical code path as before.
+  if (trade.direction === 'Long') {
+    buyBrokerage = trade.entryBrokerage ?? buyBrokerage;
+    sellBrokerage = trade.exitBrokerage ?? sellBrokerage;
+  } else {
+    sellBrokerage = trade.entryBrokerage ?? sellBrokerage;
+    buyBrokerage = trade.exitBrokerage ?? buyBrokerage;
+  }
+
   if (trade.currency === 'USD') {
     buyBrokerage = buyBrokerage * weeklyExchangeRate;
     sellBrokerage = sellBrokerage * weeklyExchangeRate;
@@ -326,6 +348,38 @@ export function getWeekKeyForClose(trade: Trade): string | null {
 }
 
 /**
+ * Weekly Standing — one week's ledger across all trades, split into settled vs open money.
+ * Buckets each trade's calculateTradeForWeek piece by role:
+ *   realized = pieces settled this week (roles closing / same-week-closed), with their
+ *              attributed exit-leg (and same-week entry-leg) brokerage;
+ *   mtm      = mark-to-market pieces of trades still open through this week (roles
+ *              initiation / intermediate); the entry week's piece already carries the
+ *              entry-leg brokerage.
+ * net = realized + mtm — identical to summing netProfit over every active trade, so the
+ * existing weekly Net (and the reconciliation offset applied on top of it) is unchanged.
+ */
+export interface WeeklyStanding {
+  realized: number;
+  mtm: number;
+  net: number;
+}
+
+export function calculateWeeklyStanding(trades: Trade[], weekKey: string): WeeklyStanding {
+  let realized = 0;
+  let mtm = 0;
+  trades.forEach(trade => {
+    const calc = calculateTradeForWeek(trade, weekKey);
+    if (!calc.isActive) return;
+    if (calc.role === 'closing' || calc.role === 'same-week-closed') {
+      realized += calc.netProfit;
+    } else {
+      mtm += calc.netProfit;
+    }
+  });
+  return { realized, mtm, net: realized + mtm };
+}
+
+/**
  * Calculates current transient PnL for live checking (does not alter the standard weekly calculations)
  */
 export interface InstantPnL {
@@ -365,6 +419,15 @@ export function estimateInstantPnL(trade: Trade, currentPrice: number): InstantP
 
   let buyB = buyTurnCalc.brokerage;
   let sellB = sellTurnCalc.brokerage;
+  // Same per-leg override rule as calculateTradeForWeek; an absent leg (e.g. exit
+  // brokerage of a still-open trade) keeps the formula estimate.
+  if (trade.direction === 'Long') {
+    buyB = trade.entryBrokerage ?? buyB;
+    sellB = trade.exitBrokerage ?? sellB;
+  } else {
+    sellB = trade.entryBrokerage ?? sellB;
+    buyB = trade.exitBrokerage ?? buyB;
+  }
   if (trade.currency === 'USD') {
     buyB = buyB * instantExchangeRate;
     sellB = sellB * instantExchangeRate;

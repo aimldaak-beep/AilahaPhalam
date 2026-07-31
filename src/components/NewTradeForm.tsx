@@ -27,6 +27,7 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
   const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
   const [usdToInrRate, setUsdToInrRate] = useState<string>('83.24');
   const [realizationOption, setRealizationOption] = useState<'Full' | '80/20'>('80/20');
+  const [entryBrokerage, setEntryBrokerage] = useState<string>('');
 
   const validateAndSetDecimal = (val: string, setter: (val: string) => void) => {
     // Strip any characters that are not digits or decimal point
@@ -119,6 +120,12 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
       realizationRate: realizationOption === '80/20' ? 0.8 : 1.0,
       fridayClosingPrices: {},
     };
+
+    // Actual entry-leg brokerage (optional). Blank = field absent -> legacy formula charge.
+    const parsedEntryBrokerage = parseFloat(entryBrokerage);
+    if (entryBrokerage.trim() !== '' && !isNaN(parsedEntryBrokerage) && parsedEntryBrokerage >= 0) {
+      trade.entryBrokerage = parsedEntryBrokerage;
+    }
 
     onAddTrade(trade);
     onClose();
@@ -755,6 +762,27 @@ export default function NewTradeForm({ onAddTrade, onClose }: NewTradeFormProps)
                     80% (0.8)
                   </button>
                 </div>
+              </div>
+
+              {/* Actual entry-leg brokerage (optional) */}
+              <div style={{ gridColumn: '1 / -1', paddingTop: 12, borderTop: '1px solid rgba(201,168,76,0.08)' }}>
+                <label style={labelStyle}>
+                  Entry-Leg Brokerage — actual, optional ({currency === 'USD' ? '$' : '₹'})
+                </label>
+                <input
+                  id="entry-brokerage-input"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="blank = auto formula (legacy)"
+                  value={entryBrokerage}
+                  onChange={e => validateAndSetDecimal(e.target.value, setEntryBrokerage)}
+                  onFocus={e => (e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)')}
+                  onBlur={e => (e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)')}
+                  style={inputMonoStyle}
+                />
+                <span style={{ fontSize: 10, marginTop: 4, display: 'block', lineHeight: 1.5, fontWeight: 600, color: 'rgba(240,230,200,0.5)' }}>
+                  * Charged in this entry week. Exit-leg brokerage is entered when closing the trade.
+                </span>
               </div>
 
               {/* Conditionally ask for USD to INR exchange rate */}

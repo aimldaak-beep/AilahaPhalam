@@ -11,7 +11,8 @@
     "lint": "tsc --noEmit",
     "test:pnl": "tsx scripts/edit-pnl-proof.ts",
     "test:whatif": "tsx scripts/whatif-proof.ts",
-    "test:proofs": "npm run test:pnl && npm run test:whatif"
+    "test:weekly": "tsx scripts/weekly-mtm-proof.ts",
+    "test:proofs": "npm run test:pnl && npm run test:whatif && npm run test:weekly"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

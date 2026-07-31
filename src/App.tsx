@@ -55,6 +55,13 @@ import {
   saveWeekOffset,
   deleteWeekOffset,
 } from './lib/offsets';
+import {
+  fetchWeeklyMarks,
+  syncWeeklyMarksForTrade,
+  deleteWeeklyMarksForTrade,
+  deleteAllWeeklyMarks,
+  overlayMissingMarks,
+} from './lib/marks';
 import { fetchPinHash } from './lib/pin';
 import PinModal from './components/PinModal';
 
@@ -109,14 +116,19 @@ export default function App() {
       .from('trades')
       .select('data, created_at')
       .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (cancelled) return;
         if (error) {
           console.error('Failed to load trades from Supabase:', error.message);
           setTrades([]);
           return;
         }
-        setTrades((data ?? []).map((row) => row.data as Trade));
+        const loaded = (data ?? []).map((row) => row.data as Trade);
+        // Back-fill marks the trade jsonb is missing from weekly_marks (jsonb wins on
+        // conflict). Load-only path — never triggers a sync.
+        const marks = await fetchWeeklyMarks();
+        if (cancelled) return;
+        setTrades(overlayMissingMarks(loaded, marks));
       });
     return () => {
       cancelled = true;
@@ -312,18 +324,23 @@ export default function App() {
     const prevById = new Map(prevList.map((t) => [t.id, t]));
     const nextById = new Map(nextList.map((t) => [t.id, t]));
 
+    const userId = session?.user.id;
+
     // Inserts and updates
     for (const trade of nextList) {
       const before = prevById.get(trade.id);
       if (!before) {
         const { error } = await supabase.from('trades').insert({ data: trade });
         if (error) console.error('Failed to add trade to Supabase:', error.message);
+        if (userId) await syncWeeklyMarksForTrade(userId, trade);
       } else if (JSON.stringify(before) !== JSON.stringify(trade)) {
         const { error } = await supabase
           .from('trades')
           .update({ data: trade })
           .eq('data->>id', trade.id);
         if (error) console.error('Failed to update trade in Supabase:', error.message);
+        // Mirror the trade's marks into weekly_marks so the table tracks every write path.
+        if (userId) await syncWeeklyMarksForTrade(userId, trade, before);
       }
     }
 
@@ -332,6 +349,7 @@ export default function App() {
       if (!nextById.has(trade.id)) {
         const { error } = await supabase.from('trades').delete().eq('data->>id', trade.id);
         if (error) console.error('Failed to delete trade from Supabase:', error.message);
+        if (userId) await deleteWeeklyMarksForTrade(userId, trade.id);
       }
     }
   };
@@ -399,11 +417,12 @@ export default function App() {
   };
 
   const handleConfirmCloseTrade = (
-    tradeId: string, 
-    exitPrice: number, 
-    exitDate: string, 
+    tradeId: string,
+    exitPrice: number,
+    exitDate: string,
     updatedStatus: TradeStatus,
-    closedUsdToInrRate?: number
+    closedUsdToInrRate?: number,
+    exitBrokerage?: number
   ) => {
     const updated = trades.map(t => {
       if (t.id === tradeId) {
@@ -414,7 +433,8 @@ export default function App() {
           buyPrice: t.direction === 'Long' ? t.buyPrice : exitPrice,
           sellDate: t.direction === 'Long' ? exitDate : t.sellDate,
           buyDate: t.direction === 'Long' ? t.buyDate : exitDate,
-          closedUsdToInrRate: closedUsdToInrRate !== undefined ? closedUsdToInrRate : t.closedUsdToInrRate
+          closedUsdToInrRate: closedUsdToInrRate !== undefined ? closedUsdToInrRate : t.closedUsdToInrRate,
+          exitBrokerage: exitBrokerage !== undefined ? exitBrokerage : t.exitBrokerage
         };
       }
       return t;
@@ -476,6 +496,8 @@ export default function App() {
     if (session) {
       const { error } = await supabase.from('trades').delete().eq('user_id', session.user.id);
       if (error) console.error('Failed to reset trades in Supabase:', error.message);
+      // Marks are trade-scoped mirrors — wiping trades without them would leave orphans.
+      await deleteAllWeeklyMarks(session.user.id);
     }
   };
   const doDeleteTrade = (trade: Trade) => {

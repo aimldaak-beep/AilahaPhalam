@@ -99,6 +99,12 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
     trade.closedUsdToInrRate?.toString() ?? '',
   );
   const [realizationRate, setRealizationRate] = useState(trade.realizationRate?.toString() ?? '1');
+  const [entryBrokerage, setEntryBrokerage] = useState(
+    trade.entryBrokerage != null ? String(trade.entryBrokerage) : '',
+  );
+  const [exitBrokerage, setExitBrokerage] = useState(
+    trade.exitBrokerage != null ? String(trade.exitBrokerage) : '',
+  );
   const [friClose, setFriClose] = useState<Record<string, string>>(() =>
     recordToStrings(trade.fridayClosingPrices),
   );
@@ -167,6 +173,9 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
       realizationRate: parseNum(realizationRate, trade.realizationRate),
       fridayClosingPrices: buildNumRecord(friClose),
       fridayUsdToInrRates: buildNumRecord(friFx),
+      // Blank = absent (legacy formula charge for that leg) — never stored as 0.
+      entryBrokerage: parseNumOrNull(entryBrokerage) ?? undefined,
+      exitBrokerage: parseNumOrNull(exitBrokerage) ?? undefined,
     };
 
     onSave(updated);
@@ -364,6 +373,52 @@ export default function EditTradeModal({ trade, onSave, onClose }: EditTradeModa
                 <option value="INR" style={optionStyle}>INR</option>
                 <option value="USD" style={optionStyle}>USD</option>
               </select>
+            </div>
+          </div>
+
+          {/* Actual per-leg brokerage (blank = legacy formula charge) */}
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+            style={{
+              background: 'rgba(0,0,0,0.2)',
+              border: '1px solid rgba(201,168,76,0.1)',
+              borderRadius: 12,
+              padding: 16,
+            }}
+          >
+            <div>
+              <label className={labelClass} style={{ color: '#C9A84C' }}>
+                Entry-Leg Brokerage ({currency === 'USD' ? '$' : '₹'})
+              </label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={entryBrokerage}
+                onChange={(e) => setEntryBrokerage(e.target.value)}
+                className={inputClass}
+                style={inputStyle}
+                placeholder="blank = auto formula (legacy)"
+              />
+              <p className="text-[11px] mt-1 font-medium leading-snug" style={{ color: 'rgba(240,230,200,0.35)' }}>
+                Charged in the entry week ({direction === 'Long' ? 'buy' : 'sell'} leg).
+              </p>
+            </div>
+            <div>
+              <label className={labelClass} style={{ color: '#C9A84C' }}>
+                Exit-Leg Brokerage ({currency === 'USD' ? '$' : '₹'})
+              </label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={exitBrokerage}
+                onChange={(e) => setExitBrokerage(e.target.value)}
+                className={inputClass}
+                style={inputStyle}
+                placeholder="blank = auto formula (legacy)"
+              />
+              <p className="text-[11px] mt-1 font-medium leading-snug" style={{ color: 'rgba(240,230,200,0.35)' }}>
+                Charged in the closing week ({direction === 'Long' ? 'sell' : 'buy'} leg).
+              </p>
             </div>
           </div>
 

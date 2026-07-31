@@ -15,7 +15,8 @@ interface CloseTradeModalProps {
     exitPrice: number,
     exitDate: string,
     updatedStatus: TradeStatus,
-    closedUsdToInrRate?: number
+    closedUsdToInrRate?: number,
+    exitBrokerage?: number
   ) => void;
   onClose: () => void;
 }
@@ -26,6 +27,9 @@ export default function CloseTradeModal({ trade, onConfirmClose, onClose }: Clos
     new Date().toISOString().split('T')[0]
   );
   const [closedUsdToInrRate, setClosedUsdToInrRate] = useState<string>('83.24');
+  const [exitBrokerage, setExitBrokerage] = useState<string>(
+    trade.exitBrokerage != null ? String(trade.exitBrokerage) : ''
+  );
 
   const validateAndSetDecimal = (val: string, setter: (val: string) => void) => {
     const sanitized = val.replace(/[^0-9.]/g, '');
@@ -70,7 +74,14 @@ export default function CloseTradeModal({ trade, onConfirmClose, onClose }: Clos
 
     const manualExchangeRate = trade.currency === 'USD' ? parseFloat(closedUsdToInrRate) || 83.24 : undefined;
 
-    onConfirmClose(trade.id, parsedPrice, exitDate, finalStatus, manualExchangeRate);
+    // Actual exit-leg brokerage (optional). Blank = field stays absent -> legacy formula charge.
+    const parsedExitBrokerage = parseFloat(exitBrokerage);
+    const manualExitBrokerage =
+      exitBrokerage.trim() !== '' && !isNaN(parsedExitBrokerage) && parsedExitBrokerage >= 0
+        ? parsedExitBrokerage
+        : undefined;
+
+    onConfirmClose(trade.id, parsedPrice, exitDate, finalStatus, manualExchangeRate, manualExitBrokerage);
     onClose();
   };
 
@@ -172,6 +183,27 @@ export default function CloseTradeModal({ trade, onConfirmClose, onClose }: Clos
               </p>
             </div>
           )}
+
+          {/* Exit-leg brokerage input (optional) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '2.5px', color: 'rgba(240,230,200,0.55)', fontFamily: 'monospace' }}>
+              Exit-Leg Brokerage — actual, optional ({trade.currency === 'USD' ? '$' : '₹'})
+            </label>
+            <input
+              id="exit-brokerage-close-input"
+              type="text"
+              inputMode="decimal"
+              placeholder="blank = auto formula (legacy)"
+              value={exitBrokerage}
+              onChange={e => validateAndSetDecimal(e.target.value, setExitBrokerage)}
+              style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 8, padding: '10px 14px', color: '#F0E6C8', fontSize: 13, outline: 'none', width: '100%', fontFamily: 'monospace', boxSizing: 'border-box' }}
+              onFocus={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)'}
+              onBlur={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)'}
+            />
+            <p style={{ fontSize: 10, color: 'rgba(240,230,200,0.45)', margin: 0, fontFamily: "'DM Sans', sans-serif" }}>
+              * Charged in this closing week. Entry-leg brokerage stays in the entry week.
+            </p>
+          </div>
 
           {/* Exit Date input */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
