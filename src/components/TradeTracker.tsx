@@ -639,7 +639,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                 const groupColor = PALETTE.groupColors[groupIndex % 3];
 
                 return (
-                  <div key={entryDate} style={{ marginBottom: 32, minWidth: 2300 }}>
+                  <div key={entryDate} style={{ marginBottom: 32, minWidth: 2340 }}>
 
                     {/* Group Header */}
                     <div style={{
@@ -675,7 +675,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                     {/* Column Header Row */}
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: '140px 80px 120px 100px 60px repeat(7, 1fr) 80px',
+                      gridTemplateColumns: '165px 80px 135px 100px 60px repeat(7, 1fr) 80px',
                       padding: '8px 16px',
                       marginBottom: 4,
                       background: 'rgba(201,168,76,0.05)',
@@ -729,7 +729,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                         key={trade.id}
                         style={{
                           display: 'grid',
-                          gridTemplateColumns: '140px 80px 120px 100px 60px repeat(7, 1fr) 80px',
+                          gridTemplateColumns: '165px 80px 135px 100px 60px repeat(7, 1fr) 80px',
                           padding: '12px 16px',
                           marginBottom: 6,
                           background: 'rgba(255,255,255,0.03)',
@@ -742,7 +742,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                         }}
                       >
                         {/* Symbol */}
-                        <div style={{ fontSize: 16, fontWeight: 900, color: '#F0E6C8' }}>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: '#F0E6C8' }}>
                           {trade.symbol}
                         </div>
 
@@ -762,7 +762,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                         </div>
 
                         {/* Entry Price */}
-                        <div style={{ fontSize: 16, fontWeight: 700, color: '#F0E6C8', fontFamily: 'monospace' }}>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: '#F0E6C8', fontFamily: 'monospace' }}>
                           ₹{trade.entry_price?.toLocaleString('en-IN')}
                         </div>
 
@@ -816,7 +816,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                                       gap: 4,
                                       color: col,
                                       fontFamily: 'monospace',
-                                      fontSize: isClose ? 15 : 14,
+                                      fontSize: isClose ? 16 : 15,
                                       fontWeight: isClose ? 800 : 400,
                                       marginBottom: 2,
                                     }}
@@ -900,7 +900,7 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: '160px 80px 100px 140px 100px 80px 1fr 100px',
+                gridTemplateColumns: '185px 80px 100px 155px 115px 80px 1fr 100px',
                 background: 'rgba(201,168,76,0.05)',
                 borderBottom: '1px solid rgba(201,168,76,0.12)',
                 padding: '8px 20px',
@@ -918,14 +918,14 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                   key={trade.id}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '160px 80px 100px 140px 100px 80px 1fr 100px',
+                    gridTemplateColumns: '185px 80px 100px 155px 115px 80px 1fr 100px',
                     padding: '12px 20px',
                     borderBottom: '1px solid rgba(201,168,76,0.06)',
                     alignItems: 'center',
                     borderRadius: 0,
                   }}
                 >
-                  <div style={{ fontFamily: 'monospace', fontWeight: 800, color: '#F0E6C8', fontSize: 16 }}>{trade.symbol}</div>
+                  <div style={{ fontFamily: 'monospace', fontWeight: 800, color: '#F0E6C8', fontSize: 18 }}>{trade.symbol}</div>
                   <div>
                     <span
                       style={{
@@ -943,11 +943,11 @@ export default function TradeTracker({ session, setCurrentView }: Props) {
                       {trade.direction}
                     </span>
                   </div>
-                  <div style={{ fontFamily: 'monospace', color: 'rgba(240,230,200,0.45)', fontSize: 13, whiteSpace: 'nowrap' }}>{trade.entry_date}</div>
-                  <div style={{ fontFamily: 'monospace', color: '#F0E6C8', fontSize: 16, fontWeight: 700, whiteSpace: 'nowrap' }}>₹{formatPrice(trade.entry_price)}</div>
-                  <div style={{ fontFamily: 'monospace', color: 'rgba(240,230,200,0.45)', fontSize: 13, whiteSpace: 'nowrap' }}>{trade.close_date ?? '—'}</div>
-                  <div style={{ fontFamily: 'monospace', color: '#F0E6C8', fontSize: 16, fontWeight: 700, whiteSpace: 'nowrap' }}>{trade.close_price != null ? '₹' + formatPrice(trade.close_price) : '—'}</div>
-                  <div style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 16, color: pctColor(move) }}>{fmtPct(move)}</div>
+                  <div style={{ fontFamily: 'monospace', color: 'rgba(240,230,200,0.45)', fontSize: 14, whiteSpace: 'nowrap' }}>{trade.entry_date}</div>
+                  <div style={{ fontFamily: 'monospace', color: '#F0E6C8', fontSize: 18, fontWeight: 700, whiteSpace: 'nowrap' }}>₹{formatPrice(trade.entry_price)}</div>
+                  <div style={{ fontFamily: 'monospace', color: 'rgba(240,230,200,0.45)', fontSize: 14, whiteSpace: 'nowrap' }}>{trade.close_date ?? '—'}</div>
+                  <div style={{ fontFamily: 'monospace', color: '#F0E6C8', fontSize: 18, fontWeight: 700, whiteSpace: 'nowrap' }}>{trade.close_price != null ? '₹' + formatPrice(trade.close_price) : '—'}</div>
+                  <div style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 18, color: pctColor(move) }}>{fmtPct(move)}</div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                     <button
                       type="button"

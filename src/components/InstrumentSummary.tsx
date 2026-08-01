@@ -234,7 +234,7 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
                       {group.icon}
                     </span>
                     <div>
-                      <h4 className="font-extrabold text-base uppercase tracking-wider font-sans" style={{ color: '#F0E6C8', margin: 0 }}>
+                      <h4 className="font-extrabold text-lg uppercase tracking-wider font-sans" style={{ color: '#F0E6C8', margin: 0 }}>
                         {group.name}
                       </h4>
                       <p className="text-[8px] font-bold font-mono tracking-widest" style={{ color: 'rgba(240,230,200,0.45)', margin: 0 }}>
@@ -263,7 +263,7 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
                 </div>
 
                 {/* Micro breakdowns */}
-                <div className="pt-2.5 flex items-center justify-between text-[11px] font-bold font-mono leading-none tracking-wider" style={{ borderTop: '1px solid rgba(201,168,76,0.08)', color: 'rgba(240,230,200,0.7)' }}>
+                <div className="pt-2.5 flex items-center justify-between text-[13px] font-bold font-mono leading-none tracking-wider" style={{ borderTop: '1px solid rgba(201,168,76,0.08)', color: 'rgba(240,230,200,0.7)' }}>
                   <div>
                     <span>WINRATE: </span>
                     <span style={{ color: '#F0E6C8' }}>{formatAmount(grpWinRate, 0)}%</span>
@@ -280,7 +280,7 @@ export default function InstrumentSummary({ trades }: InstrumentSummaryProps) {
 
                 {/* Symbols tags */}
                 {group.symbols.length > 0 && (
-                  <div className="mt-2 text-[10px] uppercase font-mono overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: 'rgba(240,230,200,0.5)' }}>
+                  <div className="mt-2 text-[11px] uppercase font-mono overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: 'rgba(240,230,200,0.5)' }}>
                     Active: {group.symbols.join(', ')}
                   </div>
                 )}
