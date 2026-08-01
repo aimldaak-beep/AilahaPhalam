@@ -132,7 +132,7 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
           <span className="block text-[9px] font-black uppercase tracking-widest font-mono font-bold" style={{ color: 'rgba(240,230,200,0.7)' }}>
             Net Cumulative Yield
           </span>
-          <span className={`block text-2xl font-black font-mono tracking-tight mt-3`} style={{ color: totalNetProfit >= 0 ? '#677A67' : '#C9960C' }}>
+          <span className={`block text-3xl font-black font-mono tracking-tight mt-3`} style={{ color: totalNetProfit >= 0 ? '#677A67' : '#C9960C' }}>
             {totalNetProfit >= 0 ? '+' : ''}
             ₹{formatAmount(totalNetProfit)}
           </span>
@@ -146,7 +146,7 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
           <span className="block text-[9px] font-black uppercase tracking-widest font-mono font-bold" style={{ color: 'rgba(240,230,200,0.7)' }}>
             Consolidated Win Rate
           </span>
-          <span className="block text-2xl font-black font-mono tracking-tight mt-3" style={{ color: '#F0E6C8' }}>
+          <span className="block text-3xl font-black font-mono tracking-tight mt-3" style={{ color: '#F0E6C8' }}>
             {formatAmount(winRate, 1)}%
           </span>
           <div className="mt-4 flex items-center gap-1.5 text-[9px] font-bold font-mono tracking-wider">
@@ -167,7 +167,7 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
           <span className="block text-[9px] font-black uppercase tracking-widest font-mono font-bold" style={{ color: 'rgba(240,230,200,0.7)' }}>
             Gross Executed PnL
           </span>
-          <span className="block text-2xl font-black font-mono tracking-tight mt-3" style={{ color: totalGrossProfit >= 0 ? '#677A67' : '#C9960C' }}>
+          <span className="block text-3xl font-black font-mono tracking-tight mt-3" style={{ color: totalGrossProfit >= 0 ? '#677A67' : '#C9960C' }}>
             {totalGrossProfit >= 0 ? '+' : ''}
             ₹{formatAmount(totalGrossProfit)}
           </span>
@@ -181,7 +181,7 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
           <span className="block text-[9px] font-black uppercase tracking-widest font-mono font-bold" style={{ color: 'rgba(240,230,200,0.7)' }}>
             Total Brokerage Spent
           </span>
-          <span className="block text-2xl font-black font-mono tracking-tight mt-3 font-bold" style={{ color: '#C9960C' }}>
+          <span className="block text-3xl font-black font-mono tracking-tight mt-3 font-bold" style={{ color: '#C9960C' }}>
             -₹{formatAmount(totalBrokerage)}
           </span>
         </div>
@@ -203,10 +203,10 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
           </div>
         </div>
         <div className="text-right">
-          <span className="block text-2xl font-black font-mono tracking-tight" style={{ color: lifetimeOffset === 0 ? 'rgba(240,230,200,0.7)' : lifetimeOffset > 0 ? '#677A67' : '#C9960C' }}>
+          <span className="block text-3xl font-black font-mono tracking-tight" style={{ color: lifetimeOffset === 0 ? 'rgba(240,230,200,0.7)' : lifetimeOffset > 0 ? '#677A67' : '#C9960C' }}>
             {lifetimeOffset > 0 ? '+' : ''}₹{formatAmount(lifetimeOffset)}
           </span>
-          <span className="block text-[9px] font-mono mt-1 uppercase tracking-wider" style={{ color: 'rgba(240,230,200,0.5)' }}>
+          <span className="block text-[11px] font-mono mt-1 uppercase tracking-wider" style={{ color: 'rgba(240,230,200,0.5)' }}>
             Net incl. offset: {totalNetProfit + lifetimeOffset >= 0 ? '+' : ''}₹{formatAmount(totalNetProfit + lifetimeOffset)}
           </span>
         </div>
@@ -219,7 +219,7 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
             <BookOpen className="w-4 h-4" style={{ color: '#C9A84C' }} />
             <span className="font-bold font-mono text-[10px] uppercase tracking-wider" style={{ color: 'rgba(240,230,200,0.7)' }}>Registered Ledgers</span>
           </div>
-          <span className="font-bold font-mono text-xs px-3 py-1.5" style={{ color: '#F0E6C8', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 12 }}>
+          <span className="font-bold font-mono text-sm px-3 py-1.5" style={{ color: '#F0E6C8', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 12 }}>
             {totalTradesCount.toString().padStart(2, '0')} contracts
           </span>
         </div>
@@ -229,7 +229,7 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
             <TrendingUp className="w-4 h-4" style={{ color: '#C9A84C' }} />
             <span className="font-bold font-mono text-[10px] uppercase tracking-wider" style={{ color: 'rgba(240,230,200,0.7)' }}>Top Realized Trade</span>
           </div>
-          <span className="font-extrabold font-mono text-xs px-3 py-1.5" style={{ color: '#C9A84C', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 12 }}>
+          <span className="font-extrabold font-mono text-sm px-3 py-1.5" style={{ color: '#C9A84C', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 12 }}>
             {bestTradeSymbol} {bestTradeNet > 0 ? `(+₹${formatAmount(bestTradeNet, 1)})` : ''}
           </span>
         </div>
@@ -239,7 +239,7 @@ export default function CumulativeStats({ trades, weekOffsets }: CumulativeStats
             <TrendingDown className="w-4 h-4" style={{ color: '#C9A84C' }} />
             <span className="font-bold font-mono text-[10px] uppercase tracking-wider" style={{ color: 'rgba(240,230,200,0.7)' }}>Max Deficit Trade</span>
           </div>
-          <span className="font-extrabold font-mono text-xs px-3 py-1.5" style={{ color: '#C9960C', background: 'rgba(201,150,12,0.1)', border: '1px solid rgba(201,150,12,0.2)', borderRadius: 12 }}>
+          <span className="font-extrabold font-mono text-sm px-3 py-1.5" style={{ color: '#C9960C', background: 'rgba(201,150,12,0.1)', border: '1px solid rgba(201,150,12,0.2)', borderRadius: 12 }}>
             {worstTradeSymbol} {worstTradeNet < 0 ? `(-₹${formatAmount(Math.abs(worstTradeNet), 1)})` : ''}
           </span>
         </div>

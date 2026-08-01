@@ -424,7 +424,7 @@ export default function WeeklyReport({
                 <div key={trade.id} className="p-4 rounded-lg flex flex-col justify-between gap-3.5 shadow-md" style={{background:'rgba(4,2,0,0.95)',border:'1px solid rgba(201,168,76,0.08)'}}>
                   <div className="flex items-center justify-between text-xs">
                     <div>
-                      <span className="font-black font-mono text-sm tracking-wide" style={{color:'#F0E6C8'}}>
+                      <span className="font-black font-mono text-base tracking-wide" style={{color:'#F0E6C8'}}>
                         {trade.symbol}
                       </span>
                       <span className="block font-mono text-[9px] mt-0.5 font-bold tracking-wider" style={{color:'rgba(240,230,200,0.5)'}}>
@@ -432,7 +432,7 @@ export default function WeeklyReport({
                       </span>
                     </div>
                     <div className="text-right">
-                      <span className="block font-mono font-bold text-[11px]" style={{color:'rgba(240,230,200,0.7)'}}>Entry: {currencySymbol}{formatNumber(entryPrice)}</span>
+                      <span className="block font-mono font-bold text-[13px]" style={{color:'rgba(240,230,200,0.7)'}}>Entry: {currencySymbol}{formatNumber(entryPrice)}</span>
                     </div>
                   </div>
 
@@ -493,7 +493,7 @@ export default function WeeklyReport({
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.45)', marginBottom: 10 }}>
             Weekly Net {savedOffsetAmount !== 0 ? 'Reconciled' : 'Realized'}
           </div>
-          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.1, color: adjustedWeeklyNet >= 0 ? '#677A67' : '#C9960C' }}>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.1, color: adjustedWeeklyNet >= 0 ? '#677A67' : '#C9960C' }}>
             {adjustedWeeklyNet >= 0 ? '+' : ''}₹{formatAmount(adjustedWeeklyNet)}
           </div>
           <div style={{ fontSize: 10, color: 'rgba(240,230,200,0.3)', marginTop: 6, letterSpacing: '0.5px' }}>
@@ -509,7 +509,7 @@ export default function WeeklyReport({
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.45)', marginBottom: 10 }}>
             Weekly Gross Profit
           </div>
-          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.1, color: weeklyGrossSum >= 0 ? '#677A67' : '#C9960C' }}>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.1, color: weeklyGrossSum >= 0 ? '#677A67' : '#C9960C' }}>
             {weeklyGrossSum >= 0 ? '+' : ''}₹{formatAmount(weeklyGrossSum)}
           </div>
           <div style={{ fontSize: 10, color: 'rgba(240,230,200,0.3)', marginTop: 6, letterSpacing: '0.5px' }}>
@@ -523,7 +523,7 @@ export default function WeeklyReport({
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.45)', marginBottom: 10 }}>
             Commissions Deductions
           </div>
-          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.1, color: '#C9960C' }}>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.1, color: '#C9960C' }}>
             -₹{formatAmount(weeklyBrokerageSum)}
           </div>
           <div style={{ fontSize: 10, color: 'rgba(240,230,200,0.3)', marginTop: 6, letterSpacing: '0.5px' }}>
@@ -541,19 +541,19 @@ export default function WeeklyReport({
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
           <div className="rounded-lg p-3.5" style={{background:'rgba(5,3,1,0.95)',border:'1px solid rgba(201,168,76,0.15)'}}>
             <span className="block text-[9px] font-extrabold uppercase tracking-widest mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.7)'}}>Realized (settled this week)</span>
-            <span id="standing-realized" className="font-mono font-black text-sm" style={{color: weeklyStanding.realized >= 0 ? '#F0E6C8' : '#C9960C'}}>
+            <span id="standing-realized" className="font-mono font-black text-base" style={{color: weeklyStanding.realized >= 0 ? '#F0E6C8' : '#C9960C'}}>
               {weeklyStanding.realized >= 0 ? '+' : ''}₹{formatAmount(weeklyStanding.realized)}
             </span>
           </div>
           <div className="rounded-lg p-3.5" style={{background:'rgba(5,3,1,0.95)',border:'1px solid rgba(201,168,76,0.15)'}}>
             <span className="block text-[9px] font-extrabold uppercase tracking-widest mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.7)'}}>MTM (open carry marks)</span>
-            <span id="standing-mtm" className="font-mono font-black text-sm" style={{color: weeklyStanding.mtm >= 0 ? '#F0E6C8' : '#C9960C'}}>
+            <span id="standing-mtm" className="font-mono font-black text-base" style={{color: weeklyStanding.mtm >= 0 ? '#F0E6C8' : '#C9960C'}}>
               {weeklyStanding.mtm >= 0 ? '+' : ''}₹{formatAmount(weeklyStanding.mtm)}
             </span>
           </div>
           <div className="rounded-lg p-3.5" style={{background:'rgba(201,168,76,0.05)',border:'1px solid rgba(201,168,76,0.3)'}}>
             <span className="block text-[9px] font-extrabold uppercase tracking-widest mb-1.5 font-mono" style={{color:'#C9A84C'}}>Net Standing</span>
-            <span id="standing-net" className="font-mono font-black text-base" style={{color: weeklyStanding.net >= 0 ? '#677A67' : '#C9960C'}}>
+            <span id="standing-net" className="font-mono font-black text-xl" style={{color: weeklyStanding.net >= 0 ? '#677A67' : '#C9960C'}}>
               {weeklyStanding.net >= 0 ? '+' : ''}₹{formatAmount(weeklyStanding.net)}
             </span>
           </div>
@@ -574,13 +574,13 @@ export default function WeeklyReport({
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
           <div className="rounded-lg p-3.5" style={{background:'rgba(5,3,1,0.95)',border:'1px solid rgba(201,168,76,0.15)'}}>
             <span className="block text-[9px] font-extrabold uppercase tracking-widest mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.7)'}}>Calculated Net</span>
-            <span className="font-mono font-black text-sm" style={{color: weeklyNetSum >= 0 ? '#F0E6C8' : '#C9960C'}}>
+            <span className="font-mono font-black text-base" style={{color: weeklyNetSum >= 0 ? '#F0E6C8' : '#C9960C'}}>
               {weeklyNetSum >= 0 ? '+' : ''}₹{formatAmount(weeklyNetSum)}
             </span>
           </div>
           <div className="rounded-lg p-3.5" style={{background:'rgba(5,3,1,0.95)',border:'1px solid rgba(201,168,76,0.15)'}}>
             <span className="block text-[9px] font-extrabold uppercase tracking-widest mb-1.5 font-mono" style={{color:'rgba(240,230,200,0.7)'}}>Offset Applied</span>
-            <span className="font-mono font-black text-sm" style={{color: savedOffsetAmount === 0 ? 'rgba(240,230,200,0.5)' : savedOffsetAmount > 0 ? '#677A67' : '#C9960C'}}>
+            <span className="font-mono font-black text-base" style={{color: savedOffsetAmount === 0 ? 'rgba(240,230,200,0.5)' : savedOffsetAmount > 0 ? '#677A67' : '#C9960C'}}>
               {savedOffsetAmount > 0 ? '+' : ''}₹{formatAmount(savedOffsetAmount)}
             </span>
             {savedOffset?.note ? (
@@ -589,7 +589,7 @@ export default function WeeklyReport({
           </div>
           <div className="rounded-lg p-3.5" style={{background:'rgba(201,168,76,0.05)',border:'1px solid rgba(201,168,76,0.3)'}}>
             <span className="block text-[9px] font-extrabold uppercase tracking-widest mb-1.5 font-mono" style={{color:'#C9A84C'}}>Adjusted Total (Reconciled)</span>
-            <span className="font-mono font-black text-base" style={{color: adjustedWeeklyNet >= 0 ? '#677A67' : '#C9960C'}}>
+            <span className="font-mono font-black text-lg" style={{color: adjustedWeeklyNet >= 0 ? '#677A67' : '#C9960C'}}>
               {adjustedWeeklyNet >= 0 ? '+' : ''}₹{formatAmount(adjustedWeeklyNet)}
             </span>
           </div>
@@ -652,9 +652,9 @@ export default function WeeklyReport({
           </div>
         ) : (
           <div style={{ background: 'rgba(0,0,0,0.15)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 12, overflow: 'hidden', marginTop: 12 }}>
-            <div style={{ minWidth: 1150 }}>
+            <div style={{ minWidth: 1230 }}>
               {/* Header row — 8 columns */}
-              <div style={{ display: 'grid', gridTemplateColumns: '160px 110px 90px 1fr 190px 120px 140px 160px', padding: '8px 20px', background: 'rgba(201,168,76,0.05)', borderBottom: '1px solid rgba(201,168,76,0.12)', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '170px 110px 100px 1fr 210px 130px 150px 160px', padding: '8px 20px', background: 'rgba(201,168,76,0.05)', borderBottom: '1px solid rgba(201,168,76,0.12)', gap: 8 }}>
                 {['SYMBOL', 'TYPE', 'LOTS', 'ENTRY + DATE', 'WEEK CLOSE', 'WK MTM', 'CURRENT PNL', 'ACTIONS'].map((h, i) => (
                   <div key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', textAlign: i >= 5 ? 'right' : 'left' }}>{h}</div>
                 ))}
@@ -669,22 +669,22 @@ export default function WeeklyReport({
                 const existingMark = trade.fridayClosingPrices[selectedWeekKey];
                 const existingFx = trade.fridayUsdToInrRates?.[selectedWeekKey];
                 return (
-                  <div key={trade.id} id={`active-trade-${trade.id}`} style={{ display: 'grid', gridTemplateColumns: '160px 110px 90px 1fr 190px 120px 140px 160px', padding: '12px 20px', borderBottom: '1px solid rgba(201,168,76,0.06)', alignItems: 'center', gap: 8 }}>
-                    <div className="font-mono" style={{ fontSize: 14, fontWeight: 700, color: '#F0E6C8', letterSpacing: '0.3px' }}>{trade.symbol}</div>
+                  <div key={trade.id} id={`active-trade-${trade.id}`} style={{ display: 'grid', gridTemplateColumns: '170px 110px 100px 1fr 210px 130px 150px 160px', padding: '14px 20px', borderBottom: '1px solid rgba(201,168,76,0.06)', alignItems: 'center', gap: 8 }}>
+                    <div className="font-mono" style={{ fontSize: 16, fontWeight: 700, color: '#F0E6C8', letterSpacing: '0.3px' }}>{trade.symbol}</div>
                     <div>
                       <span className="font-mono" style={{ fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 4, letterSpacing: '1px', display: 'inline-block', ...(trade.direction === 'Long' ? { background: 'rgba(103,122,103,0.1)', color: '#677A67', border: '1px solid rgba(103,122,103,0.25)' } : { background: 'rgba(201,150,12,0.1)', color: '#C9960C', border: '1px solid rgba(201,150,12,0.25)' }) }}>
                         {trade.direction.toUpperCase()}
                       </span>
-                      <span className="block font-mono mt-0.5" style={{ fontSize: 10, color: 'rgba(240,230,200,0.5)' }}>{trade.instrument}</span>
+                      <span className="block font-mono mt-0.5" style={{ fontSize: 12, color: 'rgba(240,230,200,0.5)' }}>{trade.instrument}</span>
                       {!hasLegBrokerage(trade) && (
                         <span className="font-mono" title="No entered leg brokerage — formula charges apply" style={{ fontSize: 8, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(240,230,200,0.35)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 3, padding: '1px 4px', display: 'inline-block', marginTop: 2 }}>legacy</span>
                       )}
                     </div>
-                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, color: 'rgba(240,230,200,0.7)' }}>{trade.numberOfLots} × {trade.lotSize}</div>
+                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 15, color: 'rgba(240,230,200,0.7)' }}>{trade.numberOfLots} × {trade.lotSize}</div>
                     {/* Merged entry price + entry date cell */}
                     <div>
-                      <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, fontWeight: 700, color: '#F0E6C8' }}>{sym}{formatPrice(entryPrice)}</div>
-                      <div className="font-mono whitespace-nowrap" style={{ fontSize: 11, color: 'rgba(240,230,200,0.5)' }}>{trade.dateInitiated}</div>
+                      <div className="font-mono whitespace-nowrap" style={{ fontSize: 15, fontWeight: 700, color: '#F0E6C8' }}>{sym}{formatPrice(entryPrice)}</div>
+                      <div className="font-mono whitespace-nowrap" style={{ fontSize: 12, color: 'rgba(240,230,200,0.5)' }}>{trade.dateInitiated}</div>
                     </div>
                     {/* Week close mark input for the selected week — persists to weekly_marks */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -698,7 +698,7 @@ export default function WeeklyReport({
                             value={fridayCloseInputs[trade.id] ?? (existingMark !== undefined ? String(existingMark) : '')}
                             onChange={e => setFridayCloseInputs(prev => ({ ...prev, [trade.id]: e.target.value }))}
                             className="font-mono"
-                            style={{ width: 76, background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 8, padding: '5px 8px', color: '#F0E6C8', fontSize: 11, outline: 'none' }}
+                            style={{ width: 90, background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 8, padding: '6px 8px', color: '#F0E6C8', fontSize: 13, outline: 'none' }}
                           />
                           {trade.currency === 'USD' && (
                             <input
@@ -709,7 +709,7 @@ export default function WeeklyReport({
                               value={usdToInrInputs[trade.id] ?? (existingFx !== undefined ? String(existingFx) : '')}
                               onChange={e => setUsdToInrInputs(prev => ({ ...prev, [trade.id]: e.target.value }))}
                               className="font-mono"
-                              style={{ width: 46, background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 8, padding: '5px 6px', color: '#F0E6C8', fontSize: 11, outline: 'none' }}
+                              style={{ width: 54, background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 8, padding: '6px 6px', color: '#F0E6C8', fontSize: 13, outline: 'none' }}
                             />
                           )}
                           <button type="button" title="Save week close" onClick={() => handleInlineMarkSave(trade)} className="p-1 rounded-lg transition cursor-pointer active:scale-95" style={{ background: 'rgba(201,150,12,0.2)', border: '1px solid rgba(201,150,12,0.4)', color: '#C9960C' }}>
@@ -723,7 +723,7 @@ export default function WeeklyReport({
                     {/* This-week MTM beside the lifetime/current figure */}
                     <div className="font-mono" style={{ textAlign: 'right' }}>
                       {wkCalc.isActive ? (
-                        <span style={{ fontSize: 13, fontWeight: 700, color: wkCalc.netProfit >= 0 ? '#677A67' : '#C9960C' }} title={`Week ${activeWeekInfo.weekNum} mark-to-market net`}>
+                        <span style={{ fontSize: 15, fontWeight: 700, color: wkCalc.netProfit >= 0 ? '#677A67' : '#C9960C' }} title={`Week ${activeWeekInfo.weekNum} mark-to-market net`}>
                           {wkCalc.netProfit >= 0 ? '+' : ''}₹{formatAmount(wkCalc.netProfit)}
                         </span>
                       ) : (
@@ -734,7 +734,7 @@ export default function WeeklyReport({
                       {curPnl === null ? (
                         <span style={{ fontSize: 14, color: 'rgba(240,230,200,0.35)' }}>—</span>
                       ) : (
-                        <span style={{ fontSize: 14, fontWeight: 700, color: curPnl >= 0 ? '#677A67' : '#C9960C' }} title={live ? 'Live — from your entered current price' : 'Mark-to-date — last recorded weekly closes'}>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: curPnl >= 0 ? '#677A67' : '#C9960C' }} title={live ? 'Live — from your entered current price' : 'Mark-to-date — last recorded weekly closes'}>
                           {curPnl >= 0 ? '+' : ''}₹{formatAmount(curPnl)}
                           <span className="block" style={{ fontSize: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(240,230,200,0.35)' }}>{live ? 'live' : 'to date'}</span>
                         </span>
@@ -784,9 +784,9 @@ export default function WeeklyReport({
           </div>
         ) : (
           <div style={{ background: 'rgba(0,0,0,0.15)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 12, overflow: 'hidden', marginTop: 12 }}>
-            <div style={{ minWidth: 1120 }}>
+            <div style={{ minWidth: 1200 }}>
               {/* Header row — 9 columns */}
-              <div style={{ display: 'grid', gridTemplateColumns: '170px 120px 90px 120px 120px 100px 130px 140px 80px', padding: '8px 20px', background: 'rgba(201,168,76,0.05)', borderBottom: '1px solid rgba(201,168,76,0.12)', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '180px 120px 100px 130px 130px 105px 140px 150px 80px', padding: '8px 20px', background: 'rgba(201,168,76,0.05)', borderBottom: '1px solid rgba(201,168,76,0.12)', gap: 8 }}>
                 {['SYMBOL', 'TYPE', 'LOTS', 'ENTRY', 'CLOSE', 'DATE', 'WK NET', 'NET PNL', 'ACTIONS'].map((h, i) => (
                   <div key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', textAlign: i === 6 || i === 7 ? 'right' : i === 8 ? 'center' : 'left' }}>{h}</div>
                 ))}
@@ -800,28 +800,28 @@ export default function WeeklyReport({
                 const exitDate = trade.direction === 'Long' ? trade.sellDate : trade.buyDate;
                 const totNet = tradeTotalNet(trade);
                 return (
-                  <div key={trade.id} id={`closed-trade-${trade.id}`} style={{ display: 'grid', gridTemplateColumns: '170px 120px 90px 120px 120px 100px 130px 140px 80px', padding: '12px 20px', borderBottom: '1px solid rgba(201,168,76,0.06)', alignItems: 'center', gap: 8 }}>
-                    <div className="font-mono" style={{ fontSize: 14, fontWeight: 700, color: '#F0E6C8', letterSpacing: '0.3px' }}>{trade.symbol}</div>
+                  <div key={trade.id} id={`closed-trade-${trade.id}`} style={{ display: 'grid', gridTemplateColumns: '180px 120px 100px 130px 130px 105px 140px 150px 80px', padding: '14px 20px', borderBottom: '1px solid rgba(201,168,76,0.06)', alignItems: 'center', gap: 8 }}>
+                    <div className="font-mono" style={{ fontSize: 16, fontWeight: 700, color: '#F0E6C8', letterSpacing: '0.3px' }}>{trade.symbol}</div>
                     <div>
                       <span className="font-mono" style={{ fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 4, letterSpacing: '1px', display: 'inline-block', ...(trade.direction === 'Long' ? { background: 'rgba(103,122,103,0.1)', color: '#677A67', border: '1px solid rgba(103,122,103,0.25)' } : { background: 'rgba(201,150,12,0.1)', color: '#C9960C', border: '1px solid rgba(201,150,12,0.25)' }) }}>
                         {trade.direction.toUpperCase()}
                       </span>
-                      <span className="block font-mono mt-0.5" style={{ fontSize: 10, color: 'rgba(240,230,200,0.5)' }}>{trade.instrument}</span>
+                      <span className="block font-mono mt-0.5" style={{ fontSize: 12, color: 'rgba(240,230,200,0.5)' }}>{trade.instrument}</span>
                       {!hasLegBrokerage(trade) && (
                         <span className="font-mono" title="No entered leg brokerage — formula charges apply" style={{ fontSize: 8, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(240,230,200,0.35)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 3, padding: '1px 4px', display: 'inline-block', marginTop: 2 }}>legacy</span>
                       )}
                     </div>
-                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, color: 'rgba(240,230,200,0.7)' }}>{trade.numberOfLots} × {trade.lotSize}</div>
-                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, fontWeight: 700, color: '#F0E6C8' }}>{sym}{formatPrice(entryPrice)}</div>
-                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 13, fontWeight: 700, color: '#F0E6C8' }}>{sym}{formatPrice(exitPrice)}</div>
-                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 11, color: 'rgba(240,230,200,0.45)', letterSpacing: '0.3px' }}>{exitDate || '—'}</div>
+                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 15, color: 'rgba(240,230,200,0.7)' }}>{trade.numberOfLots} × {trade.lotSize}</div>
+                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 15, fontWeight: 700, color: '#F0E6C8' }}>{sym}{formatPrice(entryPrice)}</div>
+                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 15, fontWeight: 700, color: '#F0E6C8' }}>{sym}{formatPrice(exitPrice)}</div>
+                    <div className="font-mono whitespace-nowrap" style={{ fontSize: 12, color: 'rgba(240,230,200,0.45)', letterSpacing: '0.3px' }}>{exitDate || '—'}</div>
                     <div className="font-mono" style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: item.netProfit >= 0 ? '#677A67' : '#C9960C' }} title={`Week ${activeWeekInfo.weekNum} piece of this trade`}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: item.netProfit >= 0 ? '#677A67' : '#C9960C' }} title={`Week ${activeWeekInfo.weekNum} piece of this trade`}>
                         {item.netProfit >= 0 ? '+' : ''}₹{formatAmount(item.netProfit)}
                       </span>
                     </div>
                     <div className="font-mono" style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: totNet >= 0 ? '#677A67' : '#C9960C' }} title="Final realized net across the trade's life">
+                      <span style={{ fontSize: 15, fontWeight: 700, color: totNet >= 0 ? '#677A67' : '#C9960C' }} title="Final realized net across the trade's life">
                         {totNet >= 0 ? '+' : ''}₹{formatAmount(totNet)}
                       </span>
                     </div>

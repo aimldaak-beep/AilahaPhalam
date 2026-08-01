@@ -449,8 +449,8 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
               <tbody style={{ color: 'rgba(240,230,200,0.7)' }}>
                 {matchedTrades.slice(0, 5).map(t => (
                   <tr key={t.id} className="transition duration-150" style={{ borderBottom: '1px solid rgba(201,168,76,0.06)' }}>
-                    <td className="py-2 px-4" style={{ color: '#F0E6C8', fontSize: 14, fontWeight: 700 }}>{t.symbol}</td>
-                    <td className="py-2 px-4" style={{ fontSize: 13 }}>{t.instrument}</td>
+                    <td className="py-2.5 px-4" style={{ color: '#F0E6C8', fontSize: 16, fontWeight: 700 }}>{t.symbol}</td>
+                    <td className="py-2.5 px-4" style={{ fontSize: 14 }}>{t.instrument}</td>
                     <td className="py-2 px-4">
                       <span className={`px-1.5 py-0.5 rounded text-[10px] font-black tracking-wider uppercase`}
                         style={
@@ -462,8 +462,8 @@ export default function ExportLedgerView({ trades, onOpenEditTrade, weekOffsets 
                         {t.direction}
                       </span>
                     </td>
-                    <td className="py-2 px-4 font-mono" style={{ color: 'rgba(240,230,200,0.45)', fontSize: 13 }}>{t.dateInitiated}</td>
-                    <td className="py-2 px-4 text-right font-bold font-mono" style={{ color: '#F0E6C8', fontSize: 13 }}>
+                    <td className="py-2.5 px-4 font-mono" style={{ color: 'rgba(240,230,200,0.45)', fontSize: 14 }}>{t.dateInitiated}</td>
+                    <td className="py-2.5 px-4 text-right font-bold font-mono" style={{ color: '#F0E6C8', fontSize: 15 }}>
                       {t.currency === 'INR' ? '₹' : '$'}
                       {formatPrice(t.direction === 'Long' ? t.buyPrice : t.sellPrice)}
                     </td>
