@@ -140,18 +140,24 @@ symbol, initiated date, closed date, **held-days** (calendar days between), side
 Rows have checkboxes with a selected-sum bar; the selection is **shared with the Closed view**.
 
 ## 12. Live trades
-Open positions only. Per-trade weekly MTM ledger (§7). Row buttons: **Close · What-if · Edit ·
-Delete** (ghost; Delete inked on Forest / loss-color on White). **Edit** (PIN-gated) opens
-entry/lots/side/init-date inline; Save rewrites the entry leg and recomputes all weekly MTM from
-the new entry. **Realization and currency are LOCKED post-initiation** — to change those, delete +
-re-add. Wrong symbol/instrument = delete + re-add. **Delete** (PIN-gated) confirms
-("Delete SYMBOL — entry X, N lots? Its weekly marks go too.") and removes the trade AND its
-`weekly_marks`.
+Open positions only. Per-trade weekly MTM ledger (§7). Row buttons: **What-if · Edit · Close ·
+Delete** (uniform 84px ghost; Delete inked on Forest / loss-color on White). **Edit** (PIN-gated)
+opens EVERY initiation field inline in the grid cells: symbol · instrument (dropdown, re-auto-fills
+multiplier) · side · lots · entry · init date · currency · realization · entry-leg brokerage (blank
+= legacy auto). One Save commits all fields atomically and recomputes the whole weekly MTM chain;
+Esc cancels. **Delete** (PIN-gated) confirms ("Delete SYMBOL — entry X, N lots? Its weekly marks go
+too.") and removes the trade AND its `weekly_marks`.
 
 ## 13. Closed trades
 Table: checkbox · Closed · Symbol · Side · Qty(r) · Entry(r) · Exit(r) · Share(r) · P&L(r) · actions.
-Multi-select with a selected-sum bar (shared with Journal). **Edit** (exit value) and **Delete** are
-PIN-gated per row.
+Multi-select with a selected-sum bar (shared with Journal). **Edit** (PIN-gated) opens an expanded
+grid row with ALL live fields PLUS exit price · exit-leg brokerage (blank = auto) · closed date; Save
+recomputes realized P&L + held-days and re-files the trade into the correct journal week if the
+closed date moved. **Delete** is PIN-gated per row.
+
+**Edit guards (both panels):** a confirm line on instrument/currency change ("Recomputes all P&L for
+this trade — proceed?"); week-identity integrity — weekly marks earlier than the (possibly new)
+initiation week are removed on save, noted in the confirm.
 
 ## 14. Download as Excel (Journal + Closed)
 Three modes: **complete history · selected trades · date range** (by closing date). CSV columns:
