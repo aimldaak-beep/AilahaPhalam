@@ -363,29 +363,32 @@ export default function App() {
     );
   }
 
-  const headerDate = new Date(todayISO).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  // Spec header date is "Monday 24 August 2026" (no comma) — build it explicitly.
+  const _hd = new Date(todayISO);
+  const headerDate = `${_hd.toLocaleDateString('en-GB', { weekday: 'long' })} ${_hd.getDate()} ${_hd.toLocaleDateString('en-GB', { month: 'long' })} ${_hd.getFullYear()}`;
 
   return (
     <div style={{ minHeight: '100vh', background: t.bg, color: t.ink, ...sans, transition: 'background 180ms, color 180ms' }}>
       <div style={{ maxWidth: 820, margin: '0 auto', padding: '48px 24px 96px' }}>
 
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 48, flexWrap: 'wrap', gap: 16 }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 48 }}>
           <div>
             <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '0.06em' }}>AILAHA PHALAM</div>
             <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 2 }}>{headerDate} · {weekLabel(todayISO)}</div>
           </div>
-          <nav style={{ display: 'flex', gap: 22, alignItems: 'center', flexWrap: 'wrap' }}>
+          <nav style={{ display: 'flex', gap: 22, alignItems: 'center' }}>
             <Tab id="live" label="Live trades" />
             <Tab id="journal" label="Journal" />
             <Tab id="closedv" label="Closed trades" />
             <Tab id="add" label="Add trade" />
+            {/* THEME — after Add trade (spec), then a minimal Sign out (auth necessity) */}
             <span style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 6 }}>
               <span style={{ fontSize: SZ.label, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Theme</span>
               {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][]).map(([k, th2]) => (
                 <button key={k} onClick={() => setThemeKey(k)} title={th2.name} style={{ width: 22, height: 22, borderRadius: '50%', cursor: 'pointer', background: th2.swatch, border: '2px solid ' + (themeKey === k ? t.ink : t.hair) }} />
               ))}
             </span>
-            <button onClick={() => supabase.auth.signOut()} style={{ ...sans, fontSize: 12, color: t.faint, background: 'none', border: '1px solid ' + t.hair, borderRadius: 3, padding: '5px 11px', cursor: 'pointer' }}>Sign out</button>
+            <button onClick={() => supabase.auth.signOut()} title="Sign out" style={{ ...sans, fontSize: SZ.label, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Sign out</button>
           </nav>
         </header>
 
