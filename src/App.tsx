@@ -57,7 +57,20 @@ export default function App() {
   const prevWeekISO = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
   const prevWeekKey = weekKeyOf(prevWeekISO);
 
+  // ---- Week-close timing law (JOB 1), evaluated in IST ----
+  // The panel is a Saturday-evening (≥18:00 IST) through Sunday ritual, for the week
+  // that is ENDING. It asks only trades initiated BEFORE that Saturday, never re-asks a
+  // marked week, and never asks a week earlier than a trade's initiation.
+  const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  const p2 = (n: number) => String(n).padStart(2, '0');
+  const istDateISO = `${nowIST.getFullYear()}-${p2(nowIST.getMonth() + 1)}-${p2(nowIST.getDate())}`;
+  const inCloseWindow = (nowIST.getDay() === 6 && nowIST.getHours() >= 18) || nowIST.getDay() === 0;
+  const endWeekKey = weekKeyOf(istDateISO);
+  const endWeekMondayISO = mondayOf(istDateISO);
+  const saturdayISO = (() => { const d = new Date(endWeekMondayISO + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + 5); return d.toISOString().split('T')[0]; })();
+
   const [rateEdit, setRateEdit] = useState<string | null>(null);
+  const [closeEdit, setCloseEdit] = useState<string | null>(null);
   const [sel, setSel] = useState<string[]>([]);
   const [satOpen, setSatOpen] = useState(true);
   const [satDismissed, setSatDismissed] = useState(false);
@@ -132,8 +145,9 @@ export default function App() {
     if (lastRate != null) setSatRate(String(lastRate));
   }, [live, prevWeekKey]);
 
-  const showSaturday = satOpen && !satDismissed && live.length > 0 &&
-    live.some((tr) => tr.fridayClosingPrices[curWeekKey] == null);
+  // Trades this Saturday actually asks: initiated before this Saturday, ending week not yet marked.
+  const satTrades = live.filter((tr) => tr.dateInitiated < saturdayISO && tr.fridayClosingPrices[endWeekKey] == null);
+  const showSaturday = inCloseWindow && !satDismissed && satTrades.length > 0;
 
   const lastRateDisplay = (() => {
     const r = live.map((tr) => tr.fridayUsdToInrRates?.[prevWeekKey]).find((x) => x != null);
@@ -175,15 +189,17 @@ export default function App() {
   // ---- actions ----
   const saveSaturday = () => {
     const rate = parseFloat(satRate);
+    // Stamp the ENDING week (endWeekKey), only on the trades this Saturday asked.
+    const asked = new Set(satTrades.map((x) => x.id));
     const next = trades.map((tr) => {
-      if (!isOpen(tr)) return tr;
+      if (!asked.has(tr.id)) return tr;
       const v = satVals[tr.id];
       if (v == null || v === '') return tr;
       return {
         ...tr,
-        fridayClosingPrices: { ...tr.fridayClosingPrices, [curWeekKey]: +v },
+        fridayClosingPrices: { ...tr.fridayClosingPrices, [endWeekKey]: +v },
         fridayUsdToInrRates: tr.currency === 'USD' && !isNaN(rate)
-          ? { ...tr.fridayUsdToInrRates, [curWeekKey]: rate } : (tr.fridayUsdToInrRates || {}),
+          ? { ...tr.fridayUsdToInrRates, [endWeekKey]: rate } : (tr.fridayUsdToInrRates || {}),
       };
     });
     update(next);
@@ -194,6 +210,13 @@ export default function App() {
     const next = trades.map((tr) =>
       tr.currency === 'USD' && tr.fridayUsdToInrRates?.[weekKey] != null
         ? { ...tr, fridayUsdToInrRates: { ...tr.fridayUsdToInrRates, [weekKey]: rate } } : tr);
+    update(next);
+  };
+
+  // Inline-editable weekly CLOSE value (per trade), same UX as @rate — no PIN. MTM recomputes.
+  const editClose = (weekKey: string, tradeId: string, close: number) => {
+    const next = trades.map((tr) =>
+      tr.id === tradeId ? { ...tr, fridayClosingPrices: { ...tr.fridayClosingPrices, [weekKey]: close } } : tr);
     update(next);
   };
 
@@ -571,15 +594,15 @@ export default function App() {
           <>
             {showSaturday && (
               <div style={{ border: '1px solid ' + t.ink, borderRadius: 4, padding: '18px 20px', marginBottom: 40 }}>
-                <div style={{ fontSize: 15, fontWeight: 600 }}>Week close — {weekLabel(todayISO)}</div>
-                <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 4, marginBottom: 14 }}>Asked every Saturday evening. Closing values stamp the week's MTM.</div>
+                <div style={{ fontSize: 15, fontWeight: 600 }}>Week close — {weekLabel(endWeekMondayISO)}</div>
+                <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 4, marginBottom: 14 }}>Asked Saturday evening through Sunday. Closing values stamp the ending week's MTM.</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, padding: '7px 0', borderBottom: '1px solid ' + t.hair, marginBottom: 8 }}>
                   <span style={{ fontSize: 15, fontWeight: 600, width: 140 }}>USD / INR</span>
                   <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>last week {lastRateDisplay}</span>
                   <input value={satRate} onChange={(e) => setSatRate(e.target.value.replace(/[^\d.]/g, ''))}
                     style={{ ...mono, fontSize: SZ.num, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink, width: 100 }} />
                 </div>
-                {live.map((tr) => {
+                {satTrades.map((tr) => {
                   const last = liveMtmRows(tr);
                   const lastClose = last.length ? last[last.length - 1].close : entryVal(tr);
                   return (
@@ -691,7 +714,17 @@ export default function App() {
                       {rows.map((r, i) => (
                         <div key={i} style={{ display: 'flex', gap: 18, padding: '6px 0', alignItems: 'baseline' }}>
                           <span style={{ fontSize: SZ.meta, color: t.faint, width: 140 }}>{r.label}</span>
-                          <span style={{ ...mono, fontSize: SZ.numSm + 1, color: t.faint }}>close {nf(r.close)}</span>
+                          {closeEdit === (tr.id + '-' + r.weekKey) ? (
+                            <span style={{ ...mono, fontSize: SZ.numSm + 1, color: t.faint }}>close&nbsp;
+                              <input autoFocus defaultValue={r.close}
+                                onBlur={(e) => { editClose(r.weekKey, tr.id, +e.target.value.replace(/[^\d.]/g, '') || r.close); setCloseEdit(null); }}
+                                onKeyDown={(e) => { if (e.key === 'Enter') { editClose(r.weekKey, tr.id, +(e.target as HTMLInputElement).value.replace(/[^\d.]/g, '') || r.close); setCloseEdit(null); } if (e.key === 'Escape') setCloseEdit(null); }}
+                                style={{ ...mono, fontSize: SZ.numSm + 1, width: 90, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
+                            </span>
+                          ) : (
+                            <button onClick={() => setCloseEdit(tr.id + '-' + r.weekKey)} title="Edit this week's closing value"
+                              style={{ ...mono, fontSize: SZ.numSm + 1, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px dashed ' + t.hair, padding: 0 }}>close {nf(r.close)}</button>
+                          )}
                           {tr.currency === 'USD' && (
                             rateEdit === (tr.id + '-' + r.weekKey) ? (
                               <input autoFocus defaultValue={r.rate}
