@@ -26,6 +26,7 @@ const THEMES = {
   forest: { name: 'Forest', bg: '#121712', ink: '#E9EDE7', faint: '#8FA284', hair: '#27301F', profit: '#EFC44F', loss: '#ABB0AA', swatch: '#121712' },
 } as const;
 type ThemeKey = keyof typeof THEMES;
+type PinAction = 'edit' | 'delete' | 'live-edit' | 'live-delete';
 const SZ = { hero: 58, big: 46, num: 17, numSm: 15, meta: 13, label: 12, btn: 14, symbol: 18 };
 
 const isoFromForm = (s: string) => {
@@ -62,11 +63,13 @@ export default function App() {
   const [satRate, setSatRate] = useState('83.24');
   const [closing, setClosing] = useState<{ id: string; px: string } | null>(null);
   const [pinOk, setPinOk] = useState(false);
-  const [pinAsk, setPinAsk] = useState<{ action: 'edit' | 'delete'; id: string } | null>(null);
+  const [pinAsk, setPinAsk] = useState<{ action: PinAction; id: string } | null>(null);
   const [pinSet, setPinSet] = useState(false); // true when the modal is in SET-PIN mode
   const [pinVal, setPinVal] = useState('');
   const [pinErr, setPinErr] = useState('');
   const [editRow, setEditRow] = useState<{ id: string; exit: string } | null>(null);
+  const [liveEdit, setLiveEdit] = useState<{ id: string; entry: string; lots: string; side: 'LONG' | 'SHORT'; date: string } | null>(null);
+  const [liveDelete, setLiveDelete] = useState<Trade | null>(null);
   const [dlOpen, setDlOpen] = useState(false);
   const [dlMode, setDlMode] = useState<'all' | 'selected' | 'range'>('all');
   const [dlFrom, setDlFrom] = useState('');
@@ -232,13 +235,15 @@ export default function App() {
   };
 
   // ---- PIN gate ----
-  const askPin = (action: 'edit' | 'delete', id: string) => {
+  const askPin = (action: PinAction, id: string) => {
     setPinAsk({ action, id }); setPinVal(''); setPinErr('');
     setPinSet(pinHash == null); // no pin yet -> SET-PIN flow
   };
-  const runAction = (action: 'edit' | 'delete', id: string) => {
+  const runAction = (action: PinAction, id: string) => {
     if (action === 'edit') { const tr = closed.find((x) => x.id === id); if (tr) setEditRow({ id, exit: String(exitVal(tr)) }); }
-    else { update(trades.filter((x) => x.id !== id)); setSel((s) => s.filter((i) => i !== id)); }
+    else if (action === 'delete') { update(trades.filter((x) => x.id !== id)); setSel((s) => s.filter((i) => i !== id)); }
+    else if (action === 'live-edit') { const tr = live.find((x) => x.id === id); if (tr) setLiveEdit({ id, entry: String(entryVal(tr)), lots: String(tr.numberOfLots), side: sideOf(tr), date: dmyInput(tr.dateInitiated) }); }
+    else if (action === 'live-delete') { const tr = live.find((x) => x.id === id); if (tr) setLiveDelete(tr); }
   };
   const submitPin = async () => {
     if (!/^\d{4,}$/.test(pinVal)) { setPinErr('At least 4 digits.'); return; }
@@ -256,7 +261,7 @@ export default function App() {
     if (pinAsk) runAction(pinAsk.action, pinAsk.id);
     setPinAsk(null);
   };
-  const act = (action: 'edit' | 'delete', id: string) => { pinOk && pinHash ? runAction(action, id) : askPin(action, id); };
+  const act = (action: PinAction, id: string) => { pinOk && pinHash ? runAction(action, id) : askPin(action, id); };
   const saveEdit = () => {
     if (!editRow) return;
     const tr = closed.find((x) => x.id === editRow.id);
@@ -269,6 +274,40 @@ export default function App() {
     };
     update(trades.map((x) => (x.id === editRow.id ? updated : x)));
     setEditRow(null);
+  };
+
+  // Save inline live-trade initiation edits. Realization + currency stay locked;
+  // MTM recomputes from the NEW entry (week-1 MTM = close1 − new entry) because the
+  // engine reads the entry leg. Weekly closes/rates are preserved.
+  const saveLiveEdit = () => {
+    if (!liveEdit) return;
+    const tr = live.find((x) => x.id === liveEdit.id);
+    if (!tr || !liveEdit.entry) return;
+    const entry = +liveEdit.entry;
+    const lots = parseInt(liveEdit.lots) || tr.numberOfLots;
+    const side = liveEdit.side;
+    const iso = isoFromForm(liveEdit.date);
+    const updated: Trade = {
+      ...tr,
+      direction: side === 'LONG' ? 'Long' : 'Short',
+      status: side === 'LONG' ? 'CarryForwardLong' : 'CarryForwardShort',
+      numberOfLots: lots,
+      dateInitiated: iso,
+      buyPrice: side === 'LONG' ? entry : null,
+      sellPrice: side === 'LONG' ? null : entry,
+      buyDate: side === 'LONG' ? iso : null,
+      sellDate: side === 'LONG' ? null : iso,
+    };
+    update(trades.map((x) => (x.id === tr.id ? updated : x)));
+    setLiveEdit(null);
+  };
+
+  // Delete a live trade. update()'s persist diff removes the trades row AND calls
+  // deleteWeeklyMarksForTrade, so its weekly_marks go too.
+  const doLiveDelete = () => {
+    if (!liveDelete) return;
+    update(trades.filter((x) => x.id !== liveDelete.id));
+    setLiveDelete(null);
   };
 
   const exitVal = (tr: Trade) => (tr.direction === 'Long' ? tr.sellPrice : tr.buyPrice) ?? 0;
@@ -314,6 +353,10 @@ export default function App() {
   const inp = { ...mono, fontSize: SZ.num, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink, padding: '6px 0', width: '100%' } as const;
   const toggle = (on: boolean) => ({ ...sans, fontSize: SZ.btn - 1, fontWeight: 600, padding: '8px 15px', borderRadius: 3, cursor: 'pointer', border: '1px solid ' + (on ? t.ink : t.hair), background: on ? t.ink : 'none', color: on ? t.bg : t.faint });
   const ghost = { ...sans, fontSize: 13, color: t.faint, background: 'none', border: '1px solid ' + t.hair, borderRadius: 3, padding: '5px 12px', cursor: 'pointer' } as const;
+  // Delete ghost — mirrors the closed table's Delete color (loss on white, ink on forest).
+  const ghostDanger = { ...ghost, color: themeKey === 'white' ? t.loss : t.ink } as const;
+  // Compact LONG/SHORT toggle for inline live-edit — row rhythm, not the big Add-form toggle.
+  const miniToggle = (on: boolean) => ({ ...sans, fontSize: 13, fontWeight: 600, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: '1px solid ' + (on ? t.ink : t.hair), background: on ? t.ink : 'none', color: on ? t.bg : t.faint });
 
   const Tab = ({ id, label }: { id: typeof view; label: string }) => (
     <button onClick={() => setView(id)} style={{ ...sans, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, padding: '6px 2px', color: view === id ? t.ink : t.faint, borderBottom: view === id ? '1px solid ' + t.ink : '1px solid transparent' }}>{label}</button>
@@ -399,7 +442,7 @@ export default function App() {
             <div style={{ background: t.bg, borderRadius: 6, padding: '26px 30px', width: 320, border: '1px solid ' + t.hair }}>
               <div style={{ fontSize: 15, fontWeight: 600 }}>{pinSet ? 'Set a PIN' : 'Enter PIN'}</div>
               <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 4 }}>
-                {pinSet ? 'No PIN yet. Choose one (4+ digits) — it guards Edit and Delete.' : (pinAsk.action === 'delete' ? 'Deleting a closed trade.' : 'Editing a closed trade.')}
+                {pinSet ? 'No PIN yet. Choose one (4+ digits) — it guards Edit and Delete.' : (pinAsk.action.includes('delete') ? 'Deleting a trade.' : 'Editing a trade.')}
               </div>
               <input autoFocus type="password" inputMode="numeric" value={pinVal}
                 onChange={(e) => { setPinVal(e.target.value.replace(/\D/g, '')); setPinErr(''); }}
@@ -409,6 +452,22 @@ export default function App() {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 22 }}>
                 <button onClick={() => setPinAsk(null)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
                 <button onClick={submitPin} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '8px 18px', cursor: 'pointer' }}>{pinSet ? 'Set PIN' : 'Unlock'}</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Live-trade delete confirm */}
+        {liveDelete && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+            <div style={{ background: t.bg, borderRadius: 6, padding: '26px 30px', width: 380, border: '1px solid ' + t.hair }}>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>Delete {liveDelete.symbol}</div>
+              <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 6 }}>
+                Delete {liveDelete.symbol} — entry {nf(entryVal(liveDelete))}, {liveDelete.numberOfLots} lot{liveDelete.numberOfLots > 1 ? 's' : ''}? Its weekly marks go too.
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 22 }}>
+                <button onClick={() => setLiveDelete(null)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+                <button onClick={doLiveDelete} style={{ ...sans, fontSize: 13, fontWeight: 600, background: themeKey === 'white' ? t.loss : t.ink, color: themeKey === 'white' ? '#fff' : t.bg, border: 'none', borderRadius: 3, padding: '8px 18px', cursor: 'pointer' }}>Delete</button>
               </div>
             </div>
           </div>
@@ -459,22 +518,52 @@ export default function App() {
               return (
                 <div key={tr.id} style={{ borderBottom: '1px solid ' + t.hair, padding: '22px 0' }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: SZ.symbol, fontWeight: 600 }}>{tr.symbol}</span>
-                    <span style={{ fontSize: SZ.meta, color: t.faint }}>
-                      {specName} ×{meta.mult} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · {tr.currency} · share {realPct(tr)}% · opened {dmy(tr.dateInitiated)}
-                    </span>
-                    <span style={{ ...mono, fontSize: SZ.num, color: t.faint }}>entry {nf(entryVal(tr))}</span>
-                    <span style={{ ...mono, fontSize: 20, fontWeight: 600, marginLeft: 'auto', color: rows.length ? pl(m) : t.faint }}>{rows.length ? signed(m) : '—'}</span>
-                    {closing && closing.id === tr.id ? (
-                      <span style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-                        <input autoFocus placeholder="exit" value={closing.px}
-                          onChange={(e) => setClosing({ ...closing, px: e.target.value.replace(/[^\d.]/g, '') })}
-                          onKeyDown={(e) => e.key === 'Enter' && closeTrade()}
-                          style={{ ...mono, fontSize: SZ.num, width: 100, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
-                        <button onClick={closeTrade} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '6px 13px', cursor: 'pointer' }}>Close</button>
-                      </span>
+                    {liveEdit && liveEdit.id === tr.id ? (
+                      <>
+                        <span style={{ fontSize: SZ.symbol, fontWeight: 600 }}>{tr.symbol}</span>
+                        <span style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
+                          <button onClick={() => setLiveEdit({ ...liveEdit, side: 'LONG' })} style={miniToggle(liveEdit.side === 'LONG')}>LONG</button>
+                          <button onClick={() => setLiveEdit({ ...liveEdit, side: 'SHORT' })} style={miniToggle(liveEdit.side === 'SHORT')}>SHORT</button>
+                        </span>
+                        <span style={{ fontSize: SZ.meta, color: t.faint }}>entry</span>
+                        <input autoFocus value={liveEdit.entry} onChange={(e) => setLiveEdit({ ...liveEdit, entry: e.target.value.replace(/[^\d.]/g, '') })}
+                          style={{ ...mono, fontSize: SZ.num, width: 92, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink }} />
+                        <span style={{ fontSize: SZ.meta, color: t.faint }}>lots</span>
+                        <input value={liveEdit.lots} onChange={(e) => setLiveEdit({ ...liveEdit, lots: e.target.value.replace(/\D/g, '') })}
+                          style={{ ...mono, fontSize: SZ.num, width: 46, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink }} />
+                        <span style={{ fontSize: SZ.meta, color: t.faint }}>init</span>
+                        <input value={liveEdit.date} onChange={(e) => setLiveEdit({ ...liveEdit, date: e.target.value })}
+                          onKeyDown={(e) => e.key === 'Enter' && saveLiveEdit()}
+                          style={{ ...mono, fontSize: SZ.numSm, width: 104, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink }} />
+                        <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'baseline' }}>
+                          <button onClick={saveLiveEdit} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '6px 13px', cursor: 'pointer' }}>Save</button>
+                          <button onClick={() => setLiveEdit(null)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+                        </span>
+                      </>
                     ) : (
-                      <button onClick={() => setClosing({ id: tr.id, px: '' })} style={ghost}>Close</button>
+                      <>
+                        <span style={{ fontSize: SZ.symbol, fontWeight: 600 }}>{tr.symbol}</span>
+                        <span style={{ fontSize: SZ.meta, color: t.faint }}>
+                          {specName} ×{meta.mult} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · {tr.currency} · share {realPct(tr)}% · opened {dmy(tr.dateInitiated)}
+                        </span>
+                        <span style={{ ...mono, fontSize: SZ.num, color: t.faint }}>entry {nf(entryVal(tr))}</span>
+                        <span style={{ ...mono, fontSize: 20, fontWeight: 600, marginLeft: 'auto', color: rows.length ? pl(m) : t.faint }}>{rows.length ? signed(m) : '—'}</span>
+                        {closing && closing.id === tr.id ? (
+                          <span style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+                            <input autoFocus placeholder="exit" value={closing.px}
+                              onChange={(e) => setClosing({ ...closing, px: e.target.value.replace(/[^\d.]/g, '') })}
+                              onKeyDown={(e) => e.key === 'Enter' && closeTrade()}
+                              style={{ ...mono, fontSize: SZ.num, width: 100, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
+                            <button onClick={closeTrade} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '6px 13px', cursor: 'pointer' }}>Close</button>
+                          </span>
+                        ) : (
+                          <span style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+                            <button onClick={() => setClosing({ id: tr.id, px: '' })} style={ghost}>Close</button>
+                            <button onClick={() => act('live-edit', tr.id)} style={ghost}>Edit</button>
+                            <button onClick={() => act('live-delete', tr.id)} style={ghostDanger}>Delete</button>
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
 
