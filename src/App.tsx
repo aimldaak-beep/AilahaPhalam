@@ -14,7 +14,7 @@ import { Trade, estimateInstantPnL } from './types';
 import {
   INSTR, SpecInstrument, specNameOf, inr, signed, nf,
   weekKeyOf, mondayOf, todayStr, weekLabel, heldDays,
-  isOpen, isClosed, liveMtmRows, liveMtm, realized, closeDateOf, latestUsdRate,
+  isOpen, isClosed, liveMtmRows, liveMtm, realized, closeDateOf, latestUsdRate, entryLegBrokerage,
 } from './lib/v2engine';
 import {
   fetchWeeklyMarks, syncWeeklyMarksForTrade, deleteWeeklyMarksForTrade, overlayMissingMarks,
@@ -415,6 +415,11 @@ export default function App() {
   const ghostDanger = { ...ghost, color: themeKey === 'white' ? t.loss : t.ink } as const;
   // Compact LONG/SHORT toggle for inline live-edit — row rhythm, not the big Add-form toggle.
   const miniToggle = (on: boolean) => ({ ...sans, fontSize: 13, fontWeight: 600, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: '1px solid ' + (on ? t.ink : t.hair), background: on ? t.ink : 'none', color: on ? t.bg : t.faint });
+  // Layout-system (grid) helpers: uniform 84px action buttons + zone-2 slot labels.
+  const actBtn = { ...sans, fontSize: 13, color: t.faint, background: 'none', border: '1px solid ' + t.hair, borderRadius: 3, padding: '5px 0', width: 84, textAlign: 'center' as const, cursor: 'pointer' };
+  const actDanger = { ...actBtn, color: themeKey === 'white' ? t.loss : t.ink };
+  const slotLabel = { ...sans, fontSize: SZ.label, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase' as const, marginBottom: 4 };
+  const gridInput = (w: number) => ({ ...mono, fontSize: SZ.num, width: w, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink } as const);
 
   const Tab = ({ id, label }: { id: typeof view; label: string }) => (
     <button onClick={() => setView(id)} style={{ ...sans, background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, padding: '6px 2px', color: view === id ? t.ink : t.faint, borderBottom: view === id ? '1px solid ' + t.ink : '1px solid transparent' }}>{label}</button>
@@ -488,7 +493,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', background: t.bg, color: t.ink, ...sans, transition: 'background 180ms, color 180ms' }}>
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '48px 24px 96px' }}>
+      <div style={{ maxWidth: 1140, margin: '0 auto', padding: '48px 24px 96px' }}>
 
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 48 }}>
           <div>
@@ -596,18 +601,18 @@ export default function App() {
               <div style={{ border: '1px solid ' + t.ink, borderRadius: 4, padding: '18px 20px', marginBottom: 40 }}>
                 <div style={{ fontSize: 15, fontWeight: 600 }}>Week close — {weekLabel(endWeekMondayISO)}</div>
                 <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 4, marginBottom: 14 }}>Asked Saturday evening through Sunday. Closing values stamp the ending week's MTM.</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, padding: '7px 0', borderBottom: '1px solid ' + t.hair, marginBottom: 8 }}>
-                  <span style={{ fontSize: 15, fontWeight: 600, width: 140 }}>USD / INR</span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 220px)', alignItems: 'baseline', padding: '7px 0', borderBottom: '1px solid ' + t.hair, marginBottom: 8 }}>
+                  <span style={{ fontSize: 15, fontWeight: 600 }}>USD / INR</span>
                   <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>last week {lastRateDisplay}</span>
                   <input value={satRate} onChange={(e) => setSatRate(e.target.value.replace(/[^\d.]/g, ''))}
-                    style={{ ...mono, fontSize: SZ.num, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink, width: 100 }} />
+                    style={{ ...mono, fontSize: SZ.num, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink, width: 120 }} />
                 </div>
                 {satTrades.map((tr) => {
                   const last = liveMtmRows(tr);
                   const lastClose = last.length ? last[last.length - 1].close : entryVal(tr);
                   return (
-                    <div key={tr.id} style={{ display: 'flex', alignItems: 'baseline', gap: 14, padding: '7px 0' }}>
-                      <span style={{ fontSize: 15, fontWeight: 600, width: 140 }}>{tr.symbol}</span>
+                    <div key={tr.id} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 220px)', alignItems: 'baseline', padding: '7px 0' }}>
+                      <span style={{ fontSize: 15, fontWeight: 600 }}>{tr.symbol}</span>
                       <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>last {nf(lastClose)}</span>
                       <input placeholder="closing value" value={satVals[tr.id] || ''}
                         onChange={(e) => setSatVals({ ...satVals, [tr.id]: e.target.value.replace(/[^\d.]/g, '') })}
@@ -633,99 +638,95 @@ export default function App() {
               const specName = specNameOf(tr.instrument); const meta = INSTR[specName];
               return (
                 <div key={tr.id} style={{ borderBottom: '1px solid ' + t.hair, padding: '22px 0' }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
-                    {liveEdit && liveEdit.id === tr.id ? (
-                      <>
-                        <span style={{ fontSize: SZ.symbol, fontWeight: 600 }}>{tr.symbol}</span>
-                        <span style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
-                          <button onClick={() => setLiveEdit({ ...liveEdit, side: 'LONG' })} style={miniToggle(liveEdit.side === 'LONG')}>LONG</button>
-                          <button onClick={() => setLiveEdit({ ...liveEdit, side: 'SHORT' })} style={miniToggle(liveEdit.side === 'SHORT')}>SHORT</button>
-                        </span>
-                        <span style={{ fontSize: SZ.meta, color: t.faint }}>entry</span>
-                        <input autoFocus value={liveEdit.entry} onChange={(e) => setLiveEdit({ ...liveEdit, entry: e.target.value.replace(/[^\d.]/g, '') })}
-                          style={{ ...mono, fontSize: SZ.num, width: 92, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink }} />
-                        <span style={{ fontSize: SZ.meta, color: t.faint }}>lots</span>
-                        <input value={liveEdit.lots} onChange={(e) => setLiveEdit({ ...liveEdit, lots: e.target.value.replace(/\D/g, '') })}
-                          style={{ ...mono, fontSize: SZ.num, width: 46, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink }} />
-                        <span style={{ fontSize: SZ.meta, color: t.faint }}>init</span>
-                        <input value={liveEdit.date} onChange={(e) => setLiveEdit({ ...liveEdit, date: e.target.value })}
-                          onKeyDown={(e) => e.key === 'Enter' && saveLiveEdit()}
-                          style={{ ...mono, fontSize: SZ.numSm, width: 104, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink }} />
-                        <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'baseline' }}>
-                          <button onClick={saveLiveEdit} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '6px 13px', cursor: 'pointer' }}>Save</button>
-                          <button onClick={() => setLiveEdit(null)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span style={{ fontSize: SZ.symbol, fontWeight: 600 }}>{tr.symbol}</span>
-                        <span style={{ fontSize: SZ.meta, color: t.faint }}>
-                          {specName} ×{meta.mult} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · {tr.currency} · share {realPct(tr)}% · opened {dmy(tr.dateInitiated)}
-                        </span>
-                        <span style={{ ...mono, fontSize: SZ.num, color: t.faint }}>entry {nf(entryVal(tr))}</span>
-                        <span style={{ ...mono, fontSize: 22, fontWeight: 600, marginLeft: 'auto', color: rows.length ? pl(m) : t.faint }}>{rows.length ? signed(m) : '—'}</span>
-                        {closing && closing.id === tr.id ? (
-                          <span style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-                            <input autoFocus placeholder="exit" value={closing.px}
-                              onChange={(e) => setClosing({ ...closing, px: e.target.value.replace(/[^\d.]/g, '') })}
-                              onKeyDown={(e) => e.key === 'Enter' && closeTrade()}
-                              style={{ ...mono, fontSize: SZ.num, width: 100, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
-                            <button onClick={closeTrade} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '6px 13px', cursor: 'pointer' }}>Close</button>
-                          </span>
-                        ) : (
-                          <span style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-                            <button onClick={() => { setWhatIf(null); setClosing({ id: tr.id, px: '' }); }} style={ghost}>Close</button>
-                            <button onClick={() => setWhatIf({ id: tr.id, exit: '', rate: String(latestUsdRate(tr)) })} style={ghost}>What-if</button>
-                            <button onClick={() => act('live-edit', tr.id)} style={ghost}>Edit</button>
-                            <button onClick={() => act('live-delete', tr.id)} style={ghostDanger}>Delete</button>
-                          </span>
-                        )}
-                      </>
-                    )}
+                  {/* ZONE 1 — identity line: SYMBOL | meta | actions (fixed tracks) */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr 380px', alignItems: 'baseline', gap: 14 }}>
+                    <span style={{ fontSize: SZ.symbol, fontWeight: 600 }}>{tr.symbol}</span>
+                    <span style={{ fontSize: SZ.meta, color: t.faint, lineHeight: 1.5 }}>
+                      {specName} ×{meta.mult} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · {tr.currency} · share {realPct(tr)}% · opened {dmy(tr.dateInitiated)}
+                    </span>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                      <button onClick={() => { setClosing(null); setWhatIf(whatIf && whatIf.id === tr.id ? null : { id: tr.id, exit: '', rate: String(latestUsdRate(tr)) }); }} style={actBtn}>What-if</button>
+                      <button onClick={() => { setWhatIf(null); setClosing(null); act('live-edit', tr.id); }} style={actBtn}>Edit</button>
+                      <button onClick={() => { setWhatIf(null); setClosing({ id: tr.id, px: '' }); }} style={actBtn}>Close</button>
+                      <button onClick={() => act('live-delete', tr.id)} style={actDanger}>Delete</button>
+                    </div>
                   </div>
 
+                  {/* ZONE 2 — numbers strip: 4 fixed 220px slots (or the edit grid, same tracks) */}
+                  {liveEdit && liveEdit.id === tr.id ? (
+                    <>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 220px)', marginTop: 18, alignItems: 'start' }}>
+                        <div><div style={slotLabel}>Edit entry</div>
+                          <input autoFocus value={liveEdit.entry} onChange={(e) => setLiveEdit({ ...liveEdit, entry: e.target.value.replace(/[^\d.]/g, '') })} style={gridInput(150)} /></div>
+                        <div><div style={slotLabel}>Lots</div>
+                          <input value={liveEdit.lots} onChange={(e) => setLiveEdit({ ...liveEdit, lots: e.target.value.replace(/\D/g, '') })} style={gridInput(80)} /></div>
+                        <div><div style={slotLabel}>Side</div>
+                          <span style={{ display: 'flex', gap: 6 }}>
+                            <button onClick={() => setLiveEdit({ ...liveEdit, side: 'LONG' })} style={miniToggle(liveEdit.side === 'LONG')}>LONG</button>
+                            <button onClick={() => setLiveEdit({ ...liveEdit, side: 'SHORT' })} style={miniToggle(liveEdit.side === 'SHORT')}>SHORT</button>
+                          </span></div>
+                        <div><div style={slotLabel}>Init date</div>
+                          <input value={liveEdit.date} onChange={(e) => setLiveEdit({ ...liveEdit, date: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && saveLiveEdit()} style={gridInput(150)} /></div>
+                      </div>
+                      <div style={{ marginTop: 14, display: 'flex', gap: 10 }}>
+                        <button onClick={saveLiveEdit} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '6px 15px', cursor: 'pointer' }}>Save</button>
+                        <button onClick={() => setLiveEdit(null)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 220px)', marginTop: 18, alignItems: 'start' }}>
+                      <div><div style={slotLabel}>Entry</div><div style={{ ...mono, fontSize: SZ.num, color: t.ink }}>{nf(entryVal(tr))}</div></div>
+                      <div><div style={slotLabel}>Brokerage · entry leg</div><div style={{ ...mono, fontSize: SZ.num, color: t.ink }}>{(tr.currency === 'USD' ? '$' : '₹') + nf(Math.round(entryLegBrokerage(tr)))}</div></div>
+                      <div><div style={slotLabel}>Current P&amp;L</div><div style={{ ...mono, fontSize: 22, fontWeight: 600, color: rows.length ? pl(m) : t.faint }}>{rows.length ? signed(m) : '—'}</div></div>
+                      <div><div style={slotLabel}>Closed value</div><div style={{ ...mono, fontSize: SZ.num, color: t.faint }}>{rows.length ? nf(rows[rows.length - 1].close) : '—'}</div></div>
+                    </div>
+                  )}
+
+                  {/* Close (exit) input — grid-aligned, opens in place */}
+                  {closing && closing.id === tr.id && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 220px)', marginTop: 14, alignItems: 'end' }}>
+                      <div><div style={slotLabel}>Exit price</div>
+                        <span style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
+                          <input autoFocus placeholder="exit" value={closing.px} onChange={(e) => setClosing({ ...closing, px: e.target.value.replace(/[^\d.]/g, '') })} onKeyDown={(e) => e.key === 'Enter' && closeTrade()} style={gridInput(110)} />
+                          <button onClick={closeTrade} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '6px 13px', cursor: 'pointer' }}>Close</button>
+                        </span></div>
+                    </div>
+                  )}
+
+                  {/* What-if — opens in zone 3 grid tracks (indent 200) */}
                   {whatIf && whatIf.id === tr.id && !(liveEdit && liveEdit.id === tr.id) && (() => {
                     const hypoRate = tr.currency === 'USD' ? (parseFloat(whatIf.rate) || latestUsdRate(tr)) : 1;
                     const pnl = whatIf.exit ? Math.round(estimateInstantPnL({ ...tr, usdToInrRate: hypoRate }, +whatIf.exit).netProfit) : 0;
                     return (
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap', marginTop: 15 }}>
-                        <span style={{ fontSize: SZ.meta, color: t.faint, width: 140 }}>What-if exit</span>
-                        <input autoFocus placeholder="exit price" value={whatIf.exit}
-                          onChange={(e) => setWhatIf({ ...whatIf, exit: e.target.value.replace(/[^\d.]/g, '') })}
-                          onKeyDown={(e) => e.key === 'Escape' && setWhatIf(null)}
-                          style={{ ...mono, fontSize: SZ.num, width: 110, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink }} />
-                        {tr.currency === 'USD' && (
-                          <>
-                            <span style={{ fontSize: SZ.meta, color: t.faint }}>@ rate</span>
-                            <input value={whatIf.rate}
-                              onChange={(e) => setWhatIf({ ...whatIf, rate: e.target.value.replace(/[^\d.]/g, '') })}
-                              onKeyDown={(e) => e.key === 'Escape' && setWhatIf(null)}
-                              style={{ ...mono, fontSize: SZ.num, width: 76, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink }} />
-                          </>
-                        )}
-                        <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, marginLeft: 'auto', color: whatIf.exit ? pl(pnl) : t.faint }}>= {whatIf.exit ? signed(pnl) : '—'}</span>
-                        <button onClick={() => setWhatIf(null)} title="Close (Esc)" style={{ ...sans, fontSize: 15, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>✕</button>
+                      <div style={{ display: 'grid', gridTemplateColumns: '160px 150px 100px 150px', marginLeft: 200, marginTop: 16, alignItems: 'baseline', columnGap: 18 }}>
+                        <span style={{ fontSize: SZ.meta, color: t.faint }}>What-if exit</span>
+                        <input autoFocus placeholder="exit" value={whatIf.exit} onChange={(e) => setWhatIf({ ...whatIf, exit: e.target.value.replace(/[^\d.]/g, '') })} onKeyDown={(e) => e.key === 'Escape' && setWhatIf(null)} style={gridInput(120)} />
+                        {tr.currency === 'USD' ? (
+                          <input value={whatIf.rate} onChange={(e) => setWhatIf({ ...whatIf, rate: e.target.value.replace(/[^\d.]/g, '') })} onKeyDown={(e) => e.key === 'Escape' && setWhatIf(null)} style={gridInput(76)} />
+                        ) : <span />}
+                        <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, textAlign: 'right', color: whatIf.exit ? pl(pnl) : t.faint }}>{whatIf.exit ? signed(pnl) : '—'}
+                          <button onClick={() => setWhatIf(null)} title="Close (Esc)" style={{ ...sans, fontSize: 15, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 10px' }}>✕</button>
+                        </span>
                       </div>
                     );
                   })()}
 
+                  {/* ZONE 3 — weekly MTM ledger: fixed grid, indented 200 under the meta column */}
                   {rows.length > 0 ? (
-                    <div style={{ marginTop: 15 }}>
+                    <div style={{ marginTop: 16 }}>
                       {rows.map((r, i) => (
-                        <div key={i} style={{ display: 'flex', gap: 18, padding: '6px 0', alignItems: 'baseline' }}>
-                          <span style={{ fontSize: SZ.meta, color: t.faint, width: 140 }}>{r.label}</span>
+                        <div key={i} style={{ display: 'grid', gridTemplateColumns: '160px 150px 100px 150px', marginLeft: 200, padding: '6px 0', alignItems: 'baseline', columnGap: 18 }}>
+                          <span style={{ fontSize: SZ.meta, color: t.faint }}>{r.label}</span>
                           {closeEdit === (tr.id + '-' + r.weekKey) ? (
-                            <span style={{ ...mono, fontSize: SZ.numSm + 1, color: t.faint }}>close&nbsp;
-                              <input autoFocus defaultValue={r.close}
-                                onBlur={(e) => { editClose(r.weekKey, tr.id, +e.target.value.replace(/[^\d.]/g, '') || r.close); setCloseEdit(null); }}
-                                onKeyDown={(e) => { if (e.key === 'Enter') { editClose(r.weekKey, tr.id, +(e.target as HTMLInputElement).value.replace(/[^\d.]/g, '') || r.close); setCloseEdit(null); } if (e.key === 'Escape') setCloseEdit(null); }}
-                                style={{ ...mono, fontSize: SZ.numSm + 1, width: 90, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
-                            </span>
+                            <input autoFocus defaultValue={r.close}
+                              onBlur={(e) => { editClose(r.weekKey, tr.id, +e.target.value.replace(/[^\d.]/g, '') || r.close); setCloseEdit(null); }}
+                              onKeyDown={(e) => { if (e.key === 'Enter') { editClose(r.weekKey, tr.id, +(e.target as HTMLInputElement).value.replace(/[^\d.]/g, '') || r.close); setCloseEdit(null); } if (e.key === 'Escape') setCloseEdit(null); }}
+                              style={{ ...mono, fontSize: SZ.numSm + 1, width: 120, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
                           ) : (
                             <button onClick={() => setCloseEdit(tr.id + '-' + r.weekKey)} title="Edit this week's closing value"
-                              style={{ ...mono, fontSize: SZ.numSm + 1, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px dashed ' + t.hair, padding: 0 }}>close {nf(r.close)}</button>
+                              style={{ ...mono, fontSize: SZ.numSm + 1, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px dashed ' + t.hair, padding: 0, textAlign: 'left' }}>close {nf(r.close)}</button>
                           )}
-                          {tr.currency === 'USD' && (
+                          {tr.currency === 'USD' ? (
                             rateEdit === (tr.id + '-' + r.weekKey) ? (
                               <input autoFocus defaultValue={r.rate}
                                 onBlur={(e) => { editRate(r.weekKey, +e.target.value.replace(/[^\d.]/g, '') || r.rate); setRateEdit(null); }}
@@ -733,15 +734,15 @@ export default function App() {
                                 style={{ ...mono, fontSize: SZ.numSm, width: 66, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
                             ) : (
                               <button onClick={() => setRateEdit(tr.id + '-' + r.weekKey)} title="Edit this week's USD rate"
-                                style={{ ...mono, fontSize: SZ.numSm, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px dashed ' + t.hair, padding: 0 }}>@{r.rate}</button>
+                                style={{ ...mono, fontSize: SZ.numSm, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px dashed ' + t.hair, padding: 0, textAlign: 'left' }}>@{r.rate}</button>
                             )
-                          )}
-                          <span style={{ ...mono, fontSize: SZ.num, fontWeight: 500, color: pl(r.val) }}>{signed(r.val)}</span>
+                          ) : <span />}
+                          <span style={{ ...mono, fontSize: SZ.num, fontWeight: 500, textAlign: 'right', color: pl(r.val) }}>{signed(r.val)}</span>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 12 }}>opened this week — first close stamps Saturday</div>
+                    <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 12, marginLeft: 200 }}>opened this week — first close stamps Saturday</div>
                   )}
                 </div>
               );
@@ -783,15 +784,15 @@ export default function App() {
                     {trs.map((tr) => {
                       const p = realized(tr); const c = closeDateOf(tr); const held = heldDays(tr.dateInitiated, c);
                       return (
-                        <div key={tr.id} style={{ display: 'flex', alignItems: 'baseline', gap: 16, padding: '13px 0', borderBottom: '1px solid ' + t.hair, flexWrap: 'wrap' }}>
+                        <div key={tr.id} style={{ display: 'grid', gridTemplateColumns: '30px 200px 130px 130px 90px 1fr 150px', alignItems: 'baseline', padding: '13px 0', borderBottom: '1px solid ' + t.hair }}>
                           <span onClick={() => setSel((s) => s.includes(tr.id) ? s.filter((i) => i !== tr.id) : [...s, tr.id])}
                             style={{ display: 'inline-block', width: 15, height: 15, borderRadius: 3, cursor: 'pointer', alignSelf: 'center', border: '1.5px solid ' + (sel.includes(tr.id) ? t.ink : t.hair), background: sel.includes(tr.id) ? t.ink : 'none' }} />
-                          <span style={{ ...sans, fontSize: SZ.num, fontWeight: 600, width: 130 }}>{tr.symbol}</span>
+                          <span style={{ ...sans, fontSize: SZ.num, fontWeight: 600 }}>{tr.symbol}</span>
                           <span style={{ fontSize: SZ.meta, color: t.faint }}>initiated {dmy(tr.dateInitiated)}</span>
                           <span style={{ fontSize: SZ.meta, color: t.faint }}>closed {dmy(c)}</span>
                           <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>held {held}d</span>
                           <span style={{ fontSize: SZ.meta, color: t.faint }}>{sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · share {realPct(tr)}%</span>
-                          <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, marginLeft: 'auto', color: pl(p) }}>{signed(p)}</span>
+                          <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, textAlign: 'right', color: pl(p) }}>{signed(p)}</span>
                         </div>
                       );
                     })}

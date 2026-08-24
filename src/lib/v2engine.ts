@@ -12,6 +12,7 @@
 import {
   Trade, Instrument, TradeDirection, TradeStatus,
   getWeekInfo, getWeeksBetween, calculateTradeForWeek, getWeekKeyForClose,
+  calculateTurnoverAndBrokerage,
 } from '../types';
 
 // Spec instrument -> { multiplier (lotSize), default currency, v1 enum for brokerage }.
@@ -59,6 +60,13 @@ export const isOpen = (t: Trade) => t.status === 'CarryForwardLong' || t.status 
 export const isClosed = (t: Trade) => t.status === 'Closed' || t.status === 'CarryForwardClosed';
 export const entryPriceOf = (t: Trade) => (t.direction === 'Long' ? t.buyPrice : t.sellPrice) ?? 0;
 export const exitPriceOf  = (t: Trade) => (t.direction === 'Long' ? t.sellPrice : t.buyPrice) ?? 0;
+
+/** Entry-leg brokerage in the trade's native currency — the legacy auto formula for the
+ *  entry price, unless a manual entryBrokerage override is set. */
+export function entryLegBrokerage(t: Trade): number {
+  const formula = calculateTurnoverAndBrokerage(entryPriceOf(t), t.numberOfLots, t.lotSize, t.instrument).brokerage;
+  return t.entryBrokerage ?? formula;
+}
 
 export interface MtmRow { weekKey: string; monday: string; label: string; close: number; rate: number; val: number; }
 
