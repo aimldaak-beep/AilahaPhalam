@@ -640,7 +640,7 @@ export default function App() {
                 <div key={tr.id} style={{ borderBottom: '1px solid ' + t.hair, padding: '22px 0' }}>
                   {/* ZONE 1 — identity line: SYMBOL | meta | actions (fixed tracks) */}
                   <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr 380px', alignItems: 'baseline', gap: 14 }}>
-                    <span style={{ fontSize: SZ.symbol, fontWeight: 600 }}>{tr.symbol}</span>
+                    <span title={tr.symbol} style={{ fontSize: SZ.symbol, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tr.symbol}</span>
                     <span style={{ fontSize: SZ.meta, color: t.faint, lineHeight: 1.5 }}>
                       {specName} ×{meta.mult} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · {tr.currency} · share {realPct(tr)}% · opened {dmy(tr.dateInitiated)}
                     </span>
