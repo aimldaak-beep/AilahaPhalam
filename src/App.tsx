@@ -28,7 +28,8 @@ const THEMES = {
 } as const;
 type ThemeKey = keyof typeof THEMES;
 type PinAction = 'edit' | 'delete' | 'live-edit' | 'live-delete' | 'team';
-const SZ = { hero: 58, big: 46, num: 17, numSm: 15, meta: 13, label: 12, btn: 14, symbol: 18 };
+// JOB 5 — raised type scale (supersedes DESIGN_SPEC's SZ values).
+const SZ = { hero: 64, big: 50, num: 19, numSm: 17, meta: 15, label: 13, btn: 15, symbol: 20 };
 
 const isoFromForm = (s: string) => {
   // accepts dd-mm-yyyy (spec) or yyyy-mm-dd; returns yyyy-mm-dd
@@ -393,7 +394,7 @@ export default function App() {
   const miniToggle = (on: boolean) => ({ ...sans, fontSize: 13, fontWeight: 600, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: '1px solid ' + (on ? t.ink : t.hair), background: on ? t.ink : 'none', color: on ? t.bg : t.faint });
 
   const Tab = ({ id, label }: { id: typeof view; label: string }) => (
-    <button onClick={() => setView(id)} style={{ ...sans, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, padding: '6px 2px', color: view === id ? t.ink : t.faint, borderBottom: view === id ? '1px solid ' + t.ink : '1px solid transparent' }}>{label}</button>
+    <button onClick={() => setView(id)} style={{ ...sans, background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, padding: '6px 2px', color: view === id ? t.ink : t.faint, borderBottom: view === id ? '1px solid ' + t.ink : '1px solid transparent' }}>{label}</button>
   );
 
   const DownloadPanel = () => (
@@ -408,7 +409,7 @@ export default function App() {
           ].map((o) => (
             <span key={o.k} onClick={() => setDlMode(o.k)} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '7px 0', cursor: 'pointer' }}>
               <span style={{ width: 14, height: 14, borderRadius: '50%', border: '1.5px solid ' + (dlMode === o.k ? t.ink : t.hair), background: dlMode === o.k ? t.ink : 'none', display: 'inline-block' }} />
-              <span style={{ fontSize: 14, color: dlMode === o.k ? t.ink : t.faint }}>{o.label}</span>
+              <span style={{ fontSize: 15, color: dlMode === o.k ? t.ink : t.faint }}>{o.label}</span>
             </span>
           ))}
           {dlMode === 'range' && (
@@ -426,7 +427,7 @@ export default function App() {
   );
 
   // ---- auth gate ----
-  if (authLoading) return <div style={{ minHeight: '100vh', background: t.bg, color: t.faint, ...mono, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Loading…</div>;
+  if (authLoading) return <div style={{ minHeight: '100vh', background: t.bg, color: t.faint, ...mono, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Loading…</div>;
   if (!session) {
     return (
       <div style={{ minHeight: '100vh', background: t.bg, color: t.ink, ...sans, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28 }}>
@@ -443,7 +444,7 @@ export default function App() {
   // ---- allowlist gate (Google OAuth itself is unchanged; this gates the workspace) ----
   const userEmail = session.user.email;
   if (allowlist === null) {
-    return <div style={{ minHeight: '100vh', background: t.bg, color: t.faint, ...mono, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Checking access…</div>;
+    return <div style={{ minHeight: '100vh', background: t.bg, color: t.faint, ...mono, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Checking access…</div>;
   }
   if (!isAllowed(userEmail, allowlist)) {
     return (
@@ -464,7 +465,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', background: t.bg, color: t.ink, ...sans, transition: 'background 180ms, color 180ms' }}>
-      <div style={{ maxWidth: 820, margin: '0 auto', padding: '48px 24px 96px' }}>
+      <div style={{ maxWidth: 870, margin: '0 auto', padding: '48px 24px 96px' }}>
 
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 48 }}>
           <div>
@@ -570,7 +571,7 @@ export default function App() {
           <>
             {showSaturday && (
               <div style={{ border: '1px solid ' + t.ink, borderRadius: 4, padding: '18px 20px', marginBottom: 40 }}>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>Week close — {weekLabel(todayISO)}</div>
+                <div style={{ fontSize: 15, fontWeight: 600 }}>Week close — {weekLabel(todayISO)}</div>
                 <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 4, marginBottom: 14 }}>Asked every Saturday evening. Closing values stamp the week's MTM.</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, padding: '7px 0', borderBottom: '1px solid ' + t.hair, marginBottom: 8 }}>
                   <span style={{ fontSize: 15, fontWeight: 600, width: 140 }}>USD / INR</span>
@@ -602,7 +603,7 @@ export default function App() {
             <div style={{ ...mono, fontSize: SZ.hero, lineHeight: 1, fontWeight: 500, color: pl(totalLive) }}>{signed(totalLive)}</div>
             <div style={{ height: 1, background: t.hair, margin: '36px 0 0' }} />
 
-            {live.length === 0 && <div style={{ fontSize: 14, color: t.faint, marginTop: 24 }}>No live trades — add one from “Add trade”.</div>}
+            {live.length === 0 && <div style={{ fontSize: 15, color: t.faint, marginTop: 24 }}>No live trades — add one from “Add trade”.</div>}
 
             {live.map((tr) => {
               const rows = liveMtmRows(tr); const m = liveMtm(tr);
@@ -639,7 +640,7 @@ export default function App() {
                           {specName} ×{meta.mult} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · {tr.currency} · share {realPct(tr)}% · opened {dmy(tr.dateInitiated)}
                         </span>
                         <span style={{ ...mono, fontSize: SZ.num, color: t.faint }}>entry {nf(entryVal(tr))}</span>
-                        <span style={{ ...mono, fontSize: 20, fontWeight: 600, marginLeft: 'auto', color: rows.length ? pl(m) : t.faint }}>{rows.length ? signed(m) : '—'}</span>
+                        <span style={{ ...mono, fontSize: 22, fontWeight: 600, marginLeft: 'auto', color: rows.length ? pl(m) : t.faint }}>{rows.length ? signed(m) : '—'}</span>
                         {closing && closing.id === tr.id ? (
                           <span style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
                             <input autoFocus placeholder="exit" value={closing.px}
@@ -680,7 +681,7 @@ export default function App() {
                           </>
                         )}
                         <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, marginLeft: 'auto', color: whatIf.exit ? pl(pnl) : t.faint }}>= {whatIf.exit ? signed(pnl) : '—'}</span>
-                        <button onClick={() => setWhatIf(null)} title="Close (Esc)" style={{ ...sans, fontSize: 14, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>✕</button>
+                        <button onClick={() => setWhatIf(null)} title="Close (Esc)" style={{ ...sans, fontSize: 15, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>✕</button>
                       </div>
                     );
                   })()}
@@ -726,11 +727,11 @@ export default function App() {
                 <span style={{ fontSize: SZ.meta, color: t.faint }}>Journal · realized by closing week · after share</span>
                 <DownloadPanel />
               </div>
-              <div style={{ ...mono, fontSize: 40, lineHeight: 1, fontWeight: 500, color: pl(totalClosed), marginBottom: 6 }}>{signed(totalClosed)}</div>
+              <div style={{ ...mono, fontSize: 44, lineHeight: 1, fontWeight: 500, color: pl(totalClosed), marginBottom: 6 }}>{signed(totalClosed)}</div>
               <div style={{ fontSize: SZ.meta, color: t.faint, marginBottom: 20 }}>A trade lives in the week it CLOSED — that is the week its profit belongs to.</div>
               {sel.length > 0 && (
                 <div style={{ marginBottom: 24, padding: '13px 17px', border: '1px solid ' + t.ink, borderRadius: 4, display: 'flex', alignItems: 'baseline', gap: 16 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600 }}>{sel.length} selected</span>
+                  <span style={{ fontSize: 15, fontWeight: 600 }}>{sel.length} selected</span>
                   <span style={{ ...mono, fontSize: 22, fontWeight: 600, color: pl(selSum) }}>{signed(selSum)}</span>
                   <button onClick={() => setSel([])} style={{ ...sans, marginLeft: 'auto', fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>clear</button>
                 </div>
@@ -744,7 +745,7 @@ export default function App() {
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, paddingBottom: 10, borderBottom: '1px solid ' + t.ink }}>
                       <span style={{ fontSize: 15, fontWeight: 600 }}>{weekLabel(anyDate)}</span>
                       <span style={{ fontSize: SZ.meta, color: t.faint }}>{trs.length} trade{trs.length > 1 ? 's' : ''}</span>
-                      <span style={{ ...mono, fontSize: 20, fontWeight: 600, marginLeft: 'auto', color: pl(wkTotal) }}>{signed(wkTotal)}</span>
+                      <span style={{ ...mono, fontSize: 22, fontWeight: 600, marginLeft: 'auto', color: pl(wkTotal) }}>{signed(wkTotal)}</span>
                     </div>
                     {trs.map((tr) => {
                       const p = realized(tr); const c = closeDateOf(tr); const held = heldDays(tr.dateInitiated, c);
@@ -764,7 +765,7 @@ export default function App() {
                   </div>
                 );
               })}
-              {weeksDesc.length === 0 && <div style={{ fontSize: 14, color: t.faint }}>No closed trades yet — the journal fills as trades close.</div>}
+              {weeksDesc.length === 0 && <div style={{ fontSize: 15, color: t.faint }}>No closed trades yet — the journal fills as trades close.</div>}
             </>
           );
         })()}
@@ -779,7 +780,7 @@ export default function App() {
             <div style={{ ...mono, fontSize: SZ.big, lineHeight: 1, fontWeight: 500, color: pl(totalClosed) }}>{signed(totalClosed)}</div>
             {sel.length > 0 && (
               <div style={{ marginTop: 18, padding: '13px 17px', border: '1px solid ' + t.ink, borderRadius: 4, display: 'flex', alignItems: 'baseline', gap: 16 }}>
-                <span style={{ fontSize: 14, fontWeight: 600 }}>{sel.length} selected</span>
+                <span style={{ fontSize: 15, fontWeight: 600 }}>{sel.length} selected</span>
                 <span style={{ ...mono, fontSize: 22, fontWeight: 600, color: pl(selSum) }}>{signed(selSum)}</span>
                 <button onClick={() => setSel([])} style={{ ...sans, marginLeft: 'auto', fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>clear</button>
               </div>
@@ -800,7 +801,7 @@ export default function App() {
                       </td>
                       <td style={td({ color: t.faint, fontSize: SZ.numSm })}>{dmy(closeDateOf(tr))}</td>
                       <td style={{ ...td(), ...sans, fontWeight: 600, fontSize: SZ.num }}>{tr.symbol}</td>
-                      <td style={{ ...td(), ...sans, fontSize: 14, color: tr.direction === 'Long' ? t.ink : t.faint }}>{sideOf(tr)}</td>
+                      <td style={{ ...td(), ...sans, fontSize: 15, color: tr.direction === 'Long' ? t.ink : t.faint }}>{sideOf(tr)}</td>
                       <td style={td({ textAlign: 'right' })}>{tr.numberOfLots}</td>
                       <td style={td({ textAlign: 'right' })}>{nf(entryVal(tr))}</td>
                       <td style={td({ textAlign: 'right' })}>
@@ -809,7 +810,7 @@ export default function App() {
                             style={{ ...mono, fontSize: SZ.num, width: 92, textAlign: 'right', border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
                         ) : nf(exitVal(tr))}
                       </td>
-                      <td style={td({ textAlign: 'right', fontSize: 14, color: t.faint })}>{realPct(tr)}%</td>
+                      <td style={td({ textAlign: 'right', fontSize: 15, color: t.faint })}>{realPct(tr)}%</td>
                       <td style={td({ textAlign: 'right', fontWeight: 600, color: pl(p) })}>{signed(p)}</td>
                       <td style={{ ...td(), textAlign: 'right' }}>
                         {editing ? (
@@ -826,7 +827,7 @@ export default function App() {
                 })}
               </tbody>
             </table>
-            {closed.length === 0 && <div style={{ fontSize: 14, color: t.faint, marginTop: 16 }}>No closed trades yet.</div>}
+            {closed.length === 0 && <div style={{ fontSize: 15, color: t.faint, marginTop: 16 }}>No closed trades yet.</div>}
             <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 14 }}>
               Checkbox sums selected trades. Edit and Delete sit behind the PIN{pinOk ? ' — unlocked this session' : (pinHash ? '' : ' — first use sets it')}.
             </div>
