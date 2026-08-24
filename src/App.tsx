@@ -375,20 +375,21 @@ export default function App() {
           <div>
             <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '0.06em' }}>AILAHA PHALAM</div>
             <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 2 }}>{headerDate} · {weekLabel(todayISO)}</div>
+            {/* Sign out — kept out of the nav so the nav matches DESIGN_SPEC exactly; tiny faint link under the date (auth necessity). */}
+            <button onClick={() => supabase.auth.signOut()} title="Sign out" style={{ ...sans, fontSize: SZ.label, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 6 }}>Sign out</button>
           </div>
           <nav style={{ display: 'flex', gap: 22, alignItems: 'center' }}>
             <Tab id="live" label="Live trades" />
             <Tab id="journal" label="Journal" />
             <Tab id="closedv" label="Closed trades" />
             <Tab id="add" label="Add trade" />
-            {/* THEME — after Add trade (spec), then a minimal Sign out (auth necessity) */}
+            {/* THEME — after Add trade (spec) */}
             <span style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 6 }}>
               <span style={{ fontSize: SZ.label, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Theme</span>
               {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][]).map(([k, th2]) => (
                 <button key={k} onClick={() => setThemeKey(k)} title={th2.name} style={{ width: 22, height: 22, borderRadius: '50%', cursor: 'pointer', background: th2.swatch, border: '2px solid ' + (themeKey === k ? t.ink : t.hair) }} />
               ))}
             </span>
-            <button onClick={() => supabase.auth.signOut()} title="Sign out" style={{ ...sans, fontSize: SZ.label, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Sign out</button>
           </nav>
         </header>
 

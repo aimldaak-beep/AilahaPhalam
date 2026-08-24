@@ -1,6 +1,9 @@
 /* AILAHA PHALAM v2 — minimal reset. All visual theming lives in App.tsx
-   (White / Forest), which paints its own full-viewport background. */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+   (White / Forest), which paints its own full-viewport background.
+   NOTE: box-sizing is intentionally left at the default content-box — DESIGN_SPEC.jsx
+   was designed in that box model, so its maxWidth:820 means an 820px CONTENT column.
+   Forcing border-box shrinks it to 772px and makes the nav + live row wrap wrongly. */
+*, *::before, *::after { margin: 0; padding: 0; }
 
 html, body, #root { min-height: 100vh; }
 body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; overflow-x: hidden; }
