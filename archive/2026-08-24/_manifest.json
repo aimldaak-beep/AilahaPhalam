@@ -1,0 +1,62 @@
+{
+  "date": "2026-08-24",
+  "project": "https://crhlsheofcneafhbdrld.supabase.co",
+  "tables": [
+    {
+      "table": "daily_ohlc",
+      "server_count": 3120,
+      "rows_fetched": 3120,
+      "json_bytes": 805247,
+      "csv_bytes": 368499
+    },
+    {
+      "table": "signal_dates",
+      "server_count": 17,
+      "rows_fetched": 17,
+      "json_bytes": 665,
+      "csv_bytes": 215
+    },
+    {
+      "table": "signals",
+      "server_count": 134160,
+      "rows_fetched": 134160,
+      "json_bytes": 42064714,
+      "csv_bytes": 19794224
+    },
+    {
+      "table": "trade_tracker",
+      "server_count": 51,
+      "rows_fetched": 51,
+      "json_bytes": 58879,
+      "csv_bytes": 34923
+    },
+    {
+      "table": "trades",
+      "server_count": 55,
+      "rows_fetched": 55,
+      "json_bytes": 39577,
+      "csv_bytes": 32295
+    },
+    {
+      "table": "user_settings",
+      "server_count": 1,
+      "rows_fetched": 1,
+      "json_bytes": 254,
+      "csv_bytes": 206
+    },
+    {
+      "table": "week_offsets",
+      "server_count": 0,
+      "rows_fetched": 0,
+      "json_bytes": 2,
+      "csv_bytes": 2
+    },
+    {
+      "table": "weekly_marks",
+      "server_count": 2,
+      "rows_fetched": 2,
+      "json_bytes": 536,
+      "csv_bytes": 353
+    }
+  ]
+}

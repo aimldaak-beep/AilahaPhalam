@@ -1,0 +1,2821 @@
+[
+  {
+    "id": "46c91833-3abe-414b-b957-2cd395e0ae7f",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "PIDILITIND",
+    "direction": "Short",
+    "entry_date": "2026-06-18",
+    "entry_price": 1579.2,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1482,
+        "date": "2026-06-18",
+        "high": 1582,
+        "open": 1579,
+        "close": 1482
+      },
+      {
+        "low": 1482,
+        "date": "2026-06-18",
+        "high": 1582,
+        "open": 1579,
+        "close": 1482
+      },
+      {
+        "low": 1482,
+        "date": "2026-06-18",
+        "high": 1582,
+        "open": 1579,
+        "close": 1482
+      },
+      {
+        "low": 1575,
+        "date": "2026-06-19",
+        "high": 1580,
+        "open": 1577,
+        "close": 1577
+      },
+      {
+        "low": 1560,
+        "date": "2026-06-22",
+        "high": 1577,
+        "open": 1577,
+        "close": 1561
+      },
+      {
+        "low": 1561,
+        "date": "2026-06-23",
+        "high": 1587,
+        "open": 1561,
+        "close": 1577
+      },
+      {
+        "low": 1571,
+        "date": "2026-06-24",
+        "high": 1580,
+        "open": 1575,
+        "close": 1577
+      },
+      {
+        "low": 1577,
+        "date": "2026-06-25",
+        "high": 1610,
+        "open": 1577,
+        "close": 1607
+      },
+      {
+        "low": 1599,
+        "date": "2026-06-29",
+        "high": 1613,
+        "open": 1607,
+        "close": 1599
+      }
+    ],
+    "created_at": "2026-06-18T09:34:14.733953+00:00"
+  },
+  {
+    "id": "faf8ad95-5e42-4d13-b27a-ab2313faaa2b",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "PFC",
+    "direction": "Short",
+    "entry_date": "2026-06-18",
+    "entry_price": 428.8,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 425,
+        "date": "2026-06-18",
+        "high": 431,
+        "open": 428,
+        "close": 425
+      },
+      {
+        "low": 425,
+        "date": "2026-06-18",
+        "high": 431,
+        "open": 428,
+        "close": 425
+      },
+      {
+        "low": 425,
+        "date": "2026-06-18",
+        "high": 431,
+        "open": 428,
+        "close": 425
+      },
+      {
+        "low": 429,
+        "date": "2026-06-19",
+        "high": 432,
+        "open": 432,
+        "close": 430
+      },
+      {
+        "low": 434,
+        "date": "2026-06-22",
+        "high": 440,
+        "open": 434,
+        "close": 440
+      },
+      {
+        "low": 431,
+        "date": "2026-06-23",
+        "high": 441,
+        "open": 441,
+        "close": 431
+      },
+      {
+        "low": 431,
+        "date": "2026-06-24",
+        "high": 441,
+        "open": 431,
+        "close": 437
+      },
+      {
+        "low": 435,
+        "date": "2026-06-25",
+        "high": 441,
+        "open": 441,
+        "close": 436
+      },
+      {
+        "low": 424,
+        "date": "2026-06-29",
+        "high": 436,
+        "open": 436,
+        "close": 424
+      }
+    ],
+    "created_at": "2026-06-18T09:33:52.773868+00:00"
+  },
+  {
+    "id": "52a7433c-2a0f-44d2-bafd-f8fca036f645",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "BIOCON",
+    "direction": "Long",
+    "entry_date": "2026-06-18",
+    "entry_price": 413.7,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 411,
+        "date": "2026-06-18",
+        "high": 431,
+        "open": 411,
+        "close": 431
+      },
+      {
+        "low": 392,
+        "date": "2026-06-19",
+        "high": 417,
+        "open": 412,
+        "close": 416
+      },
+      {
+        "low": 414,
+        "date": "2026-06-22",
+        "high": 420,
+        "open": 415,
+        "close": 420
+      },
+      {
+        "low": 427,
+        "date": "2026-06-23",
+        "high": 429,
+        "open": 429,
+        "close": 427
+      },
+      {
+        "low": 421,
+        "date": "2026-06-24",
+        "high": 427,
+        "open": 427,
+        "close": 422
+      },
+      {
+        "low": 418,
+        "date": "2026-06-25",
+        "high": 426,
+        "open": 423,
+        "close": 422
+      },
+      {
+        "low": 416,
+        "date": "2026-06-29",
+        "high": 421,
+        "open": 417,
+        "close": 416
+      }
+    ],
+    "created_at": "2026-06-18T09:32:23.676126+00:00"
+  },
+  {
+    "id": "d37f93f3-c806-41ed-9228-baa3669cd203",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "CHOLAFIN",
+    "direction": "Short",
+    "entry_date": "2026-06-29",
+    "entry_price": 1780,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1775,
+        "date": "2026-06-30",
+        "high": 1800,
+        "open": 1775,
+        "close": 1795
+      },
+      {
+        "low": 1781,
+        "date": "2026-07-01",
+        "high": 1799,
+        "open": 1781,
+        "close": 1799
+      },
+      {
+        "low": 1793,
+        "date": "2026-07-02",
+        "high": 1805,
+        "open": 1799,
+        "close": 1793
+      },
+      {
+        "low": 1813,
+        "date": "2026-07-06",
+        "high": 1853,
+        "open": 1813,
+        "close": 1853
+      },
+      {
+        "low": 1344,
+        "date": "2026-07-07",
+        "high": 1858,
+        "open": 1858,
+        "close": 1858
+      },
+      {
+        "low": 1812,
+        "date": "2026-07-08",
+        "high": 1848,
+        "open": 1816,
+        "close": 1812
+      }
+    ],
+    "created_at": "2026-06-29T09:09:58.898038+00:00"
+  },
+  {
+    "id": "86072057-77c3-4287-b46e-8856478808e0",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "VBL",
+    "direction": "Short",
+    "entry_date": "2026-06-17",
+    "entry_price": 544.05,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 543,
+        "date": "2026-06-18",
+        "high": 550,
+        "open": 550,
+        "close": 543
+      },
+      {
+        "low": 528,
+        "date": "2026-06-19",
+        "high": 543,
+        "open": 543,
+        "close": 528
+      },
+      {
+        "low": 508,
+        "date": "2026-06-22",
+        "high": 528,
+        "open": 528,
+        "close": 512
+      },
+      {
+        "low": 504,
+        "date": "2026-06-23",
+        "high": 512,
+        "open": 512,
+        "close": 504
+      },
+      {
+        "low": 506,
+        "date": "2026-06-24",
+        "high": 511,
+        "open": 511,
+        "close": 507
+      },
+      {
+        "low": 507,
+        "date": "2026-06-25",
+        "high": 512,
+        "open": 512,
+        "close": 507
+      }
+    ],
+    "created_at": "2026-06-17T12:47:32.025312+00:00"
+  },
+  {
+    "id": "3d456241-2af7-4d9e-9b5a-2cca940a291f",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "EICHERMOT",
+    "direction": "Short",
+    "entry_date": "2026-06-18",
+    "entry_price": 7601,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 7220,
+        "date": "2026-06-18",
+        "high": 7663,
+        "open": 7475,
+        "close": 7220
+      },
+      {
+        "low": 7572,
+        "date": "2026-06-19",
+        "high": 7649,
+        "open": 7598,
+        "close": 7649
+      },
+      {
+        "low": 7642,
+        "date": "2026-06-22",
+        "high": 7709,
+        "open": 7649,
+        "close": 7642
+      },
+      {
+        "low": 7573,
+        "date": "2026-06-23",
+        "high": 7664,
+        "open": 7642,
+        "close": 7573
+      },
+      {
+        "low": 7564,
+        "date": "2026-06-24",
+        "high": 7596,
+        "open": 7573,
+        "close": 7596
+      },
+      {
+        "low": 7597,
+        "date": "2026-06-25",
+        "high": 7722,
+        "open": 7722,
+        "close": 7597
+      },
+      {
+        "low": 7399,
+        "date": "2026-06-29",
+        "high": 7597,
+        "open": 7597,
+        "close": 7399
+      }
+    ],
+    "created_at": "2026-06-18T09:32:50.962961+00:00"
+  },
+  {
+    "id": "66149fd0-529f-4d1c-b914-f4b503b3b039",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "BANKBARODA",
+    "direction": "Short",
+    "entry_date": "2026-06-18",
+    "entry_price": 282.65,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 274,
+        "date": "2026-06-18",
+        "high": 284,
+        "open": 284,
+        "close": 274
+      },
+      {
+        "low": 280,
+        "date": "2026-06-19",
+        "high": 283,
+        "open": 283,
+        "close": 280
+      },
+      {
+        "low": 280,
+        "date": "2026-06-22",
+        "high": 285,
+        "open": 280,
+        "close": 284
+      },
+      {
+        "low": 279,
+        "date": "2026-06-23",
+        "high": 284,
+        "open": 284,
+        "close": 279
+      },
+      {
+        "low": 279,
+        "date": "2026-06-24",
+        "high": 279,
+        "open": 279,
+        "close": 279
+      },
+      {
+        "low": 278,
+        "date": "2026-06-25",
+        "high": 280,
+        "open": 279,
+        "close": 280
+      },
+      {
+        "low": 274,
+        "date": "2026-06-29",
+        "high": 280,
+        "open": 280,
+        "close": 274
+      }
+    ],
+    "created_at": "2026-06-18T09:32:03.375948+00:00"
+  },
+  {
+    "id": "e2c8fa77-583f-4f3a-bcb8-377a689ed90a",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "GAIL",
+    "direction": "Long",
+    "entry_date": "2026-06-29",
+    "entry_price": 173,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 172,
+        "date": "2026-06-30",
+        "high": 174,
+        "open": 172,
+        "close": 172
+      },
+      {
+        "low": 172,
+        "date": "2026-07-01",
+        "high": 174,
+        "open": 172,
+        "close": 174
+      },
+      {
+        "low": 173,
+        "date": "2026-07-02",
+        "high": 174,
+        "open": 174,
+        "close": 174
+      },
+      {
+        "low": 174,
+        "date": "2026-07-06",
+        "high": 175,
+        "open": 174,
+        "close": 175
+      },
+      {
+        "low": 174,
+        "date": "2026-07-07",
+        "high": 175,
+        "open": 174,
+        "close": 174
+      },
+      {
+        "low": 172,
+        "date": "2026-07-08",
+        "high": 174,
+        "open": 174,
+        "close": 172
+      }
+    ],
+    "created_at": "2026-06-29T09:11:45.482949+00:00"
+  },
+  {
+    "id": "6c987025-84e5-47e6-bdec-d7cc8f6dad72",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "SUNPHARMA",
+    "direction": "Short",
+    "entry_date": "2026-06-23",
+    "entry_price": 1868,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1864,
+        "date": "2026-06-24",
+        "high": 1877,
+        "open": 1864,
+        "close": 1873
+      },
+      {
+        "low": 1873,
+        "date": "2026-06-25",
+        "high": 1887,
+        "open": 1873,
+        "close": 1877
+      },
+      {
+        "low": 1876,
+        "date": "2026-06-29",
+        "high": 1894,
+        "open": 1886,
+        "close": 1876
+      },
+      {
+        "low": 1868,
+        "date": "2026-06-30",
+        "high": 1892,
+        "open": 1892,
+        "close": 1868
+      },
+      {
+        "low": 1863,
+        "date": "2026-07-01",
+        "high": 1876,
+        "open": 1876,
+        "close": 1865
+      },
+      {
+        "low": 1871,
+        "date": "2026-07-02",
+        "high": 1877,
+        "open": 1875,
+        "close": 1874
+      }
+    ],
+    "created_at": "2026-06-23T16:17:20.006262+00:00"
+  },
+  {
+    "id": "d80c6529-0005-47b9-ad11-0a72627c6fa1",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "TATACONSUM",
+    "direction": "Long",
+    "entry_date": "2026-06-24",
+    "entry_price": 1099.2,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1098,
+        "date": "2026-06-25",
+        "high": 1127,
+        "open": 1098,
+        "close": 1127
+      },
+      {
+        "low": 1113,
+        "date": "2026-06-29",
+        "high": 1132,
+        "open": 1127,
+        "close": 1113
+      },
+      {
+        "low": 1073,
+        "date": "2026-06-30",
+        "high": 1113,
+        "open": 1113,
+        "close": 1073
+      },
+      {
+        "low": 1086,
+        "date": "2026-07-01",
+        "high": 1092,
+        "open": 1087,
+        "close": 1089
+      },
+      {
+        "low": 1086,
+        "date": "2026-07-02",
+        "high": 1104,
+        "open": 1090,
+        "close": 1104
+      }
+    ],
+    "created_at": "2026-06-24T09:27:33.982807+00:00"
+  },
+  {
+    "id": "27a439b2-5719-44da-b58d-96b3f9036f8d",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "CIPLA",
+    "direction": "Short",
+    "entry_date": "2026-06-23",
+    "entry_price": 1433.1,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1435,
+        "date": "2026-06-24",
+        "high": 1454,
+        "open": 1454,
+        "close": 1438
+      },
+      {
+        "low": 1437,
+        "date": "2026-06-25",
+        "high": 1447,
+        "open": 1438,
+        "close": 1445
+      },
+      {
+        "low": 1454,
+        "date": "2026-06-29",
+        "high": 1479,
+        "open": 1454,
+        "close": 1477
+      },
+      {
+        "low": 1465,
+        "date": "2026-06-30",
+        "high": 1477,
+        "open": 1477,
+        "close": 1470
+      },
+      {
+        "low": 1458,
+        "date": "2026-07-01",
+        "high": 1470,
+        "open": 1470,
+        "close": 1458
+      },
+      {
+        "low": 1457,
+        "date": "2026-07-02",
+        "high": 1463,
+        "open": 1458,
+        "close": 1457
+      }
+    ],
+    "created_at": "2026-06-23T16:20:00.430856+00:00"
+  },
+  {
+    "id": "9be35dd5-01b3-484d-8379-71a8bf119eec",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "LICHSGFIN",
+    "direction": "Long",
+    "entry_date": "2026-06-23",
+    "entry_price": 541.2,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 541,
+        "date": "2026-06-24",
+        "high": 550,
+        "open": 542,
+        "close": 543
+      },
+      {
+        "low": 550,
+        "date": "2026-06-25",
+        "high": 552,
+        "open": 552,
+        "close": 550
+      },
+      {
+        "low": 548,
+        "date": "2026-06-29",
+        "high": 551,
+        "open": 550,
+        "close": 551
+      },
+      {
+        "low": 551,
+        "date": "2026-06-30",
+        "high": 565,
+        "open": 551,
+        "close": 565
+      },
+      {
+        "low": 548,
+        "date": "2026-07-01",
+        "high": 555,
+        "open": 553,
+        "close": 555
+      },
+      {
+        "low": 552,
+        "date": "2026-07-02",
+        "high": 556,
+        "open": 555,
+        "close": 552
+      }
+    ],
+    "created_at": "2026-06-23T16:18:53.550902+00:00"
+  },
+  {
+    "id": "b1ef3f70-0a2a-4420-8d8c-d302f467bcf0",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "ABCAPITAL",
+    "direction": "Short",
+    "entry_date": "2026-06-24",
+    "entry_price": 394.55,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 390,
+        "date": "2026-06-25",
+        "high": 397,
+        "open": 395,
+        "close": 390
+      },
+      {
+        "low": 386,
+        "date": "2026-06-29",
+        "high": 390,
+        "open": 390,
+        "close": 388
+      },
+      {
+        "low": 388,
+        "date": "2026-06-30",
+        "high": 393,
+        "open": 388,
+        "close": 393
+      },
+      {
+        "low": 389,
+        "date": "2026-07-01",
+        "high": 394,
+        "open": 389,
+        "close": 394
+      },
+      {
+        "low": 390,
+        "date": "2026-07-02",
+        "high": 397,
+        "open": 390,
+        "close": 393
+      }
+    ],
+    "created_at": "2026-06-24T09:25:18.090826+00:00"
+  },
+  {
+    "id": "df11bb3b-5910-4c80-894d-fb27de9ddf17",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "PIDILITIND",
+    "direction": "Short",
+    "entry_date": "2026-06-23",
+    "entry_price": 1566.7,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1571,
+        "date": "2026-06-24",
+        "high": 1580,
+        "open": 1575,
+        "close": 1577
+      },
+      {
+        "low": 1577,
+        "date": "2026-06-25",
+        "high": 1610,
+        "open": 1577,
+        "close": 1607
+      },
+      {
+        "low": 1599,
+        "date": "2026-06-29",
+        "high": 1613,
+        "open": 1607,
+        "close": 1599
+      },
+      {
+        "low": 1588,
+        "date": "2026-06-30",
+        "high": 1599,
+        "open": 1599,
+        "close": 1592
+      },
+      {
+        "low": 1584,
+        "date": "2026-07-01",
+        "high": 1592,
+        "open": 1592,
+        "close": 1584
+      },
+      {
+        "low": 1584,
+        "date": "2026-07-02",
+        "high": 1604,
+        "open": 1584,
+        "close": 1604
+      }
+    ],
+    "created_at": "2026-06-23T16:18:25.741901+00:00"
+  },
+  {
+    "id": "9e0dc8af-01ba-49c1-bf5d-9ab69f945b44",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "HCLTECH",
+    "direction": "Long",
+    "entry_date": "2026-06-24",
+    "entry_price": 1119,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1112,
+        "date": "2026-06-25",
+        "high": 1125,
+        "open": 1117,
+        "close": 1112
+      },
+      {
+        "low": 1095,
+        "date": "2026-06-29",
+        "high": 1112,
+        "open": 1112,
+        "close": 1099
+      },
+      {
+        "low": 1073,
+        "date": "2026-06-30",
+        "high": 1102,
+        "open": 1102,
+        "close": 1073
+      },
+      {
+        "low": 1039,
+        "date": "2026-07-01",
+        "high": 1073,
+        "open": 1073,
+        "close": 1039
+      },
+      {
+        "low": 1039,
+        "date": "2026-07-02",
+        "high": 1072,
+        "open": 1039,
+        "close": 1072
+      }
+    ],
+    "created_at": "2026-06-24T09:24:50.653518+00:00"
+  },
+  {
+    "id": "d0ab80ff-dab2-4dc5-9fc5-e3061d388ee0",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "ABCAPITAL",
+    "direction": "Short",
+    "entry_date": "2026-06-29",
+    "entry_price": 387.55,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 388,
+        "date": "2026-06-30",
+        "high": 393,
+        "open": 388,
+        "close": 393
+      },
+      {
+        "low": 389,
+        "date": "2026-07-01",
+        "high": 394,
+        "open": 389,
+        "close": 394
+      },
+      {
+        "low": 390,
+        "date": "2026-07-02",
+        "high": 397,
+        "open": 390,
+        "close": 393
+      },
+      {
+        "low": 402,
+        "date": "2026-07-06",
+        "high": 410,
+        "open": 404,
+        "close": 409
+      },
+      {
+        "low": 408,
+        "date": "2026-07-07",
+        "high": 411,
+        "open": 409,
+        "close": 409
+      },
+      {
+        "low": 396,
+        "date": "2026-07-08",
+        "high": 409,
+        "open": 409,
+        "close": 396
+      }
+    ],
+    "created_at": "2026-06-29T09:08:42.204887+00:00"
+  },
+  {
+    "id": "2d6d5f7c-7fb6-4255-8579-e624114a4179",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "BSE",
+    "direction": "Long",
+    "entry_date": "2026-07-02",
+    "entry_price": 3834.7,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 3732,
+        "date": "2026-07-06",
+        "high": 3805,
+        "open": 3761,
+        "close": 3805
+      },
+      {
+        "low": 3648,
+        "date": "2026-07-07",
+        "high": 3699,
+        "open": 3661,
+        "close": 3661
+      },
+      {
+        "low": 3658,
+        "date": "2026-07-08",
+        "high": 3706,
+        "open": 3661,
+        "close": 3692
+      },
+      {
+        "low": 3692,
+        "date": "2026-07-09",
+        "high": 3820,
+        "open": 3692,
+        "close": 3812
+      },
+      {
+        "low": 3777,
+        "date": "2026-07-10",
+        "high": 3821,
+        "open": 3821,
+        "close": 3812
+      }
+    ],
+    "created_at": "2026-07-02T10:01:46.449079+00:00"
+  },
+  {
+    "id": "3d5a13ef-caf5-487a-9d95-c68ba7b04208",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "INDIANB",
+    "direction": "Long",
+    "entry_date": "2026-07-02",
+    "entry_price": 814.95,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 787,
+        "date": "2026-07-06",
+        "high": 799,
+        "open": 799,
+        "close": 787
+      },
+      {
+        "low": 778,
+        "date": "2026-07-07",
+        "high": 782,
+        "open": 781,
+        "close": 781
+      },
+      {
+        "low": 772,
+        "date": "2026-07-08",
+        "high": 793,
+        "open": 781,
+        "close": 772
+      },
+      {
+        "low": 772,
+        "date": "2026-07-09",
+        "high": 782,
+        "open": 772,
+        "close": 782
+      },
+      {
+        "low": 782,
+        "date": "2026-07-10",
+        "high": 871,
+        "open": 782,
+        "close": 870
+      }
+    ],
+    "created_at": "2026-07-02T10:01:04.902648+00:00"
+  },
+  {
+    "id": "c6e80c51-51e1-4219-a984-6bb565716826",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "INDIGO",
+    "direction": "Short",
+    "entry_date": "2026-06-29",
+    "entry_price": 5340,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 5325,
+        "date": "2026-06-30",
+        "high": 5374,
+        "open": 5331,
+        "close": 5374
+      },
+      {
+        "low": 5355,
+        "date": "2026-07-01",
+        "high": 5391,
+        "open": 5375,
+        "close": 5380
+      },
+      {
+        "low": 5380,
+        "date": "2026-07-02",
+        "high": 5444,
+        "open": 5380,
+        "close": 5444
+      },
+      {
+        "low": 5398,
+        "date": "2026-07-06",
+        "high": 5419,
+        "open": 5419,
+        "close": 5403
+      },
+      {
+        "low": 5384,
+        "date": "2026-07-07",
+        "high": 5393,
+        "open": 5393,
+        "close": 5393
+      },
+      {
+        "low": 5230,
+        "date": "2026-07-08",
+        "high": 5298,
+        "open": 5244,
+        "close": 5230
+      }
+    ],
+    "created_at": "2026-06-29T09:22:06.093703+00:00"
+  },
+  {
+    "id": "4cffd04c-9fb6-468d-8370-841305375446",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "BRITANNIA",
+    "direction": "Short",
+    "entry_date": "2026-06-29",
+    "entry_price": 5101,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 5127,
+        "date": "2026-06-30",
+        "high": 5146,
+        "open": 5127,
+        "close": 5146
+      },
+      {
+        "low": 5195,
+        "date": "2026-07-01",
+        "high": 5220,
+        "open": 5195,
+        "close": 5220
+      },
+      {
+        "low": 5220,
+        "date": "2026-07-02",
+        "high": 5392,
+        "open": 5220,
+        "close": 5379
+      },
+      {
+        "low": 5384,
+        "date": "2026-07-06",
+        "high": 5450,
+        "open": 5393,
+        "close": 5435
+      },
+      {
+        "low": 5443,
+        "date": "2026-07-07",
+        "high": 5448,
+        "open": 5443,
+        "close": 5443
+      },
+      {
+        "low": 5427,
+        "date": "2026-07-08",
+        "high": 5429,
+        "open": 5427,
+        "close": 5429
+      }
+    ],
+    "created_at": "2026-06-29T09:09:37.698217+00:00"
+  },
+  {
+    "id": "217becb2-4b32-41b5-9f46-cfa7735120a8",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "GODFRYPHLP",
+    "direction": "Short",
+    "entry_date": "2026-06-23",
+    "entry_price": 2237.9,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 2236,
+        "date": "2026-06-24",
+        "high": 2256,
+        "open": 2243,
+        "close": 2252
+      },
+      {
+        "low": 2252,
+        "date": "2026-06-25",
+        "high": 2281,
+        "open": 2278,
+        "close": 2252
+      },
+      {
+        "low": 2188,
+        "date": "2026-06-29",
+        "high": 2252,
+        "open": 2252,
+        "close": 2188
+      },
+      {
+        "low": 2170,
+        "date": "2026-06-30",
+        "high": 2195,
+        "open": 2188,
+        "close": 2170
+      },
+      {
+        "low": 2162,
+        "date": "2026-07-01",
+        "high": 2190,
+        "open": 2190,
+        "close": 2162
+      },
+      {
+        "low": 2171,
+        "date": "2026-07-02",
+        "high": 2174,
+        "open": 2171,
+        "close": 2174
+      }
+    ],
+    "created_at": "2026-06-23T16:19:32.932099+00:00"
+  },
+  {
+    "id": "2ee2a542-6c00-42b3-8158-76af75834cf9",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "AUROPHARMA",
+    "direction": "Short",
+    "entry_date": "2026-06-24",
+    "entry_price": 1533.7,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1547,
+        "date": "2026-06-25",
+        "high": 1561,
+        "open": 1547,
+        "close": 1555
+      },
+      {
+        "low": 1565,
+        "date": "2026-06-29",
+        "high": 1585,
+        "open": 1565,
+        "close": 1572
+      },
+      {
+        "low": 1556,
+        "date": "2026-06-30",
+        "high": 1584,
+        "open": 1556,
+        "close": 1573
+      },
+      {
+        "low": 1557,
+        "date": "2026-07-01",
+        "high": 1564,
+        "open": 1564,
+        "close": 1557
+      },
+      {
+        "low": 1551,
+        "date": "2026-07-02",
+        "high": 1564,
+        "open": 1557,
+        "close": 1561
+      }
+    ],
+    "created_at": "2026-06-24T09:25:37.887945+00:00"
+  },
+  {
+    "id": "9451c2d6-74b3-4a92-a837-d6193f8cfc32",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "SUNPHARMA",
+    "direction": "Short",
+    "entry_date": "2026-06-29",
+    "entry_price": 1872,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1868,
+        "date": "2026-06-30",
+        "high": 1892,
+        "open": 1892,
+        "close": 1868
+      },
+      {
+        "low": 1863,
+        "date": "2026-07-01",
+        "high": 1876,
+        "open": 1876,
+        "close": 1865
+      },
+      {
+        "low": 1871,
+        "date": "2026-07-02",
+        "high": 1877,
+        "open": 1875,
+        "close": 1874
+      },
+      {
+        "low": 1906,
+        "date": "2026-07-06",
+        "high": 1912,
+        "open": 1910,
+        "close": 1912
+      },
+      {
+        "low": 1908,
+        "date": "2026-07-07",
+        "high": 1914,
+        "open": 1908,
+        "close": 1908
+      },
+      {
+        "low": 1906,
+        "date": "2026-07-08",
+        "high": 1924,
+        "open": 1924,
+        "close": 1906
+      }
+    ],
+    "created_at": "2026-06-29T09:22:57.411789+00:00"
+  },
+  {
+    "id": "550fe577-d7d8-4a34-af0d-b2ba8b184e9c",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "SONACOMS",
+    "direction": "Short",
+    "entry_date": "2026-06-23",
+    "entry_price": 615.95,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 615,
+        "date": "2026-06-24",
+        "high": 620,
+        "open": 618,
+        "close": 620
+      },
+      {
+        "low": 620,
+        "date": "2026-06-25",
+        "high": 631,
+        "open": 620,
+        "close": 620
+      },
+      {
+        "low": 611,
+        "date": "2026-06-29",
+        "high": 620,
+        "open": 620,
+        "close": 616
+      },
+      {
+        "low": 610,
+        "date": "2026-06-30",
+        "high": 619,
+        "open": 610,
+        "close": 619
+      },
+      {
+        "low": 618,
+        "date": "2026-07-01",
+        "high": 621,
+        "open": 619,
+        "close": 621
+      },
+      {
+        "low": 631,
+        "date": "2026-07-02",
+        "high": 666,
+        "open": 631,
+        "close": 663
+      }
+    ],
+    "created_at": "2026-06-23T16:17:44.36086+00:00"
+  },
+  {
+    "id": "866d1c7a-9336-47d7-9a03-a529d7f14b74",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "MOTILALOFS",
+    "direction": "Short",
+    "entry_date": "2026-06-29",
+    "entry_price": 949.4,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 950,
+        "date": "2026-06-30",
+        "high": 958,
+        "open": 957,
+        "close": 951
+      },
+      {
+        "low": 951,
+        "date": "2026-07-01",
+        "high": 960,
+        "open": 951,
+        "close": 956
+      },
+      {
+        "low": 951,
+        "date": "2026-07-02",
+        "high": 969,
+        "open": 956,
+        "close": 955
+      },
+      {
+        "low": 950,
+        "date": "2026-07-06",
+        "high": 968,
+        "open": 968,
+        "close": 951
+      },
+      {
+        "low": 946,
+        "date": "2026-07-07",
+        "high": 948,
+        "open": 948,
+        "close": 948
+      },
+      {
+        "low": 915,
+        "date": "2026-07-08",
+        "high": 949,
+        "open": 939,
+        "close": 915
+      }
+    ],
+    "created_at": "2026-06-29T09:22:27.27728+00:00"
+  },
+  {
+    "id": "431a2aae-6f84-46cb-9321-6fe3a2461b9d",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "HCLTECH",
+    "direction": "Long",
+    "entry_date": "2026-06-29",
+    "entry_price": 1096.2,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1073,
+        "date": "2026-06-30",
+        "high": 1102,
+        "open": 1102,
+        "close": 1073
+      },
+      {
+        "low": 1039,
+        "date": "2026-07-01",
+        "high": 1073,
+        "open": 1073,
+        "close": 1039
+      },
+      {
+        "low": 1039,
+        "date": "2026-07-02",
+        "high": 1072,
+        "open": 1039,
+        "close": 1072
+      },
+      {
+        "low": 1134,
+        "date": "2026-07-06",
+        "high": 1142,
+        "open": 1141,
+        "close": 1134
+      },
+      {
+        "low": 1148,
+        "date": "2026-07-07",
+        "high": 1174,
+        "open": 1168,
+        "close": 1168
+      },
+      {
+        "low": 1123,
+        "date": "2026-07-08",
+        "high": 1170,
+        "open": 1168,
+        "close": 1168
+      }
+    ],
+    "created_at": "2026-06-29T09:12:06.401442+00:00"
+  },
+  {
+    "id": "769f14c6-f951-48d0-886e-9e907c20e04d",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "ZYDUSLIFE",
+    "direction": "Short",
+    "entry_date": "2026-06-23",
+    "entry_price": 1112.2,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1110,
+        "date": "2026-06-24",
+        "high": 1122,
+        "open": 1122,
+        "close": 1110
+      },
+      {
+        "low": 1100,
+        "date": "2026-06-25",
+        "high": 1112,
+        "open": 1103,
+        "close": 1101
+      },
+      {
+        "low": 1105,
+        "date": "2026-06-29",
+        "high": 1121,
+        "open": 1105,
+        "close": 1121
+      },
+      {
+        "low": 1113,
+        "date": "2026-06-30",
+        "high": 1123,
+        "open": 1121,
+        "close": 1119
+      },
+      {
+        "low": 1110,
+        "date": "2026-07-01",
+        "high": 1121,
+        "open": 1119,
+        "close": 1110
+      },
+      {
+        "low": 1098,
+        "date": "2026-07-02",
+        "high": 1110,
+        "open": 1110,
+        "close": 1098
+      }
+    ],
+    "created_at": "2026-06-23T16:16:11.336719+00:00"
+  },
+  {
+    "id": "0447d796-aa5a-4793-a8b0-76fad3cc5cfc",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "ZYDUSLIFE",
+    "direction": "Short",
+    "entry_date": "2026-06-24",
+    "entry_price": 1101.1,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1100,
+        "date": "2026-06-25",
+        "high": 1112,
+        "open": 1103,
+        "close": 1101
+      },
+      {
+        "low": 1105,
+        "date": "2026-06-29",
+        "high": 1121,
+        "open": 1105,
+        "close": 1121
+      },
+      {
+        "low": 1113,
+        "date": "2026-06-30",
+        "high": 1123,
+        "open": 1121,
+        "close": 1119
+      },
+      {
+        "low": 1110,
+        "date": "2026-07-01",
+        "high": 1121,
+        "open": 1119,
+        "close": 1110
+      },
+      {
+        "low": 1098,
+        "date": "2026-07-02",
+        "high": 1110,
+        "open": 1110,
+        "close": 1098
+      }
+    ],
+    "created_at": "2026-06-24T09:28:17.361957+00:00"
+  },
+  {
+    "id": "56908057-4f05-48b4-aac2-ef2843f42cbc",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "GAIL",
+    "direction": "Short",
+    "entry_date": "2026-06-17",
+    "entry_price": 175.03,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 174,
+        "date": "2026-06-18",
+        "high": 176,
+        "open": 176,
+        "close": 175
+      },
+      {
+        "low": 174,
+        "date": "2026-06-19",
+        "high": 176,
+        "open": 175,
+        "close": 174
+      },
+      {
+        "low": 174,
+        "date": "2026-06-22",
+        "high": 178,
+        "open": 174,
+        "close": 177
+      },
+      {
+        "low": 174,
+        "date": "2026-06-23",
+        "high": 176,
+        "open": 176,
+        "close": 174
+      },
+      {
+        "low": 174,
+        "date": "2026-06-24",
+        "high": 175,
+        "open": 175,
+        "close": 175
+      },
+      {
+        "low": 174,
+        "date": "2026-06-25",
+        "high": 176,
+        "open": 176,
+        "close": 174
+      }
+    ],
+    "created_at": "2026-06-17T12:48:59.492466+00:00"
+  },
+  {
+    "id": "58625708-c64b-469e-bcb7-2920d5a5f0c9",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "IGL",
+    "direction": "Short",
+    "entry_date": "2026-06-17",
+    "entry_price": 170.78,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 170,
+        "date": "2026-06-18",
+        "high": 171,
+        "open": 171,
+        "close": 170
+      },
+      {
+        "low": 169,
+        "date": "2026-06-19",
+        "high": 170,
+        "open": 170,
+        "close": 169
+      },
+      {
+        "low": 168,
+        "date": "2026-06-22",
+        "high": 170,
+        "open": 168,
+        "close": 170
+      },
+      {
+        "low": 169,
+        "date": "2026-06-23",
+        "high": 170,
+        "open": 170,
+        "close": 169
+      },
+      {
+        "low": 168,
+        "date": "2026-06-24",
+        "high": 169,
+        "open": 169,
+        "close": 168
+      },
+      {
+        "low": 168,
+        "date": "2026-06-25",
+        "high": 172,
+        "open": 168,
+        "close": 170
+      }
+    ],
+    "created_at": "2026-06-17T12:48:17.224528+00:00"
+  },
+  {
+    "id": "f187848e-c03b-4cd0-be44-f3f049d59cd7",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "BSE",
+    "direction": "Long",
+    "entry_date": "2026-06-17",
+    "entry_price": 3999.2,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 3993,
+        "date": "2026-06-18",
+        "high": 4018,
+        "open": 4018,
+        "close": 4015
+      },
+      {
+        "low": 4022,
+        "date": "2026-06-19",
+        "high": 4049,
+        "open": 4037,
+        "close": 4025
+      },
+      {
+        "low": 4009,
+        "date": "2026-06-22",
+        "high": 4025,
+        "open": 4025,
+        "close": 4017
+      },
+      {
+        "low": 3994,
+        "date": "2026-06-23",
+        "high": 4016,
+        "open": 4016,
+        "close": 3994
+      },
+      {
+        "low": 3900,
+        "date": "2026-06-24",
+        "high": 3932,
+        "open": 3925,
+        "close": 3900
+      },
+      {
+        "low": 3873,
+        "date": "2026-06-25",
+        "high": 3917,
+        "open": 3900,
+        "close": 3884
+      }
+    ],
+    "created_at": "2026-06-17T12:46:46.57672+00:00"
+  },
+  {
+    "id": "1ad96e59-81a6-4d64-bc46-4b1812f25327",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "NUVAMA",
+    "direction": "Short",
+    "entry_date": "2026-06-18",
+    "entry_price": 1720.4,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1655,
+        "date": "2026-06-18",
+        "high": 1753,
+        "open": 1753,
+        "close": 1661
+      },
+      {
+        "low": 1655,
+        "date": "2026-06-18",
+        "high": 1753,
+        "open": 1753,
+        "close": 1661
+      },
+      {
+        "low": 1655,
+        "date": "2026-06-18",
+        "high": 1753,
+        "open": 1753,
+        "close": 1661
+      },
+      {
+        "low": 1718,
+        "date": "2026-06-19",
+        "high": 1739,
+        "open": 1732,
+        "close": 1739
+      },
+      {
+        "low": 1739,
+        "date": "2026-06-22",
+        "high": 1755,
+        "open": 1739,
+        "close": 1741
+      },
+      {
+        "low": 1731,
+        "date": "2026-06-23",
+        "high": 1756,
+        "open": 1741,
+        "close": 1736
+      },
+      {
+        "low": 1732,
+        "date": "2026-06-24",
+        "high": 1745,
+        "open": 1736,
+        "close": 1733
+      },
+      {
+        "low": 1733,
+        "date": "2026-06-25",
+        "high": 1763,
+        "open": 1733,
+        "close": 1758
+      },
+      {
+        "low": 1758,
+        "date": "2026-06-29",
+        "high": 1786,
+        "open": 1758,
+        "close": 1778
+      }
+    ],
+    "created_at": "2026-06-18T09:33:34.522568+00:00"
+  },
+  {
+    "id": "4c4928fc-68fd-45e4-8b9b-285636a4ade4",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "DELHIVERY",
+    "direction": "Short",
+    "entry_date": "2026-07-02",
+    "entry_price": 509.3,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 448,
+        "date": "2026-07-06",
+        "high": 514,
+        "open": 514,
+        "close": 513
+      },
+      {
+        "low": 515,
+        "date": "2026-07-07",
+        "high": 520,
+        "open": 515,
+        "close": 515
+      },
+      {
+        "low": 515,
+        "date": "2026-07-08",
+        "high": 518,
+        "open": 515,
+        "close": 518
+      },
+      {
+        "low": 511,
+        "date": "2026-07-09",
+        "high": 516,
+        "open": 511,
+        "close": 516
+      },
+      {
+        "low": 514,
+        "date": "2026-07-10",
+        "high": 521,
+        "open": 516,
+        "close": 521
+      }
+    ],
+    "created_at": "2026-07-02T10:01:27.936935+00:00"
+  },
+  {
+    "id": "f822cf1e-3392-45ed-82da-42734a93b7c6",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "FEDERALBNK",
+    "direction": "Short",
+    "entry_date": "2026-06-18",
+    "entry_price": 320.05,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 305,
+        "date": "2026-06-18",
+        "high": 321,
+        "open": 321,
+        "close": 305
+      },
+      {
+        "low": 305,
+        "date": "2026-06-18",
+        "high": 321,
+        "open": 321,
+        "close": 305
+      },
+      {
+        "low": 305,
+        "date": "2026-06-18",
+        "high": 321,
+        "open": 321,
+        "close": 305
+      },
+      {
+        "low": 320,
+        "date": "2026-06-19",
+        "high": 324,
+        "open": 321,
+        "close": 324
+      },
+      {
+        "low": 322,
+        "date": "2026-06-22",
+        "high": 324,
+        "open": 322,
+        "close": 324
+      },
+      {
+        "low": 323,
+        "date": "2026-06-23",
+        "high": 324,
+        "open": 323,
+        "close": 323
+      },
+      {
+        "low": 321,
+        "date": "2026-06-24",
+        "high": 326,
+        "open": 321,
+        "close": 326
+      },
+      {
+        "low": 323,
+        "date": "2026-06-25",
+        "high": 326,
+        "open": 324,
+        "close": 323
+      },
+      {
+        "low": 322,
+        "date": "2026-06-29",
+        "high": 326,
+        "open": 323,
+        "close": 325
+      }
+    ],
+    "created_at": "2026-06-18T09:33:09.724306+00:00"
+  },
+  {
+    "id": "664610b3-4820-4785-9f67-e281392d1630",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "INFY",
+    "direction": "Long",
+    "entry_date": "2026-06-24",
+    "entry_price": 1060.3,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1047,
+        "date": "2026-06-25",
+        "high": 1053,
+        "open": 1047,
+        "close": 1050
+      },
+      {
+        "low": 1032,
+        "date": "2026-06-29",
+        "high": 1050,
+        "open": 1050,
+        "close": 1032
+      },
+      {
+        "low": 1005,
+        "date": "2026-06-30",
+        "high": 1017,
+        "open": 1017,
+        "close": 1005
+      },
+      {
+        "low": 985,
+        "date": "2026-07-01",
+        "high": 1010,
+        "open": 1010,
+        "close": 986
+      },
+      {
+        "low": 939,
+        "date": "2026-07-02",
+        "high": 1034,
+        "open": 1027,
+        "close": 1034
+      }
+    ],
+    "created_at": "2026-06-24T09:26:58.346027+00:00"
+  },
+  {
+    "id": "8d350295-40e0-44ad-9528-cbebd6457f64",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "DRREDDY",
+    "direction": "Short",
+    "entry_date": "2026-06-29",
+    "entry_price": 1382.4,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1357,
+        "date": "2026-06-30",
+        "high": 1381,
+        "open": 1381,
+        "close": 1358
+      },
+      {
+        "low": 1340,
+        "date": "2026-07-01",
+        "high": 1358,
+        "open": 1358,
+        "close": 1340
+      },
+      {
+        "low": 1340,
+        "date": "2026-07-02",
+        "high": 1348,
+        "open": 1340,
+        "close": 1348
+      },
+      {
+        "low": 1362,
+        "date": "2026-07-06",
+        "high": 1376,
+        "open": 1376,
+        "close": 1362
+      },
+      {
+        "low": 1366,
+        "date": "2026-07-07",
+        "high": 1368,
+        "open": 1367,
+        "close": 1367
+      },
+      {
+        "low": 1363,
+        "date": "2026-07-08",
+        "high": 1374,
+        "open": 1374,
+        "close": 1363
+      }
+    ],
+    "created_at": "2026-06-29T09:11:12.017135+00:00"
+  },
+  {
+    "id": "2e43155d-ae9d-4dd3-b002-eca2efbca220",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "ABCAPITAL",
+    "direction": "Short",
+    "entry_date": "2026-06-23",
+    "entry_price": 383.75,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 384,
+        "date": "2026-06-24",
+        "high": 395,
+        "open": 389,
+        "close": 395
+      },
+      {
+        "low": 390,
+        "date": "2026-06-25",
+        "high": 397,
+        "open": 395,
+        "close": 390
+      },
+      {
+        "low": 386,
+        "date": "2026-06-29",
+        "high": 390,
+        "open": 390,
+        "close": 388
+      },
+      {
+        "low": 388,
+        "date": "2026-06-30",
+        "high": 393,
+        "open": 388,
+        "close": 393
+      },
+      {
+        "low": 389,
+        "date": "2026-07-01",
+        "high": 394,
+        "open": 389,
+        "close": 394
+      },
+      {
+        "low": 390,
+        "date": "2026-07-02",
+        "high": 397,
+        "open": 390,
+        "close": 393
+      }
+    ],
+    "created_at": "2026-06-23T16:21:11.715726+00:00"
+  },
+  {
+    "id": "50ce1f80-9cd6-4b2c-ba34-2092b55a1535",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "PRESTIGE",
+    "direction": "Short",
+    "entry_date": "2026-06-18",
+    "entry_price": 1527.3,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 163,
+        "date": "2026-06-18",
+        "high": 1530,
+        "open": 1519,
+        "close": 1473
+      },
+      {
+        "low": 163,
+        "date": "2026-06-18",
+        "high": 1530,
+        "open": 1519,
+        "close": 1473
+      },
+      {
+        "low": 163,
+        "date": "2026-06-18",
+        "high": 1530,
+        "open": 1519,
+        "close": 1473
+      },
+      {
+        "low": 163,
+        "date": "2026-06-18",
+        "high": 1530,
+        "open": 1519,
+        "close": 1473
+      },
+      {
+        "low": 163,
+        "date": "2026-06-18",
+        "high": 1530,
+        "open": 1519,
+        "close": 1473
+      },
+      {
+        "low": 1483,
+        "date": "2026-06-19",
+        "high": 1486,
+        "open": 1483,
+        "close": 1483
+      },
+      {
+        "low": 1483,
+        "date": "2026-06-22",
+        "high": 1524,
+        "open": 1483,
+        "close": 1519
+      },
+      {
+        "low": 1526,
+        "date": "2026-06-23",
+        "high": 1534,
+        "open": 1526,
+        "close": 1533
+      },
+      {
+        "low": 1512,
+        "date": "2026-06-24",
+        "high": 1541,
+        "open": 1533,
+        "close": 1541
+      },
+      {
+        "low": 1541,
+        "date": "2026-06-25",
+        "high": 1571,
+        "open": 1541,
+        "close": 1564
+      },
+      {
+        "low": 1531,
+        "date": "2026-06-29",
+        "high": 1564,
+        "open": 1564,
+        "close": 1538
+      }
+    ],
+    "created_at": "2026-06-18T09:34:50.158743+00:00"
+  },
+  {
+    "id": "6f409e53-3abb-4973-b248-af6306c3c1d3",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "ASTRAL",
+    "direction": "Short",
+    "entry_date": "2026-06-18",
+    "entry_price": 1568.3,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1563,
+        "date": "2026-06-18",
+        "high": 1573,
+        "open": 1573,
+        "close": 1564
+      },
+      {
+        "low": 1540,
+        "date": "2026-06-19",
+        "high": 1566,
+        "open": 1566,
+        "close": 1545
+      },
+      {
+        "low": 1541,
+        "date": "2026-06-22",
+        "high": 1557,
+        "open": 1545,
+        "close": 1556
+      },
+      {
+        "low": 1527,
+        "date": "2026-06-23",
+        "high": 1571,
+        "open": 1571,
+        "close": 1527
+      },
+      {
+        "low": 1527,
+        "date": "2026-06-24",
+        "high": 1536,
+        "open": 1527,
+        "close": 1536
+      },
+      {
+        "low": 1490,
+        "date": "2026-06-25",
+        "high": 1509,
+        "open": 1509,
+        "close": 1490
+      },
+      {
+        "low": 1371,
+        "date": "2026-06-29",
+        "high": 1535,
+        "open": 1490,
+        "close": 1378
+      }
+    ],
+    "created_at": "2026-06-18T09:31:32.008599+00:00"
+  },
+  {
+    "id": "ffca4605-ddc6-404f-a712-233d63fdaa0e",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "BANKBARODA",
+    "direction": "Short",
+    "entry_date": "2026-06-23",
+    "entry_price": 277.8,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 279,
+        "date": "2026-06-24",
+        "high": 279,
+        "open": 279,
+        "close": 279
+      },
+      {
+        "low": 278,
+        "date": "2026-06-25",
+        "high": 280,
+        "open": 279,
+        "close": 280
+      },
+      {
+        "low": 274,
+        "date": "2026-06-29",
+        "high": 280,
+        "open": 280,
+        "close": 274
+      },
+      {
+        "low": 272,
+        "date": "2026-06-30",
+        "high": 275,
+        "open": 274,
+        "close": 273
+      },
+      {
+        "low": 271,
+        "date": "2026-07-01",
+        "high": 274,
+        "open": 273,
+        "close": 272
+      },
+      {
+        "low": 261,
+        "date": "2026-07-02",
+        "high": 272,
+        "open": 272,
+        "close": 261
+      }
+    ],
+    "created_at": "2026-06-23T16:20:29.415493+00:00"
+  },
+  {
+    "id": "4cfa9db5-1a39-46e1-862c-4f34bcb87096",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "TMPV",
+    "direction": "Short",
+    "entry_date": "2026-06-23",
+    "entry_price": 354.55,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 350,
+        "date": "2026-06-24",
+        "high": 356,
+        "open": 356,
+        "close": 351
+      },
+      {
+        "low": 353,
+        "date": "2026-06-25",
+        "high": 358,
+        "open": 358,
+        "close": 353
+      },
+      {
+        "low": 347,
+        "date": "2026-06-29",
+        "high": 353,
+        "open": 353,
+        "close": 347
+      },
+      {
+        "low": 344,
+        "date": "2026-06-30",
+        "high": 350,
+        "open": 344,
+        "close": 350
+      },
+      {
+        "low": 347,
+        "date": "2026-07-01",
+        "high": 354,
+        "open": 352,
+        "close": 348
+      },
+      {
+        "low": 346,
+        "date": "2026-07-02",
+        "high": 348,
+        "open": 348,
+        "close": 346
+      }
+    ],
+    "created_at": "2026-06-23T16:16:45.726029+00:00"
+  },
+  {
+    "id": "659fd002-6548-4a62-aa62-30cf3be584d6",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "TCS",
+    "direction": "Long",
+    "entry_date": "2026-06-24",
+    "entry_price": 2112,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 2117,
+        "date": "2026-06-25",
+        "high": 2135,
+        "open": 2117,
+        "close": 2135
+      },
+      {
+        "low": 2080,
+        "date": "2026-06-29",
+        "high": 2135,
+        "open": 2135,
+        "close": 2080
+      },
+      {
+        "low": 2035,
+        "date": "2026-06-30",
+        "high": 2053,
+        "open": 2053,
+        "close": 2040
+      },
+      {
+        "low": 1984,
+        "date": "2026-07-01",
+        "high": 2049,
+        "open": 2049,
+        "close": 1984
+      },
+      {
+        "low": 2037,
+        "date": "2026-07-02",
+        "high": 2045,
+        "open": 2037,
+        "close": 2045
+      }
+    ],
+    "created_at": "2026-06-24T09:27:58.602683+00:00"
+  },
+  {
+    "id": "d604b876-3211-4f76-89ac-c81efa4d1339",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "HINDZINC",
+    "direction": "Long",
+    "entry_date": "2026-06-24",
+    "entry_price": 541.7,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 413,
+        "date": "2026-06-25",
+        "high": 541,
+        "open": 541,
+        "close": 522
+      },
+      {
+        "low": 521,
+        "date": "2026-06-29",
+        "high": 525,
+        "open": 522,
+        "close": 525
+      },
+      {
+        "low": 519,
+        "date": "2026-06-30",
+        "high": 534,
+        "open": 525,
+        "close": 534
+      },
+      {
+        "low": 524,
+        "date": "2026-07-01",
+        "high": 534,
+        "open": 534,
+        "close": 524
+      },
+      {
+        "low": 529,
+        "date": "2026-07-02",
+        "high": 532,
+        "open": 531,
+        "close": 530
+      }
+    ],
+    "created_at": "2026-06-24T09:26:20.519438+00:00"
+  },
+  {
+    "id": "12414841-0742-47d1-b4ac-ee3d28f60c49",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "BHARATFORG",
+    "direction": "Short",
+    "entry_date": "2026-06-24",
+    "entry_price": 2123,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 2139,
+        "date": "2026-06-25",
+        "high": 2164,
+        "open": 2139,
+        "close": 2148
+      },
+      {
+        "low": 2126,
+        "date": "2026-06-29",
+        "high": 2148,
+        "open": 2148,
+        "close": 2127
+      },
+      {
+        "low": 2076,
+        "date": "2026-06-30",
+        "high": 2153,
+        "open": 2077,
+        "close": 2152
+      },
+      {
+        "low": 2111,
+        "date": "2026-07-01",
+        "high": 2152,
+        "open": 2152,
+        "close": 2111
+      },
+      {
+        "low": 2097,
+        "date": "2026-07-02",
+        "high": 2151,
+        "open": 2111,
+        "close": 2151
+      }
+    ],
+    "created_at": "2026-06-24T09:25:57.231019+00:00"
+  },
+  {
+    "id": "da2a2ba5-d6a2-4f2a-bf97-b8a02892bc5c",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "FEDERALBNK",
+    "direction": "Short",
+    "entry_date": "2026-07-02",
+    "entry_price": 331,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 327,
+        "date": "2026-07-06",
+        "high": 331,
+        "open": 331,
+        "close": 330
+      },
+      {
+        "low": 328,
+        "date": "2026-07-07",
+        "high": 331,
+        "open": 331,
+        "close": 331
+      },
+      {
+        "low": 329,
+        "date": "2026-07-08",
+        "high": 330,
+        "open": 329,
+        "close": 330
+      },
+      {
+        "low": 327,
+        "date": "2026-07-09",
+        "high": 329,
+        "open": 328,
+        "close": 327
+      },
+      {
+        "low": 328,
+        "date": "2026-07-10",
+        "high": 331,
+        "open": 331,
+        "close": 330
+      }
+    ],
+    "created_at": "2026-07-02T10:02:29.148925+00:00"
+  },
+  {
+    "id": "819f1a68-4702-41b3-8e62-f89a3ddc23cf",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "MOTILALOFS",
+    "direction": "Short",
+    "entry_date": "2026-07-02",
+    "entry_price": 957,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 950,
+        "date": "2026-07-06",
+        "high": 968,
+        "open": 968,
+        "close": 951
+      },
+      {
+        "low": 946,
+        "date": "2026-07-07",
+        "high": 948,
+        "open": 948,
+        "close": 948
+      },
+      {
+        "low": 915,
+        "date": "2026-07-08",
+        "high": 949,
+        "open": 939,
+        "close": 915
+      },
+      {
+        "low": 915,
+        "date": "2026-07-09",
+        "high": 936,
+        "open": 915,
+        "close": 936
+      },
+      {
+        "low": 963,
+        "date": "2026-07-10",
+        "high": 982,
+        "open": 963,
+        "close": 978
+      }
+    ],
+    "created_at": "2026-07-02T10:00:47.033789+00:00"
+  },
+  {
+    "id": "f4d15cef-3b83-4815-9406-c920d3be9d85",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "RBLBANK",
+    "direction": "Short",
+    "entry_date": "2026-07-13",
+    "entry_price": 380.6,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [],
+    "created_at": "2026-07-14T04:40:26.94399+00:00"
+  },
+  {
+    "id": "2f39c1da-ecaa-4914-8cf3-e0d72d20b3e8",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "FEDERALBNK",
+    "direction": "Short",
+    "entry_date": "2026-07-13",
+    "entry_price": 332.5,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [],
+    "created_at": "2026-07-14T04:41:17.738104+00:00"
+  },
+  {
+    "id": "942b6411-123a-4929-8731-ffa4d2df7938",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "AUROPHARMA",
+    "direction": "Short",
+    "entry_date": "2026-06-29",
+    "entry_price": 1551,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 1556,
+        "date": "2026-06-30",
+        "high": 1584,
+        "open": 1556,
+        "close": 1573
+      },
+      {
+        "low": 1557,
+        "date": "2026-07-01",
+        "high": 1564,
+        "open": 1564,
+        "close": 1557
+      },
+      {
+        "low": 1551,
+        "date": "2026-07-02",
+        "high": 1564,
+        "open": 1557,
+        "close": 1561
+      },
+      {
+        "low": 1600,
+        "date": "2026-07-06",
+        "high": 1620,
+        "open": 1620,
+        "close": 1600
+      },
+      {
+        "low": 1583,
+        "date": "2026-07-07",
+        "high": 1593,
+        "open": 1583,
+        "close": 1583
+      },
+      {
+        "low": 1578,
+        "date": "2026-07-08",
+        "high": 1607,
+        "open": 1607,
+        "close": 1578
+      }
+    ],
+    "created_at": "2026-06-29T09:09:12.654871+00:00"
+  },
+  {
+    "id": "ca209312-ff4d-4bfc-b3c4-c10cc2753b4c",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "SUPREMEIND",
+    "direction": "Long",
+    "entry_date": "2026-07-01",
+    "entry_price": 3211,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 3196,
+        "date": "2026-07-02",
+        "high": 3282,
+        "open": 3196,
+        "close": 3279
+      },
+      {
+        "low": 3230,
+        "date": "2026-07-06",
+        "high": 3267,
+        "open": 3267,
+        "close": 3230
+      },
+      {
+        "low": 3231,
+        "date": "2026-07-07",
+        "high": 3264,
+        "open": 3239,
+        "close": 3239
+      },
+      {
+        "low": 3153,
+        "date": "2026-07-08",
+        "high": 3239,
+        "open": 3239,
+        "close": 3153
+      },
+      {
+        "low": 3205,
+        "date": "2026-07-09",
+        "high": 3230,
+        "open": 3205,
+        "close": 3228
+      },
+      {
+        "low": 3248,
+        "date": "2026-07-10",
+        "high": 3308,
+        "open": 3248,
+        "close": 3308
+      }
+    ],
+    "created_at": "2026-07-02T09:55:54.258286+00:00"
+  },
+  {
+    "id": "6079d4fc-aff8-4fe8-97b2-1253936530e1",
+    "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+    "symbol": "SOLARINDS",
+    "direction": "Short",
+    "entry_date": "2026-07-01",
+    "entry_price": 18631,
+    "status": "Open",
+    "close_date": null,
+    "close_price": null,
+    "daily_data": [
+      {
+        "low": 18539,
+        "date": "2026-07-02",
+        "high": 18666,
+        "open": 18539,
+        "close": 18666
+      },
+      {
+        "low": 18477,
+        "date": "2026-07-06",
+        "high": 18825,
+        "open": 18545,
+        "close": 18477
+      },
+      {
+        "low": 17858,
+        "date": "2026-07-07",
+        "high": 17858,
+        "open": 17858,
+        "close": 17858
+      },
+      {
+        "low": 18005,
+        "date": "2026-07-08",
+        "high": 18235,
+        "open": 18050,
+        "close": 18005
+      },
+      {
+        "low": 17110,
+        "date": "2026-07-09",
+        "high": 18005,
+        "open": 18005,
+        "close": 17442
+      },
+      {
+        "low": 17442,
+        "date": "2026-07-10",
+        "high": 18185,
+        "open": 17442,
+        "close": 18185
+      }
+    ],
+    "created_at": "2026-07-02T09:55:16.706823+00:00"
+  }
+]
