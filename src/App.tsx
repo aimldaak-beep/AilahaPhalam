@@ -7,10 +7,11 @@
  * Google OAuth unchanged. Persistence maps onto the preserved tables (see
  * supabase/migrations/20260824000000_v2_schema.sql for the mapping + ideal DDL).
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Fragment } from 'react';
+import type { ReactNode, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
-import { Trade, estimateInstantPnL } from './types';
+import { Trade, TradeDirection, estimateInstantPnL } from './types';
 import {
   INSTR, SpecInstrument, specNameOf, inr, signed, nf,
   weekKeyOf, mondayOf, todayStr, weekLabel, heldDays,
@@ -28,6 +29,13 @@ const THEMES = {
 } as const;
 type ThemeKey = keyof typeof THEMES;
 type PinAction = 'edit' | 'delete' | 'live-edit' | 'live-delete' | 'team';
+type EditState = {
+  id: string; kind: 'live' | 'closed';
+  symbol: string; instr: SpecInstrument; side: 'LONG' | 'SHORT'; lots: string; entry: string; date: string;
+  ccy: 'INR' | 'USD'; real: number; entryBrok: string;
+  exit: string; exitBrok: string; closedDate: string;   // closed-only (blank for live)
+  origInstr: SpecInstrument; origCcy: 'INR' | 'USD';
+};
 // JOB 5 — raised type scale (supersedes DESIGN_SPEC's SZ values).
 const SZ = { hero: 64, big: 50, num: 19, numSm: 17, meta: 15, label: 13, btn: 15, symbol: 20 };
 
@@ -82,8 +90,8 @@ export default function App() {
   const [pinSet, setPinSet] = useState(false); // true when the modal is in SET-PIN mode
   const [pinVal, setPinVal] = useState('');
   const [pinErr, setPinErr] = useState('');
-  const [editRow, setEditRow] = useState<{ id: string; exit: string } | null>(null);
-  const [liveEdit, setLiveEdit] = useState<{ id: string; entry: string; lots: string; side: 'LONG' | 'SHORT'; date: string } | null>(null);
+  const [edit, setEdit] = useState<EditState | null>(null);
+  const [editConfirm, setEditConfirm] = useState<{ trade: Trade; notes: string[] } | null>(null);
   const [liveDelete, setLiveDelete] = useState<Trade | null>(null);
   const [whatIf, setWhatIf] = useState<{ id: string; exit: string; rate: string } | null>(null); // calculator only — writes nothing
   const [allowlist, setAllowlist] = useState<string[] | null>(null); // null = still loading
@@ -278,9 +286,9 @@ export default function App() {
     setPinSet(pinHash == null); // no pin yet -> SET-PIN flow
   };
   const runAction = (action: PinAction, id: string) => {
-    if (action === 'edit') { const tr = closed.find((x) => x.id === id); if (tr) setEditRow({ id, exit: String(exitVal(tr)) }); }
+    if (action === 'edit') { const tr = closed.find((x) => x.id === id); if (tr) openEdit(tr, 'closed'); }
     else if (action === 'delete') { update(trades.filter((x) => x.id !== id)); setSel((s) => s.filter((i) => i !== id)); }
-    else if (action === 'live-edit') { const tr = live.find((x) => x.id === id); if (tr) setLiveEdit({ id, entry: String(entryVal(tr)), lots: String(tr.numberOfLots), side: sideOf(tr), date: dmyInput(tr.dateInitiated) }); }
+    else if (action === 'live-edit') { const tr = live.find((x) => x.id === id); if (tr) openEdit(tr, 'live'); }
     else if (action === 'live-delete') { const tr = live.find((x) => x.id === id); if (tr) setLiveDelete(tr); }
     else if (action === 'team') { setTeamOpen(true); setTeamMsg(''); setTeamNew(''); }
   };
@@ -320,45 +328,75 @@ export default function App() {
     setPinAsk(null);
   };
   const act = (action: PinAction, id: string) => { pinOk && pinHash ? runAction(action, id) : askPin(action, id); };
-  const saveEdit = () => {
-    if (!editRow) return;
-    const tr = closed.find((x) => x.id === editRow.id);
-    if (!tr) return;
-    const exit = +editRow.exit;
-    const updated: Trade = {
-      ...tr,
-      sellPrice: tr.direction === 'Long' ? exit : tr.sellPrice,
-      buyPrice: tr.direction === 'Long' ? tr.buyPrice : exit,
-    };
-    update(trades.map((x) => (x.id === editRow.id ? updated : x)));
-    setEditRow(null);
+  // ---- FULL EDIT (live + closed): every field editable, atomic Save ----
+  const openEdit = (tr: Trade, kind: 'live' | 'closed') => {
+    const spec = specNameOf(tr.instrument);
+    setEdit({
+      id: tr.id, kind,
+      symbol: tr.symbol, instr: spec, origInstr: spec,
+      side: sideOf(tr), lots: String(tr.numberOfLots), entry: String(entryVal(tr)),
+      date: dmyInput(tr.dateInitiated), ccy: tr.currency, origCcy: tr.currency,
+      real: tr.realizationRate ?? 1.0, entryBrok: tr.entryBrokerage != null ? String(tr.entryBrokerage) : '',
+      exit: kind === 'closed' ? String(exitVal(tr)) : '',
+      exitBrok: kind === 'closed' && tr.exitBrokerage != null ? String(tr.exitBrokerage) : '',
+      closedDate: kind === 'closed' ? dmyInput(closeDateOf(tr)) : '',
+    });
+    setWhatIf(null); setClosing(null);
   };
 
-  // Save inline live-trade initiation edits. Realization + currency stay locked;
-  // MTM recomputes from the NEW entry (week-1 MTM = close1 − new entry) because the
-  // engine reads the entry leg. Weekly closes/rates are preserved.
-  const saveLiveEdit = () => {
-    if (!liveEdit) return;
-    const tr = live.find((x) => x.id === liveEdit.id);
-    if (!tr || !liveEdit.entry) return;
-    const entry = +liveEdit.entry;
-    const lots = parseInt(liveEdit.lots) || tr.numberOfLots;
-    const side = liveEdit.side;
-    const iso = isoFromForm(liveEdit.date);
-    const updated: Trade = {
-      ...tr,
-      direction: side === 'LONG' ? 'Long' : 'Short',
-      status: side === 'LONG' ? 'CarryForwardLong' : 'CarryForwardShort',
-      numberOfLots: lots,
-      dateInitiated: iso,
-      buyPrice: side === 'LONG' ? entry : null,
-      sellPrice: side === 'LONG' ? null : entry,
-      buyDate: side === 'LONG' ? iso : null,
-      sellDate: side === 'LONG' ? null : iso,
+  // Build the updated trade from an edit state; also report orphaned marks + instr/ccy changes.
+  const buildEdited = (e: EditState) => {
+    const orig = trades.find((t) => t.id === e.id)!;
+    const meta = INSTR[e.instr];
+    const entry = +e.entry || 0;
+    const lots = parseInt(e.lots) || orig.numberOfLots;
+    const iso = isoFromForm(e.date);
+    const newInitWeek = weekKeyOf(iso);
+    const fcp = orig.fridayClosingPrices || {};
+    const rates = orig.fridayUsdToInrRates || {};
+    // Week-identity integrity: no mark may be earlier than the (new) initiation week.
+    const orphans = Object.keys(fcp).filter((wk) => wk < newInitWeek).sort();
+    const cleanFcp = Object.fromEntries(Object.entries(fcp).filter(([wk]) => wk >= newInitWeek));
+    const cleanRates = Object.fromEntries(Object.entries(rates).filter(([wk]) => wk >= newInitWeek));
+    const dir: TradeDirection = e.side === 'LONG' ? 'Long' : 'Short';
+    const base: Trade = {
+      ...orig,
+      symbol: e.symbol.toUpperCase().trim() || orig.symbol, instrument: meta.v1, lotSize: meta.mult,
+      direction: dir, numberOfLots: lots, dateInitiated: iso,
+      currency: e.ccy, realizationRate: e.real,
+      entryBrokerage: e.entryBrok.trim() === '' ? null : +e.entryBrok,
+      fridayClosingPrices: cleanFcp, fridayUsdToInrRates: cleanRates,
     };
-    update(trades.map((x) => (x.id === tr.id ? updated : x)));
-    setLiveEdit(null);
+    let updated: Trade;
+    if (e.kind === 'live') {
+      updated = {
+        ...base, status: dir === 'Long' ? 'CarryForwardLong' : 'CarryForwardShort',
+        buyPrice: dir === 'Long' ? entry : null, sellPrice: dir === 'Long' ? null : entry,
+        buyDate: dir === 'Long' ? iso : null, sellDate: dir === 'Long' ? null : iso, exitBrokerage: null,
+      };
+    } else {
+      const cIso = isoFromForm(e.closedDate);
+      const exit = +e.exit || 0;
+      updated = {
+        ...base, status: 'Closed',
+        buyPrice: dir === 'Long' ? entry : exit, sellPrice: dir === 'Long' ? exit : entry,
+        buyDate: dir === 'Long' ? iso : cIso, sellDate: dir === 'Long' ? cIso : iso,
+        exitBrokerage: e.exitBrok.trim() === '' ? null : +e.exitBrok,
+      };
+    }
+    return { updated, orphans, instrChanged: e.instr !== e.origInstr, ccyChanged: e.ccy !== e.origCcy };
   };
+
+  const trySaveEdit = () => {
+    if (!edit) return;
+    const { updated, orphans, instrChanged, ccyChanged } = buildEdited(edit);
+    const notes: string[] = [];
+    if (instrChanged || ccyChanged) notes.push('Recomputes all P&L for this trade — proceed?');
+    if (orphans.length) notes.push(`${orphans.length} weekly mark${orphans.length > 1 ? 's' : ''} before the new initiation week (${weekLabel(mondayOf(isoFromForm(edit.date)))}) will be removed: ${orphans.join(', ')}.`);
+    if (notes.length) setEditConfirm({ trade: updated, notes });
+    else commitEdit(updated);
+  };
+  const commitEdit = (updated: Trade) => { update(trades.map((x) => (x.id === updated.id ? updated : x))); setEdit(null); setEditConfirm(null); };
 
   // Delete a live trade. update()'s persist diff removes the trades row AND calls
   // deleteWeeklyMarksForTrade, so its weekly_marks go too.
@@ -453,6 +491,57 @@ export default function App() {
       )}
     </span>
   );
+
+  // Full edit grid (live + closed) — labeled cells on the 220px rhythm, atomic Save.
+  const selStyle = { ...sans, fontSize: SZ.num - 1, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: t.bg, color: t.ink, width: 170, cursor: 'pointer', padding: '4px 0' } as const;
+  const setE = (patch: Partial<EditState>) => setEdit((e) => (e ? { ...e, ...patch } : e));
+  const onEditKey = (ev: ReactKeyboardEvent) => { if (ev.key === 'Enter') trySaveEdit(); if (ev.key === 'Escape') setEdit(null); };
+  const editForm = () => {
+    if (!edit) return null;
+    const e = edit; const isClosed = e.kind === 'closed';
+    const cell = (label: string, ctrl: ReactNode) => (<div><div style={slotLabel}>{label}</div>{ctrl}</div>);
+    return (
+      <>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 220px)', rowGap: 18, marginTop: 18, alignItems: 'start' }}>
+          {cell('Symbol', <input autoFocus value={e.symbol} onChange={(x) => setE({ symbol: x.target.value })} onKeyDown={onEditKey} style={gridInput(170)} />)}
+          {cell('Instrument', (
+            <select value={e.instr} onChange={(x) => setE({ instr: x.target.value as SpecInstrument, ccy: INSTR[x.target.value as SpecInstrument].ccy })} style={selStyle}>
+              {(Object.keys(INSTR) as SpecInstrument[]).map((k) => <option key={k} value={k}>{k} ×{INSTR[k].mult}</option>)}
+            </select>
+          ))}
+          {cell('Side', (
+            <span style={{ display: 'flex', gap: 6 }}>
+              <button onClick={() => setE({ side: 'LONG' })} style={miniToggle(e.side === 'LONG')}>LONG</button>
+              <button onClick={() => setE({ side: 'SHORT' })} style={miniToggle(e.side === 'SHORT')}>SHORT</button>
+            </span>
+          ))}
+          {cell('Lots', <input value={e.lots} onChange={(x) => setE({ lots: x.target.value.replace(/\D/g, '') })} onKeyDown={onEditKey} style={gridInput(80)} />)}
+          {cell('Entry price', <input value={e.entry} onChange={(x) => setE({ entry: x.target.value.replace(/[^\d.]/g, '') })} onKeyDown={onEditKey} style={gridInput(150)} />)}
+          {cell('Init date', <input value={e.date} onChange={(x) => setE({ date: x.target.value })} onKeyDown={onEditKey} style={gridInput(150)} />)}
+          {cell('Currency', (
+            <span style={{ display: 'flex', gap: 6 }}>
+              <button onClick={() => setE({ ccy: 'INR' })} style={miniToggle(e.ccy === 'INR')}>₹ INR</button>
+              <button onClick={() => setE({ ccy: 'USD' })} style={miniToggle(e.ccy === 'USD')}>$ USD</button>
+            </span>
+          ))}
+          {cell('Realization', (
+            <span style={{ display: 'flex', gap: 6 }}>
+              <button onClick={() => setE({ real: 1.0 })} style={miniToggle(e.real === 1.0)}>FULL 1.0</button>
+              <button onClick={() => setE({ real: 0.8 })} style={miniToggle(e.real === 0.8)}>80% 0.8</button>
+            </span>
+          ))}
+          {cell(`Entry brokerage (${e.ccy === 'USD' ? '$' : '₹'})`, <input placeholder="auto" value={e.entryBrok} onChange={(x) => setE({ entryBrok: x.target.value.replace(/[^\d.]/g, '') })} onKeyDown={onEditKey} style={gridInput(150)} />)}
+          {isClosed && cell('Exit price', <input value={e.exit} onChange={(x) => setE({ exit: x.target.value.replace(/[^\d.]/g, '') })} onKeyDown={onEditKey} style={gridInput(150)} />)}
+          {isClosed && cell(`Exit brokerage (${e.ccy === 'USD' ? '$' : '₹'})`, <input placeholder="auto" value={e.exitBrok} onChange={(x) => setE({ exitBrok: x.target.value.replace(/[^\d.]/g, '') })} onKeyDown={onEditKey} style={gridInput(150)} />)}
+          {isClosed && cell('Closed date', <input value={e.closedDate} onChange={(x) => setE({ closedDate: x.target.value })} onKeyDown={onEditKey} style={gridInput(150)} />)}
+        </div>
+        <div style={{ marginTop: 18, display: 'flex', gap: 12 }}>
+          <button onClick={trySaveEdit} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '7px 16px', cursor: 'pointer' }}>Save</button>
+          <button onClick={() => setEdit(null)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>Cancel (Esc)</button>
+        </div>
+      </>
+    );
+  };
 
   // ---- auth gate ----
   if (authLoading) return <div style={{ minHeight: '100vh', background: t.bg, color: t.faint, ...mono, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Loading…</div>;
@@ -578,6 +667,22 @@ export default function App() {
           </div>
         )}
 
+        {/* Edit confirm — instrument/currency change and/or orphaned-mark removal */}
+        {editConfirm && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11 }}>
+            <div style={{ background: t.bg, borderRadius: 6, padding: '26px 30px', width: 440, maxWidth: '92vw', border: '1px solid ' + t.hair }}>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>Confirm changes</div>
+              {editConfirm.notes.map((n, i) => (
+                <div key={i} style={{ fontSize: SZ.meta, color: t.faint, marginTop: 10 }}>{n}</div>
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 22 }}>
+                <button onClick={() => setEditConfirm(null)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+                <button onClick={() => commitEdit(editConfirm.trade)} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '8px 18px', cursor: 'pointer' }}>Proceed</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Live-trade delete confirm */}
         {liveDelete && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
@@ -652,28 +757,8 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* ZONE 2 — numbers strip: 4 fixed 220px slots (or the edit grid, same tracks) */}
-                  {liveEdit && liveEdit.id === tr.id ? (
-                    <>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 220px)', marginTop: 18, alignItems: 'start' }}>
-                        <div><div style={slotLabel}>Edit entry</div>
-                          <input autoFocus value={liveEdit.entry} onChange={(e) => setLiveEdit({ ...liveEdit, entry: e.target.value.replace(/[^\d.]/g, '') })} style={gridInput(150)} /></div>
-                        <div><div style={slotLabel}>Lots</div>
-                          <input value={liveEdit.lots} onChange={(e) => setLiveEdit({ ...liveEdit, lots: e.target.value.replace(/\D/g, '') })} style={gridInput(80)} /></div>
-                        <div><div style={slotLabel}>Side</div>
-                          <span style={{ display: 'flex', gap: 6 }}>
-                            <button onClick={() => setLiveEdit({ ...liveEdit, side: 'LONG' })} style={miniToggle(liveEdit.side === 'LONG')}>LONG</button>
-                            <button onClick={() => setLiveEdit({ ...liveEdit, side: 'SHORT' })} style={miniToggle(liveEdit.side === 'SHORT')}>SHORT</button>
-                          </span></div>
-                        <div><div style={slotLabel}>Init date</div>
-                          <input value={liveEdit.date} onChange={(e) => setLiveEdit({ ...liveEdit, date: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && saveLiveEdit()} style={gridInput(150)} /></div>
-                      </div>
-                      <div style={{ marginTop: 14, display: 'flex', gap: 10 }}>
-                        <button onClick={saveLiveEdit} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '6px 15px', cursor: 'pointer' }}>Save</button>
-                        <button onClick={() => setLiveEdit(null)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
-                      </div>
-                    </>
-                  ) : (
+                  {/* ZONE 2 — numbers strip: 4 fixed 220px slots (or the full edit grid, same tracks) */}
+                  {edit && edit.id === tr.id ? editForm() : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 220px)', marginTop: 18, alignItems: 'start' }}>
                       <div><div style={slotLabel}>Entry</div><div style={{ ...mono, fontSize: SZ.num, color: t.ink }}>{nf(entryVal(tr))}</div></div>
                       <div><div style={slotLabel}>Brokerage · entry leg</div><div style={{ ...mono, fontSize: SZ.num, color: t.ink }}>{(tr.currency === 'USD' ? '$' : '₹') + nf(Math.round(entryLegBrokerage(tr)))}</div></div>
@@ -694,7 +779,7 @@ export default function App() {
                   )}
 
                   {/* What-if — opens in zone 3 grid tracks (indent 200) */}
-                  {whatIf && whatIf.id === tr.id && !(liveEdit && liveEdit.id === tr.id) && (() => {
+                  {whatIf && whatIf.id === tr.id && !(edit && edit.id === tr.id) && (() => {
                     const hypoRate = tr.currency === 'USD' ? (parseFloat(whatIf.rate) || latestUsdRate(tr)) : 1;
                     const pnl = whatIf.exit ? Math.round(estimateInstantPnL({ ...tr, usdToInrRate: hypoRate }, +whatIf.exit).netProfit) : 0;
                     return (
@@ -827,9 +912,10 @@ export default function App() {
               </tr></thead>
               <tbody>
                 {closed.map((tr) => {
-                  const p = realized(tr); const on = sel.includes(tr.id); const editing = editRow && editRow.id === tr.id;
+                  const p = realized(tr); const on = sel.includes(tr.id); const editing = !!(edit && edit.id === tr.id);
                   return (
-                    <tr key={tr.id} style={{ background: on ? (themeKey === 'white' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.045)') : 'transparent' }}>
+                    <Fragment key={tr.id}>
+                    <tr style={{ background: on ? (themeKey === 'white' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.045)') : 'transparent' }}>
                       <td style={{ borderBottom: '1px solid ' + t.hair, cursor: 'pointer' }} onClick={() => setSel((s) => on ? s.filter((i) => i !== tr.id) : [...s, tr.id])}>
                         <span style={{ display: 'inline-block', width: 15, height: 15, borderRadius: 3, border: '1.5px solid ' + (on ? t.ink : t.hair), background: on ? t.ink : 'none' }} />
                       </td>
@@ -838,25 +924,20 @@ export default function App() {
                       <td style={{ ...td(), ...sans, fontSize: 15, color: tr.direction === 'Long' ? t.ink : t.faint }}>{sideOf(tr)}</td>
                       <td style={td({ textAlign: 'right' })}>{tr.numberOfLots}</td>
                       <td style={td({ textAlign: 'right' })}>{nf(entryVal(tr))}</td>
-                      <td style={td({ textAlign: 'right' })}>
-                        {editing ? (
-                          <input autoFocus value={editRow!.exit} onChange={(e) => setEditRow({ ...editRow!, exit: e.target.value.replace(/[^\d.]/g, '') })} onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-                            style={{ ...mono, fontSize: SZ.num, width: 92, textAlign: 'right', border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
-                        ) : nf(exitVal(tr))}
-                      </td>
+                      <td style={td({ textAlign: 'right' })}>{nf(exitVal(tr))}</td>
                       <td style={td({ textAlign: 'right', fontSize: 15, color: t.faint })}>{realPct(tr)}%</td>
                       <td style={td({ textAlign: 'right', fontWeight: 600, color: pl(p) })}>{signed(p)}</td>
                       <td style={{ ...td(), textAlign: 'right' }}>
-                        {editing ? (
-                          <button onClick={saveEdit} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '5px 12px', cursor: 'pointer' }}>Save</button>
-                        ) : (
-                          <span style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                            <button onClick={() => act('edit', tr.id)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Edit</button>
-                            <button onClick={() => act('delete', tr.id)} style={{ ...sans, fontSize: 13, color: themeKey === 'white' ? t.loss : t.ink, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Delete</button>
-                          </span>
-                        )}
+                        <span style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                          <button onClick={() => editing ? setEdit(null) : act('edit', tr.id)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{editing ? 'Close' : 'Edit'}</button>
+                          <button onClick={() => act('delete', tr.id)} style={{ ...sans, fontSize: 13, color: themeKey === 'white' ? t.loss : t.ink, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Delete</button>
+                        </span>
                       </td>
                     </tr>
+                    {editing && (
+                      <tr><td colSpan={10} style={{ borderBottom: '1px solid ' + t.hair, padding: '4px 0 22px' }}>{editForm()}</td></tr>
+                    )}
+                    </Fragment>
                   );
                 })}
               </tbody>
