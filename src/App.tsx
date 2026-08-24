@@ -465,7 +465,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', background: t.bg, color: t.ink, ...sans, transition: 'background 180ms, color 180ms' }}>
-      <div style={{ maxWidth: 870, margin: '0 auto', padding: '48px 24px 96px' }}>
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: '48px 24px 96px' }}>
 
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 48 }}>
           <div>
