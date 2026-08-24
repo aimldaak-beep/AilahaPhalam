@@ -10,11 +10,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
-import { Trade } from './types';
+import { Trade, estimateInstantPnL } from './types';
 import {
   INSTR, SpecInstrument, specNameOf, inr, signed, nf,
   weekKeyOf, mondayOf, todayStr, weekLabel, heldDays,
-  isOpen, isClosed, liveMtmRows, liveMtm, realized, closeDateOf,
+  isOpen, isClosed, liveMtmRows, liveMtm, realized, closeDateOf, latestUsdRate,
 } from './lib/v2engine';
 import {
   fetchWeeklyMarks, syncWeeklyMarksForTrade, deleteWeeklyMarksForTrade, overlayMissingMarks,
@@ -71,6 +71,7 @@ export default function App() {
   const [editRow, setEditRow] = useState<{ id: string; exit: string } | null>(null);
   const [liveEdit, setLiveEdit] = useState<{ id: string; entry: string; lots: string; side: 'LONG' | 'SHORT'; date: string } | null>(null);
   const [liveDelete, setLiveDelete] = useState<Trade | null>(null);
+  const [whatIf, setWhatIf] = useState<{ id: string; exit: string; rate: string } | null>(null); // calculator only — writes nothing
   const [allowlist, setAllowlist] = useState<string[] | null>(null); // null = still loading
   const [teamOpen, setTeamOpen] = useState(false);
   const [teamNew, setTeamNew] = useState('');
@@ -649,7 +650,8 @@ export default function App() {
                           </span>
                         ) : (
                           <span style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-                            <button onClick={() => setClosing({ id: tr.id, px: '' })} style={ghost}>Close</button>
+                            <button onClick={() => { setWhatIf(null); setClosing({ id: tr.id, px: '' }); }} style={ghost}>Close</button>
+                            <button onClick={() => setWhatIf({ id: tr.id, exit: '', rate: String(latestUsdRate(tr)) })} style={ghost}>What-if</button>
                             <button onClick={() => act('live-edit', tr.id)} style={ghost}>Edit</button>
                             <button onClick={() => act('live-delete', tr.id)} style={ghostDanger}>Delete</button>
                           </span>
@@ -657,6 +659,31 @@ export default function App() {
                       </>
                     )}
                   </div>
+
+                  {whatIf && whatIf.id === tr.id && !(liveEdit && liveEdit.id === tr.id) && (() => {
+                    const hypoRate = tr.currency === 'USD' ? (parseFloat(whatIf.rate) || latestUsdRate(tr)) : 1;
+                    const pnl = whatIf.exit ? Math.round(estimateInstantPnL({ ...tr, usdToInrRate: hypoRate }, +whatIf.exit).netProfit) : 0;
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap', marginTop: 15 }}>
+                        <span style={{ fontSize: SZ.meta, color: t.faint, width: 140 }}>What-if exit</span>
+                        <input autoFocus placeholder="exit price" value={whatIf.exit}
+                          onChange={(e) => setWhatIf({ ...whatIf, exit: e.target.value.replace(/[^\d.]/g, '') })}
+                          onKeyDown={(e) => e.key === 'Escape' && setWhatIf(null)}
+                          style={{ ...mono, fontSize: SZ.num, width: 110, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink }} />
+                        {tr.currency === 'USD' && (
+                          <>
+                            <span style={{ fontSize: SZ.meta, color: t.faint }}>@ rate</span>
+                            <input value={whatIf.rate}
+                              onChange={(e) => setWhatIf({ ...whatIf, rate: e.target.value.replace(/[^\d.]/g, '') })}
+                              onKeyDown={(e) => e.key === 'Escape' && setWhatIf(null)}
+                              style={{ ...mono, fontSize: SZ.num, width: 76, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink }} />
+                          </>
+                        )}
+                        <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, marginLeft: 'auto', color: whatIf.exit ? pl(pnl) : t.faint }}>= {whatIf.exit ? signed(pnl) : '—'}</span>
+                        <button onClick={() => setWhatIf(null)} title="Close (Esc)" style={{ ...sans, fontSize: 14, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>✕</button>
+                      </div>
+                    );
+                  })()}
 
                   {rows.length > 0 ? (
                     <div style={{ marginTop: 15 }}>

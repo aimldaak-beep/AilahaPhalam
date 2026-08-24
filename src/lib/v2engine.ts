@@ -80,6 +80,13 @@ export function liveMtmRows(t: Trade): MtmRow[] {
 }
 export const liveMtm = (t: Trade) => liveMtmRows(t).reduce((s, r) => s + r.val, 0);
 
+/** Latest known USD/INR rate for a trade — last stamped weekly rate, else the
+ *  trade's entry rate, else 83.24. Prefills the What-if hypothetical rate. */
+export function latestUsdRate(t: Trade): number {
+  const rows = liveMtmRows(t);
+  return rows.length ? rows[rows.length - 1].rate : (t.usdToInrRate ?? 83.24);
+}
+
 /** Realized P&L for a closed trade = sum of every active week's net (entry-leg
  *  brokerage in the init week, exit-leg at close, realization scaled). */
 export function realized(t: Trade): number {
