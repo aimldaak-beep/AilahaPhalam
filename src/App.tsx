@@ -20,13 +20,14 @@ import {
   fetchWeeklyMarks, syncWeeklyMarksForTrade, deleteWeeklyMarksForTrade, overlayMissingMarks,
 } from './lib/marks';
 import { fetchPinHash, savePinHash, hashPin } from './lib/pin';
+import { fetchAllowlist, isAllowed, saveAllowlist, BOOTSTRAP_OWNERS } from './lib/allowlist';
 
 const THEMES = {
   white:  { name: 'White',  bg: '#FFFFFF', ink: '#17181A', faint: '#878B87', hair: '#E7E8E5', profit: '#0A7D4F', loss: '#C2402E', swatch: '#FFFFFF' },
   forest: { name: 'Forest', bg: '#121712', ink: '#E9EDE7', faint: '#8FA284', hair: '#27301F', profit: '#EFC44F', loss: '#ABB0AA', swatch: '#121712' },
 } as const;
 type ThemeKey = keyof typeof THEMES;
-type PinAction = 'edit' | 'delete' | 'live-edit' | 'live-delete';
+type PinAction = 'edit' | 'delete' | 'live-edit' | 'live-delete' | 'team';
 const SZ = { hero: 58, big: 46, num: 17, numSm: 15, meta: 13, label: 12, btn: 14, symbol: 18 };
 
 const isoFromForm = (s: string) => {
@@ -70,6 +71,10 @@ export default function App() {
   const [editRow, setEditRow] = useState<{ id: string; exit: string } | null>(null);
   const [liveEdit, setLiveEdit] = useState<{ id: string; entry: string; lots: string; side: 'LONG' | 'SHORT'; date: string } | null>(null);
   const [liveDelete, setLiveDelete] = useState<Trade | null>(null);
+  const [allowlist, setAllowlist] = useState<string[] | null>(null); // null = still loading
+  const [teamOpen, setTeamOpen] = useState(false);
+  const [teamNew, setTeamNew] = useState('');
+  const [teamMsg, setTeamMsg] = useState('');
   const [dlOpen, setDlOpen] = useState(false);
   const [dlMode, setDlMode] = useState<'all' | 'selected' | 'range'>('all');
   const [dlFrom, setDlFrom] = useState('');
@@ -107,6 +112,14 @@ export default function App() {
   }, [session]);
 
   useEffect(() => { localStorage.setItem('ap_theme', themeKey); }, [themeKey]);
+
+  // ---- load email allowlist (public bucket) ----
+  useEffect(() => {
+    if (!session) { setAllowlist(null); return; }
+    let cancelled = false;
+    fetchAllowlist().then((l) => { if (!cancelled) setAllowlist(l); });
+    return () => { cancelled = true; };
+  }, [session]);
 
   const live = useMemo(() => trades.filter(isOpen), [trades]);
   const closed = useMemo(() => trades.filter(isClosed), [trades]);
@@ -244,7 +257,27 @@ export default function App() {
     else if (action === 'delete') { update(trades.filter((x) => x.id !== id)); setSel((s) => s.filter((i) => i !== id)); }
     else if (action === 'live-edit') { const tr = live.find((x) => x.id === id); if (tr) setLiveEdit({ id, entry: String(entryVal(tr)), lots: String(tr.numberOfLots), side: sideOf(tr), date: dmyInput(tr.dateInitiated) }); }
     else if (action === 'live-delete') { const tr = live.find((x) => x.id === id); if (tr) setLiveDelete(tr); }
+    else if (action === 'team') { setTeamOpen(true); setTeamMsg(''); setTeamNew(''); }
   };
+
+  // ---- allowlist management (Team access panel) ----
+  const persistAllowlist = async (next: string[]) => {
+    setAllowlist(next);
+    const token = session?.access_token;
+    if (!token) return;
+    const r = await saveAllowlist(next, token);
+    setTeamMsg(r.ok ? 'Saved — access updated.' : (r.status === 501
+      ? 'Roster updated locally. Server writes need the owner key set once in Vercel; until then the owner applies changes via manage_allowlist.py.'
+      : `Could not save (${r.status}). ${r.message ?? ''}`));
+  };
+  const teamAdd = () => {
+    const e = teamNew.trim().toLowerCase();
+    if (!e || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) { setTeamMsg('Enter a valid email.'); return; }
+    if ((allowlist ?? []).includes(e) || BOOTSTRAP_OWNERS.includes(e)) { setTeamMsg('Already has access.'); return; }
+    setTeamNew('');
+    void persistAllowlist([...(allowlist ?? []), e]);
+  };
+  const teamRemove = (e: string) => { void persistAllowlist((allowlist ?? []).filter((x) => x !== e)); };
   const submitPin = async () => {
     if (!/^\d{4,}$/.test(pinVal)) { setPinErr('At least 4 digits.'); return; }
     const uid = session!.user.id;
@@ -406,6 +439,24 @@ export default function App() {
     );
   }
 
+  // ---- allowlist gate (Google OAuth itself is unchanged; this gates the workspace) ----
+  const userEmail = session.user.email;
+  if (allowlist === null) {
+    return <div style={{ minHeight: '100vh', background: t.bg, color: t.faint, ...mono, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Checking access…</div>;
+  }
+  if (!isAllowed(userEmail, allowlist)) {
+    return (
+      <div style={{ minHeight: '100vh', background: t.bg, color: t.ink, ...sans, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '0 24px', textAlign: 'center' }}>
+        <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '0.06em' }}>AILAHA PHALAM</div>
+        <div style={{ fontSize: 22, fontWeight: 600 }}>Access restricted</div>
+        <div style={{ fontSize: SZ.meta, color: t.faint, maxWidth: 420 }}>
+          {userEmail} isn’t on this workspace’s allowlist. Ask the owner to add you, then sign in again.
+        </div>
+        <button onClick={() => supabase.auth.signOut()} style={{ ...sans, fontSize: SZ.btn, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 4, padding: '10px 22px', cursor: 'pointer', marginTop: 8 }}>Sign out</button>
+      </div>
+    );
+  }
+
   // Spec header date is "Monday 24 August 2026" (no comma) — build it explicitly.
   const _hd = new Date(todayISO);
   const headerDate = `${_hd.toLocaleDateString('en-GB', { weekday: 'long' })} ${_hd.getDate()} ${_hd.toLocaleDateString('en-GB', { month: 'long' })} ${_hd.getFullYear()}`;
@@ -418,8 +469,11 @@ export default function App() {
           <div>
             <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '0.06em' }}>AILAHA PHALAM</div>
             <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 2 }}>{headerDate} · {weekLabel(todayISO)}</div>
-            {/* Sign out — kept out of the nav so the nav matches DESIGN_SPEC exactly; tiny faint link under the date (auth necessity). */}
-            <button onClick={() => supabase.auth.signOut()} title="Sign out" style={{ ...sans, fontSize: SZ.label, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 6 }}>Sign out</button>
+            {/* Team access + Sign out — kept out of the nav so the nav matches DESIGN_SPEC exactly; tiny faint links under the date. */}
+            <div style={{ display: 'flex', gap: 14, marginTop: 6 }}>
+              <button onClick={() => act('team', '')} title="Manage who can sign in" style={{ ...sans, fontSize: SZ.label, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Team access</button>
+              <button onClick={() => supabase.auth.signOut()} title="Sign out" style={{ ...sans, fontSize: SZ.label, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Sign out</button>
+            </div>
           </div>
           <nav style={{ display: 'flex', gap: 22, alignItems: 'center' }}>
             <Tab id="live" label="Live trades" />
@@ -442,7 +496,7 @@ export default function App() {
             <div style={{ background: t.bg, borderRadius: 6, padding: '26px 30px', width: 320, border: '1px solid ' + t.hair }}>
               <div style={{ fontSize: 15, fontWeight: 600 }}>{pinSet ? 'Set a PIN' : 'Enter PIN'}</div>
               <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 4 }}>
-                {pinSet ? 'No PIN yet. Choose one (4+ digits) — it guards Edit and Delete.' : (pinAsk.action.includes('delete') ? 'Deleting a trade.' : 'Editing a trade.')}
+                {pinSet ? 'No PIN yet. Choose one (4+ digits) — it guards Edit, Delete and Team access.' : (pinAsk.action === 'team' ? 'Managing team access.' : (pinAsk.action.includes('delete') ? 'Deleting a trade.' : 'Editing a trade.'))}
               </div>
               <input autoFocus type="password" inputMode="numeric" value={pinVal}
                 onChange={(e) => { setPinVal(e.target.value.replace(/\D/g, '')); setPinErr(''); }}
@@ -452,6 +506,43 @@ export default function App() {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 22 }}>
                 <button onClick={() => setPinAsk(null)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
                 <button onClick={submitPin} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '8px 18px', cursor: 'pointer' }}>{pinSet ? 'Set PIN' : 'Unlock'}</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Team access — PIN-gated allowlist manager */}
+        {teamOpen && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+            <div style={{ background: t.bg, borderRadius: 6, padding: '26px 30px', width: 420, maxWidth: '92vw', border: '1px solid ' + t.hair }}>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>Team access</div>
+              <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 4 }}>Google accounts allowed to sign in. Owner accounts are always allowed.</div>
+              <div style={{ marginTop: 16 }}>
+                {BOOTSTRAP_OWNERS.map((e) => (
+                  <div key={e} style={{ display: 'flex', alignItems: 'baseline', gap: 10, padding: '7px 0', borderBottom: '1px solid ' + t.hair }}>
+                    <span style={{ ...mono, fontSize: SZ.numSm, color: t.ink }}>{e}</span>
+                    <span style={{ ...sans, fontSize: SZ.label, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase', marginLeft: 'auto' }}>owner</span>
+                  </div>
+                ))}
+                {(allowlist ?? []).filter((e) => !BOOTSTRAP_OWNERS.includes(e)).map((e) => (
+                  <div key={e} style={{ display: 'flex', alignItems: 'baseline', gap: 10, padding: '7px 0', borderBottom: '1px solid ' + t.hair }}>
+                    <span style={{ ...mono, fontSize: SZ.numSm, color: t.ink }}>{e}</span>
+                    <button onClick={() => teamRemove(e)} style={{ ...sans, fontSize: 13, color: themeKey === 'white' ? t.loss : t.ink, background: 'none', border: 'none', cursor: 'pointer', marginLeft: 'auto', padding: 0 }}>Remove</button>
+                  </div>
+                ))}
+                {(allowlist ?? []).filter((e) => !BOOTSTRAP_OWNERS.includes(e)).length === 0 && (
+                  <div style={{ fontSize: SZ.meta, color: t.faint, padding: '7px 0' }}>No teammates added yet.</div>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'baseline', marginTop: 14 }}>
+                <input value={teamNew} placeholder="teammate@gmail.com" onChange={(e) => { setTeamNew(e.target.value); setTeamMsg(''); }}
+                  onKeyDown={(e) => e.key === 'Enter' && teamAdd()}
+                  style={{ ...mono, fontSize: SZ.num, flex: 1, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink, padding: '4px 0' }} />
+                <button onClick={teamAdd} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '7px 15px', cursor: 'pointer' }}>Add</button>
+              </div>
+              {teamMsg && <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 12 }}>{teamMsg}</div>}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18 }}>
+                <button onClick={() => setTeamOpen(false)} style={{ ...sans, fontSize: 13, fontWeight: 600, background: 'none', color: t.faint, border: '1px solid ' + t.hair, borderRadius: 3, padding: '8px 16px', cursor: 'pointer' }}>Done</button>
               </div>
             </div>
           </div>
