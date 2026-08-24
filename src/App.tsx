@@ -1,1142 +1,688 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * AILAHA PHALAM v2 — built to DESIGN_SPEC.jsx verbatim (layout / spacing / type /
+ * both themes / interactions), wired to real Supabase data and the v1 engine.
+ * Google OAuth unchanged. Persistence maps onto the preserved tables (see
+ * supabase/migrations/20260824000000_v2_schema.sql for the mapping + ideal DDL).
  */
-
-import React, { useState, useEffect } from 'react';
-import { 
-  Trade, 
-  getWeekInfo, 
-  TradeStatus, 
-  WeekInfo, 
-  getWeeksBetween, 
-  calculateTradeForWeek, 
-  exportToExcel 
-} from './types';
-import WeeklyReport from './components/WeeklyReport';
-import CumulativeStats from './components/CumulativeStats';
-import InstrumentSummary from './components/InstrumentSummary';
-import ExportLedgerView from './components/ExportLedgerView';
-import NewTradeForm from './components/NewTradeForm';
-import CheckPnLModal from './components/CheckPnLModal';
-import CloseTradeModal from './components/CloseTradeModal';
-import CarryForwardModal from './components/CarryForwardModal';
-import EditTradeModal from './components/EditTradeModal';
-import WhatIfCloseModal from './components/WhatIfCloseModal';
-import TradeTracker from './components/TradeTracker';
-import SignalIntelligence from './components/SignalIntelligence';
-import { motion } from 'motion/react';
-import {
-  Sparkles,
-  Trash2,
-  Plus,
-  TrendingUp,
-  Info,
-  BookOpen,
-  HelpCircle,
-  TrendingDown,
-  Layers,
-  Activity,
-  ArrowLeft,
-  Download,
-  BookPlus,
-  CandlestickChart,
-  CalendarClock,
-  Calendar,
-  LogIn,
-  LogOut,
-  ShieldCheck
-} from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
+import { Trade } from './types';
 import {
-  WeekOffset,
-  fetchWeekOffsets,
-  saveWeekOffset,
-  deleteWeekOffset,
-} from './lib/offsets';
+  INSTR, SpecInstrument, specNameOf, inr, signed, nf,
+  weekKeyOf, mondayOf, todayStr, weekLabel, heldDays,
+  isOpen, isClosed, liveMtmRows, liveMtm, realized, closeDateOf,
+} from './lib/v2engine';
 import {
-  fetchWeeklyMarks,
-  syncWeeklyMarksForTrade,
-  deleteWeeklyMarksForTrade,
-  deleteAllWeeklyMarks,
-  overlayMissingMarks,
+  fetchWeeklyMarks, syncWeeklyMarksForTrade, deleteWeeklyMarksForTrade, overlayMissingMarks,
 } from './lib/marks';
-import { fetchPinHash } from './lib/pin';
-import PinModal from './components/PinModal';
+import { fetchPinHash, savePinHash, hashPin } from './lib/pin';
+
+const THEMES = {
+  white:  { name: 'White',  bg: '#FFFFFF', ink: '#17181A', faint: '#878B87', hair: '#E7E8E5', profit: '#0A7D4F', loss: '#C2402E', swatch: '#FFFFFF' },
+  forest: { name: 'Forest', bg: '#121712', ink: '#E9EDE7', faint: '#8FA284', hair: '#27301F', profit: '#EFC44F', loss: '#ABB0AA', swatch: '#121712' },
+} as const;
+type ThemeKey = keyof typeof THEMES;
+const SZ = { hero: 58, big: 46, num: 17, numSm: 15, meta: 13, label: 12, btn: 14, symbol: 18 };
+
+const isoFromForm = (s: string) => {
+  // accepts dd-mm-yyyy (spec) or yyyy-mm-dd; returns yyyy-mm-dd
+  const m = s.trim().match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  return s.trim();
+};
+const dmy = (iso: string) => {
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? iso : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+};
 
 export default function App() {
-  const [trades, setTrades] = useState<Trade[]>([]);
-  const [selectedWeekKey, setSelectedWeekKey] = useState<string>('');
-  const [currentView, setCurrentView] = useState<'menu' | 'weekly' | 'cumulative' | 'summary' | 'export' | 'tracker' | 'signals'>('menu');
-  const [weekKeysList, setWeekKeysList] = useState<string[]>([]);
-
-  // Modal Triggers
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [checkPnLTrade, setCheckPnLTrade] = useState<Trade | null>(null);
-  const [closeTradeTarget, setCloseTradeTarget] = useState<Trade | null>(null);
-  const [carryForwardTarget, setCarryForwardTarget] = useState<{ trade: Trade; weekKey: string } | null>(null);
-  const [editTradeTarget, setEditTradeTarget] = useState<Trade | null>(null);
-  const [whatIfTradeTarget, setWhatIfTradeTarget] = useState<Trade | null>(null);
-
-  // Auth state
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-
-  // Per-week reconciliation offsets, keyed by ISO week key. Separate from trades.
-  const [weekOffsets, setWeekOffsets] = useState<Record<string, WeekOffset>>({});
-
-  // PIN gate for destructive actions.
+  const [trades, setTrades] = useState<Trade[]>([]);
   const [pinHash, setPinHash] = useState<string | null>(null);
-  const [pinIntent, setPinIntent] = useState<'authorize' | 'change' | null>(null);
-  const [pinActionLabel, setPinActionLabel] = useState<string>('');
-  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
-  // Check for an existing Supabase session on load, and subscribe to auth changes.
+  const [themeKey, setThemeKey] = useState<ThemeKey>(() => (localStorage.getItem('ap_theme') as ThemeKey) || 'forest');
+  const t = THEMES[themeKey];
+  const [view, setView] = useState<'live' | 'journal' | 'closedv' | 'add'>('live');
+
+  const todayISO = todayStr();
+  const curWeekKey = weekKeyOf(todayISO);
+  const prevWeekISO = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+  const prevWeekKey = weekKeyOf(prevWeekISO);
+
+  const [rateEdit, setRateEdit] = useState<string | null>(null);
+  const [sel, setSel] = useState<string[]>([]);
+  const [satOpen, setSatOpen] = useState(true);
+  const [satDismissed, setSatDismissed] = useState(false);
+  const [satVals, setSatVals] = useState<Record<string, string>>({});
+  const [satRate, setSatRate] = useState('83.24');
+  const [closing, setClosing] = useState<{ id: string; px: string } | null>(null);
+  const [pinOk, setPinOk] = useState(false);
+  const [pinAsk, setPinAsk] = useState<{ action: 'edit' | 'delete'; id: string } | null>(null);
+  const [pinSet, setPinSet] = useState(false); // true when the modal is in SET-PIN mode
+  const [pinVal, setPinVal] = useState('');
+  const [pinErr, setPinErr] = useState('');
+  const [editRow, setEditRow] = useState<{ id: string; exit: string } | null>(null);
+  const [dlOpen, setDlOpen] = useState(false);
+  const [dlMode, setDlMode] = useState<'all' | 'selected' | 'range'>('all');
+  const [dlFrom, setDlFrom] = useState('');
+  const [dlTo, setDlTo] = useState('');
+  const [form, setForm] = useState({ sym: '', instr: 'DOW' as SpecInstrument, side: 'LONG' as 'LONG' | 'SHORT', qty: '1', price: '', date: dmyInput(todayISO), ccy: 'USD' as 'USD' | 'INR', real: 0.8, brok: '' });
+
+  // ---- auth ----
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setAuthLoading(false);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-    });
+    supabase.auth.getSession().then(({ data }) => { setSession(data.session); setAuthLoading(false); });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
     return () => subscription.unsubscribe();
   }, []);
 
-  // Load all of the signed-in user's trades from Supabase into in-memory state.
-  // Starts empty — never auto-seeds demo trades. RLS scopes rows to the current user.
+  // ---- load trades + marks ----
   useEffect(() => {
-    if (!session) {
-      setTrades([]);
-      return;
-    }
+    if (!session) { setTrades([]); return; }
     let cancelled = false;
-    supabase
-      .from('trades')
-      .select('data, created_at')
-      .order('created_at', { ascending: false })
+    supabase.from('trades').select('data, created_at').order('created_at', { ascending: false })
       .then(async ({ data, error }) => {
         if (cancelled) return;
-        if (error) {
-          console.error('Failed to load trades from Supabase:', error.message);
-          setTrades([]);
-          return;
-        }
-        const loaded = (data ?? []).map((row) => row.data as Trade);
-        // Back-fill marks the trade jsonb is missing from weekly_marks (jsonb wins on
-        // conflict). Load-only path — never triggers a sync.
+        if (error) { console.error('load trades:', error.message); setTrades([]); return; }
+        const loaded = (data ?? []).map((r) => r.data as Trade);
         const marks = await fetchWeeklyMarks();
-        if (cancelled) return;
-        setTrades(overlayMissingMarks(loaded, marks));
+        if (!cancelled) setTrades(overlayMissingMarks(loaded, marks));
       });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [session]);
 
-  // Load the signed-in user's per-week offsets. Dedicated path — independent of the trades flow.
+  // ---- load pin hash ----
   useEffect(() => {
-    if (!session) {
-      setWeekOffsets({});
-      return;
-    }
+    if (!session) { setPinHash(null); return; }
     let cancelled = false;
-    fetchWeekOffsets().then((map) => {
-      if (!cancelled) setWeekOffsets(map);
-    });
-    return () => {
-      cancelled = true;
-    };
+    fetchPinHash().then((h) => { if (!cancelled) setPinHash(h); });
+    return () => { cancelled = true; };
   }, [session]);
 
-  // Load the user's PIN hash (null until they set one). Dedicated path.
+  useEffect(() => { localStorage.setItem('ap_theme', themeKey); }, [themeKey]);
+
+  const live = useMemo(() => trades.filter(isOpen), [trades]);
+  const closed = useMemo(() => trades.filter(isClosed), [trades]);
+
+  // Saturday panel: prefill this week's rate from last week's stored rate.
   useEffect(() => {
-    if (!session) {
-      setPinHash(null);
-      return;
-    }
-    let cancelled = false;
-    fetchPinHash().then((hash) => {
-      if (!cancelled) setPinHash(hash);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [session]);
+    const lastRate = live.map((tr) => tr.fridayUsdToInrRates?.[prevWeekKey]).find((x) => x != null);
+    if (lastRate != null) setSatRate(String(lastRate));
+  }, [live, prevWeekKey]);
 
-  // Aurora canvas — gilded/neon particle/stream field behind every page. Binds once a
-  // session exists; the <canvas> is now always mounted (outside the view switch).
-  useEffect(() => {
-    if (!session) return;
-    const canvas = document.getElementById('aurora-canvas') as HTMLCanvasElement | null;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d')!;
-    let animId: number;
+  const showSaturday = satOpen && !satDismissed && live.length > 0 &&
+    live.some((tr) => tr.fridayClosingPrices[curWeekKey] == null);
 
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resize();
-    window.addEventListener('resize', resize);
+  const lastRateDisplay = (() => {
+    const r = live.map((tr) => tr.fridayUsdToInrRates?.[prevWeekKey]).find((x) => x != null);
+    return r != null ? r : 83.24;
+  })();
 
-    const particles: any[] = [];
-    const streams: any[] = [];
-
-    const pColorTypes = ['gold', 'gold', 'gold', 'silver', 'silver', 'pink', 'green', 'blue', 'blue'];
-    for (let i = 0; i < 150; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        size: Math.random() * 1.8 + 0.3,
-        speedX: (Math.random() - 0.5) * 0.35,
-        speedY: (Math.random() - 0.5) * 0.35,
-        life: Math.random() * 200,
-        maxLife: Math.random() * 200 + 100,
-        gold: false,
-        alpha: Math.random() * 0.5 + 0.15,
-        colorType: pColorTypes[i % pColorTypes.length],
-      });
-    }
-
-    const colorTypes = ['gold', 'gold', 'gold', 'silver', 'silver', 'pink', 'green', 'blue'];
-    for (let i = 0; i < 30; i++) {
-      streams.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        len: Math.random() * 130 + 60,
-        speed: Math.random() * 0.7 + 0.25,
-        angle: Math.PI / 2 + (Math.random() - 0.5) * 0.5,
-        gold: Math.random() > 0.4,
-        width: Math.random() * 1.0 + 0.3,
-        alpha: Math.random() * 0.35 + 0.08,
-        points: [] as { x: number; y: number }[],
-        colorType: colorTypes[i % colorTypes.length],
-      });
-    }
-
-    const draw = () => {
-      const W = canvas.width, H = canvas.height;
-      ctx.clearRect(0, 0, W, H);
-
-      const g1 = ctx.createRadialGradient(W * 0.7, H * 0.2, 0, W * 0.7, H * 0.2, W * 0.55);
-      g1.addColorStop(0, 'rgba(180,130,30,0.07)');
-      g1.addColorStop(1, 'transparent');
-      ctx.fillStyle = g1; ctx.globalAlpha = 1; ctx.fillRect(0, 0, W, H);
-
-      const g2 = ctx.createRadialGradient(W * 0.2, H * 0.8, 0, W * 0.2, H * 0.8, W * 0.45);
-      g2.addColorStop(0, 'rgba(180,180,200,0.05)');
-      g2.addColorStop(1, 'transparent');
-      ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H);
-
-      const g3 = ctx.createRadialGradient(W * 0.5, H * 0.5, 0, W * 0.5, H * 0.5, W * 0.4);
-      g3.addColorStop(0, 'rgba(247,37,133,0.04)');
-      g3.addColorStop(1, 'transparent');
-      ctx.fillStyle = g3; ctx.globalAlpha = 1; ctx.fillRect(0, 0, W, H);
-
-      const g4 = ctx.createRadialGradient(W * 0.1, H * 0.5, 0, W * 0.1, H * 0.5, W * 0.35);
-      g4.addColorStop(0, 'rgba(0,200,120,0.04)');
-      g4.addColorStop(1, 'transparent');
-      ctx.fillStyle = g4; ctx.fillRect(0, 0, W, H);
-
-      const g5 = ctx.createRadialGradient(W * 0.9, H * 0.7, 0, W * 0.9, H * 0.7, W * 0.3);
-      g5.addColorStop(0, 'rgba(0,180,255,0.04)');
-      g5.addColorStop(1, 'transparent');
-      ctx.fillStyle = g5; ctx.fillRect(0, 0, W, H);
-
-      streams.forEach(s => {
-        s.y += s.speed * Math.sin(s.angle);
-        s.x += s.speed * Math.cos(s.angle);
-        s.points.push({ x: s.x, y: s.y });
-        if (s.points.length > s.len) s.points.shift();
-        if (s.y > H + 40 || s.x < -40 || s.x > W + 40) {
-          s.x = Math.random() * W; s.y = -20; s.points = [];
-        }
-        if (s.points.length < 2) return;
-        for (let i = 1; i < s.points.length; i++) {
-          const t = i / s.points.length;
-          ctx.globalAlpha = s.alpha * t * t;
-          ctx.strokeStyle = (() => {
-            const colorType = s.colorType;
-            if (colorType === 'gold')
-              return `rgba(${200 + Math.floor(t * 40)},${145 + Math.floor(t * 40)},${25 + Math.floor(t * 20)},1)`;
-            if (colorType === 'silver')
-              return `rgba(${175 + Math.floor(t * 65)},${175 + Math.floor(t * 65)},${195 + Math.floor(t * 45)},1)`;
-            if (colorType === 'pink')
-              return `rgba(247,${37 + Math.floor(t * 30)},${133 + Math.floor(t * 40)},${t})`;
-            if (colorType === 'green')
-              return `rgba(${0 + Math.floor(t * 40)},${255 - Math.floor(t * 30)},${100 + Math.floor(t * 50)},${t})`;
-            if (colorType === 'blue')
-              return `rgba(${0 + Math.floor(t * 30)},${180 + Math.floor(t * 30)},${255},${t})`;
-            return `rgba(201,168,76,${t})`;
-          })();
-          ctx.lineWidth = s.width * t;
-          ctx.beginPath();
-          ctx.moveTo(s.points[i - 1].x, s.points[i - 1].y);
-          ctx.lineTo(s.points[i].x, s.points[i].y);
-          ctx.stroke();
-        }
-      });
-
-      particles.forEach(p => {
-        p.x += p.speedX; p.y += p.speedY; p.life++;
-        if (p.life > p.maxLife || p.x < 0 || p.x > W || p.y < 0 || p.y > H) {
-          p.x = Math.random() * W; p.y = Math.random() * H; p.life = 0;
-        }
-        const t = p.life / p.maxLife;
-        const a = t < 0.1 ? t / 0.1 : t > 0.9 ? (1 - t) / 0.1 : 1;
-        ctx.globalAlpha = p.alpha * a;
-        ctx.fillStyle = (() => {
-          if (p.colorType === 'gold')
-            return `rgb(${180 + Math.floor(Math.random() * 40)},${138 + Math.floor(Math.random() * 30)},${28 + Math.floor(Math.random() * 35)})`;
-          if (p.colorType === 'silver')
-            return `rgb(${178 + Math.floor(Math.random() * 60)},${178 + Math.floor(Math.random() * 60)},${195 + Math.floor(Math.random() * 40)})`;
-          if (p.colorType === 'pink')
-            return `rgb(247,${37 + Math.floor(Math.random() * 20)},${133 + Math.floor(Math.random() * 40)})`;
-          if (p.colorType === 'green')
-            return `rgb(${Math.floor(Math.random() * 40)},${200 + Math.floor(Math.random() * 55)},${80 + Math.floor(Math.random() * 60)})`;
-          if (p.colorType === 'blue')
-            return `rgb(${Math.floor(Math.random() * 30)},${160 + Math.floor(Math.random() * 60)},255)`;
-          return `rgb(180,138,28)`;
-        })();
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      ctx.globalAlpha = 1;
-      animId = requestAnimationFrame(draw);
-    };
-    draw();
-
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener('resize', resize);
-    };
-  }, [session]);
-
-  // Persist a state mutation to Supabase by diffing the previous list against the next.
-  // Each Trade object is stored in the `data` jsonb column; rows are keyed by data->>id
-  // (the in-memory Trade.id), so adds insert, edits update, and removals delete the row.
-  // React state is updated synchronously/optimistically so the UI & PnL math are unchanged.
-  const syncTradesToSupabase = async (prevList: Trade[], nextList: Trade[]) => {
-    const prevById = new Map(prevList.map((t) => [t.id, t]));
-    const nextById = new Map(nextList.map((t) => [t.id, t]));
-
-    const userId = session?.user.id;
-
-    // Inserts and updates
-    for (const trade of nextList) {
-      const before = prevById.get(trade.id);
+  // ---- persistence: diff prev vs next, mirror to Supabase ----
+  const persist = async (prev: Trade[], next: Trade[]) => {
+    const uid = session?.user.id;
+    const prevById = new Map(prev.map((x) => [x.id, x]));
+    const nextById = new Map(next.map((x) => [x.id, x]));
+    for (const tr of next) {
+      const before = prevById.get(tr.id);
       if (!before) {
-        const { error } = await supabase.from('trades').insert({ data: trade });
-        if (error) console.error('Failed to add trade to Supabase:', error.message);
-        if (userId) await syncWeeklyMarksForTrade(userId, trade);
-      } else if (JSON.stringify(before) !== JSON.stringify(trade)) {
-        const { error } = await supabase
-          .from('trades')
-          .update({ data: trade })
-          .eq('data->>id', trade.id);
-        if (error) console.error('Failed to update trade in Supabase:', error.message);
-        // Mirror the trade's marks into weekly_marks so the table tracks every write path.
-        if (userId) await syncWeeklyMarksForTrade(userId, trade, before);
+        const { error } = await supabase.from('trades').insert({ data: tr });
+        if (error) console.error('insert trade:', error.message);
+        if (uid) await syncWeeklyMarksForTrade(uid, tr);
+      } else if (JSON.stringify(before) !== JSON.stringify(tr)) {
+        const { error } = await supabase.from('trades').update({ data: tr }).eq('data->>id', tr.id);
+        if (error) console.error('update trade:', error.message);
+        if (uid) await syncWeeklyMarksForTrade(uid, tr, before);
       }
     }
-
-    // Deletions
-    for (const trade of prevList) {
-      if (!nextById.has(trade.id)) {
-        const { error } = await supabase.from('trades').delete().eq('data->>id', trade.id);
-        if (error) console.error('Failed to delete trade from Supabase:', error.message);
-        if (userId) await deleteWeeklyMarksForTrade(userId, trade.id);
+    for (const tr of prev) {
+      if (!nextById.has(tr.id)) {
+        const { error } = await supabase.from('trades').delete().eq('data->>id', tr.id);
+        if (error) console.error('delete trade:', error.message);
+        if (uid) await deleteWeeklyMarksForTrade(uid, tr.id);
       }
     }
   };
+  const update = (next: Trade[]) => { const prev = trades; setTrades(next); void persist(prev, next); };
 
-  // Sync state mutation with Supabase (replaces the previous localStorage chokepoint).
-  const updateTradesState = (updatedList: Trade[]) => {
-    const prevList = trades;
-    setTrades(updatedList);
-    void syncTradesToSupabase(prevList, updatedList);
+  // ---- derived totals ----
+  const totalLive = useMemo(() => live.reduce((s, tr) => s + liveMtm(tr), 0), [live]);
+  const totalClosed = useMemo(() => closed.reduce((s, tr) => s + realized(tr), 0), [closed]);
+  const selSum = useMemo(() => closed.filter((tr) => sel.includes(tr.id)).reduce((s, tr) => s + realized(tr), 0), [sel, closed]);
+
+  // ---- actions ----
+  const saveSaturday = () => {
+    const rate = parseFloat(satRate);
+    const next = trades.map((tr) => {
+      if (!isOpen(tr)) return tr;
+      const v = satVals[tr.id];
+      if (v == null || v === '') return tr;
+      return {
+        ...tr,
+        fridayClosingPrices: { ...tr.fridayClosingPrices, [curWeekKey]: +v },
+        fridayUsdToInrRates: tr.currency === 'USD' && !isNaN(rate)
+          ? { ...tr.fridayUsdToInrRates, [curWeekKey]: rate } : (tr.fridayUsdToInrRates || {}),
+      };
+    });
+    update(next);
+    setSatVals({}); setSatDismissed(true);
   };
 
-  // Determine current active week key
-  useEffect(() => {
-    if (trades.length > 0) {
-      // Find the latest week referenced by our active trades
-      const todayStr = new Date().toISOString().split('T')[0];
-      const weekKeys = new Set<string>();
-      weekKeys.add(getWeekInfo(todayStr).weekKey);
+  const editRate = (weekKey: string, rate: number) => {
+    const next = trades.map((tr) =>
+      tr.currency === 'USD' && tr.fridayUsdToInrRates?.[weekKey] != null
+        ? { ...tr, fridayUsdToInrRates: { ...tr.fridayUsdToInrRates, [weekKey]: rate } } : tr);
+    update(next);
+  };
 
-      trades.forEach(t => {
-        const endLimitStr = t.status === 'Closed' || t.status === 'CarryForwardClosed'
-          ? (t.direction === 'Long' ? (t.sellDate || todayStr) : (t.buyDate || todayStr))
-          : todayStr;
-        getWeeksBetween(t.dateInitiated, endLimitStr).forEach(w => weekKeys.add(w.weekKey));
-      });
+  const closeTrade = () => {
+    if (!closing || !closing.px) return;
+    const tr = live.find((x) => x.id === closing.id);
+    if (!tr) return;
+    const exit = +closing.px;
+    const curRate = tr.fridayUsdToInrRates?.[curWeekKey] ?? (parseFloat(satRate) || tr.usdToInrRate);
+    const updated: Trade = {
+      ...tr,
+      status: 'Closed',
+      sellPrice: tr.direction === 'Long' ? exit : tr.sellPrice,
+      buyPrice: tr.direction === 'Long' ? tr.buyPrice : exit,
+      sellDate: tr.direction === 'Long' ? todayISO : tr.sellDate,
+      buyDate: tr.direction === 'Long' ? tr.buyDate : todayISO,
+      closedUsdToInrRate: tr.currency === 'USD' ? curRate : tr.closedUsdToInrRate,
+    };
+    update(trades.map((x) => (x.id === tr.id ? updated : x)));
+    setClosing(null);
+  };
 
-      const sorted = Array.from(weekKeys).sort();
-      setWeekKeysList(sorted);
-      // Set to latest active week in database
-      if (!selectedWeekKey) {
-        setSelectedWeekKey(sorted[sorted.length - 1]);
-      }
+  const deploy = () => {
+    if (!form.sym || !form.price) return;
+    const meta = INSTR[form.instr];
+    const ccy = form.ccy;
+    const price = +form.price;
+    const now = `trade_${Date.now()}_${Math.floor(performance.now())}`;
+    const brok = form.brok.trim() !== '' ? +form.brok : null;
+    const newTrade: Trade = {
+      id: now,
+      symbol: form.sym.toUpperCase(),
+      instrument: meta.v1,
+      direction: form.side === 'LONG' ? 'Long' : 'Short',
+      dateInitiated: isoFromForm(form.date),
+      buyPrice: form.side === 'LONG' ? price : null,
+      sellPrice: form.side === 'LONG' ? null : price,
+      buyDate: form.side === 'LONG' ? isoFromForm(form.date) : null,
+      sellDate: form.side === 'LONG' ? null : isoFromForm(form.date),
+      lotSize: meta.mult,
+      numberOfLots: +form.qty || 1,
+      status: form.side === 'LONG' ? 'CarryForwardLong' : 'CarryForwardShort',
+      currency: ccy,
+      usdToInrRate: ccy === 'USD' ? (lastRateDisplay || 83.24) : 1,
+      fridayUsdToInrRates: {},
+      realizationRate: ccy === 'INR' ? 1.0 : form.real,
+      fridayClosingPrices: {},
+      entryBrokerage: brok,
+      exitBrokerage: null,
+    };
+    update([newTrade, ...trades]);
+    setForm({ ...form, sym: '', price: '' });
+    setView('live');
+  };
+
+  // ---- PIN gate ----
+  const askPin = (action: 'edit' | 'delete', id: string) => {
+    setPinAsk({ action, id }); setPinVal(''); setPinErr('');
+    setPinSet(pinHash == null); // no pin yet -> SET-PIN flow
+  };
+  const runAction = (action: 'edit' | 'delete', id: string) => {
+    if (action === 'edit') { const tr = closed.find((x) => x.id === id); if (tr) setEditRow({ id, exit: String(exitVal(tr)) }); }
+    else { update(trades.filter((x) => x.id !== id)); setSel((s) => s.filter((i) => i !== id)); }
+  };
+  const submitPin = async () => {
+    if (!/^\d{4,}$/.test(pinVal)) { setPinErr('At least 4 digits.'); return; }
+    const uid = session!.user.id;
+    if (pinSet) {
+      const h = await hashPin(uid, pinVal);
+      const ok = await savePinHash(uid, h);
+      if (!ok) { setPinErr('Could not save PIN.'); return; }
+      setPinHash(h);
     } else {
-      const todayKey = getWeekInfo(new Date().toISOString().split('T')[0]).weekKey;
-      setWeekKeysList([todayKey]);
-      if (!selectedWeekKey) {
-        setSelectedWeekKey(todayKey);
-      }
+      const h = await hashPin(uid, pinVal);
+      if (h !== pinHash) { setPinErr('Incorrect PIN.'); return; }
     }
-  }, [trades, selectedWeekKey]);
-
-  // Actions
-  const handleAddTrade = (newTrade: Trade) => {
-    updateTradesState([newTrade, ...trades]);
+    setPinOk(true);
+    if (pinAsk) runAction(pinAsk.action, pinAsk.id);
+    setPinAsk(null);
+  };
+  const act = (action: 'edit' | 'delete', id: string) => { pinOk && pinHash ? runAction(action, id) : askPin(action, id); };
+  const saveEdit = () => {
+    if (!editRow) return;
+    const tr = closed.find((x) => x.id === editRow.id);
+    if (!tr) return;
+    const exit = +editRow.exit;
+    const updated: Trade = {
+      ...tr,
+      sellPrice: tr.direction === 'Long' ? exit : tr.sellPrice,
+      buyPrice: tr.direction === 'Long' ? tr.buyPrice : exit,
+    };
+    update(trades.map((x) => (x.id === editRow.id ? updated : x)));
+    setEditRow(null);
   };
 
-  const handleUpdateFridayClosingPrice = (tradeId: string, weekKey: string, price: number, exchangeRate?: number) => {
-    const updated = trades.map(t => {
-      if (t.id === tradeId) {
-        return {
-          ...t,
-          fridayClosingPrices: {
-            ...t.fridayClosingPrices,
-            [weekKey]: price
-          },
-          fridayUsdToInrRates: exchangeRate !== undefined ? {
-            ...t.fridayUsdToInrRates,
-            [weekKey]: exchangeRate
-          } : (t.fridayUsdToInrRates || {})
-        };
-      }
-      return t;
+  const exitVal = (tr: Trade) => (tr.direction === 'Long' ? tr.sellPrice : tr.buyPrice) ?? 0;
+  const entryVal = (tr: Trade) => (tr.direction === 'Long' ? tr.buyPrice : tr.sellPrice) ?? 0;
+  const sideOf = (tr: Trade) => (tr.direction === 'Long' ? 'LONG' : 'SHORT');
+  const realPct = (tr: Trade) => Math.round((tr.realizationRate ?? 1) * 100);
+
+  // ---- Excel download ----
+  const downloadExcel = () => {
+    let rows = closed;
+    if (dlMode === 'selected') rows = closed.filter((tr) => sel.includes(tr.id));
+    if (dlMode === 'range') rows = closed.filter((tr) => {
+      const c = closeDateOf(tr);
+      return (!dlFrom || c >= dlFrom) && (!dlTo || c <= dlTo);
     });
-    updateTradesState(updated);
-  };
-
-  const handleConfirmCloseTrade = (
-    tradeId: string,
-    exitPrice: number,
-    exitDate: string,
-    updatedStatus: TradeStatus,
-    closedUsdToInrRate?: number,
-    exitBrokerage?: number
-  ) => {
-    const updated = trades.map(t => {
-      if (t.id === tradeId) {
-        return {
-          ...t,
-          status: updatedStatus,
-          sellPrice: t.direction === 'Long' ? exitPrice : t.sellPrice,
-          buyPrice: t.direction === 'Long' ? t.buyPrice : exitPrice,
-          sellDate: t.direction === 'Long' ? exitDate : t.sellDate,
-          buyDate: t.direction === 'Long' ? t.buyDate : exitDate,
-          closedUsdToInrRate: closedUsdToInrRate !== undefined ? closedUsdToInrRate : t.closedUsdToInrRate,
-          exitBrokerage: exitBrokerage !== undefined ? exitBrokerage : t.exitBrokerage
-        };
-      }
-      return t;
+    if (!rows.length) return;
+    const head = ['Symbol', 'Instrument', 'Side', 'Lots', 'Entry', 'Exit', 'Initiated', 'Closed', 'Held (days)', 'Week', 'Currency', 'Share', 'P&L (INR)'];
+    const lines = rows.map((tr) => {
+      const c = closeDateOf(tr);
+      return [
+        tr.symbol, specNameOf(tr.instrument), sideOf(tr), tr.numberOfLots, entryVal(tr), exitVal(tr),
+        tr.dateInitiated, c, heldDays(tr.dateInitiated, c), weekLabel(c), tr.currency,
+        realPct(tr) + '%', realized(tr),
+      ].join(',');
     });
-    updateTradesState(updated);
+    const blob = new Blob([head.join(',') + '\n' + lines.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ailaha_phalam_trades_' + dlMode + '.csv';
+    a.click(); URL.revokeObjectURL(a.href);
+    setDlOpen(false);
   };
 
-  // Edit an existing trade in place: replace by id, keeping the same id so the existing
-  // syncTradesToSupabase chokepoint UPDATEs the row (data->>id match) rather than inserting.
-  // The PnL/week math recomputes from these edited inputs unchanged.
-  const handleSaveEditedTrade = (updated: Trade) => {
-    updateTradesState(trades.map(t => (t.id === updated.id ? updated : t)));
-  };
+  // ---- style helpers (verbatim from spec) ----
+  const mono = { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontVariantNumeric: 'tabular-nums' as const };
+  const sans = { fontFamily: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" };
+  const pl = (v: number) => (v >= 0 ? t.profit : t.loss);
+  const th = (h: string, right?: boolean) => (
+    <th key={h} style={{ ...sans, fontSize: SZ.label, fontWeight: 500, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase', padding: '14px 0 10px', textAlign: right ? 'right' : 'left', borderBottom: '1px solid ' + t.hair }}>{h}</th>
+  );
+  const td = (extra = {}) => ({ ...mono, fontSize: SZ.num, padding: '15px 0', borderBottom: '1px solid ' + t.hair, ...extra });
+  const lbl = { ...sans, fontSize: SZ.label, fontWeight: 500, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: 6 } as const;
+  const inp = { ...mono, fontSize: SZ.num, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink, padding: '6px 0', width: '100%' } as const;
+  const toggle = (on: boolean) => ({ ...sans, fontSize: SZ.btn - 1, fontWeight: 600, padding: '8px 15px', borderRadius: 3, cursor: 'pointer', border: '1px solid ' + (on ? t.ink : t.hair), background: on ? t.ink : 'none', color: on ? t.bg : t.faint });
+  const ghost = { ...sans, fontSize: 13, color: t.faint, background: 'none', border: '1px solid ' + t.hair, borderRadius: 3, padding: '5px 12px', cursor: 'pointer' } as const;
 
-  // Save (upsert) a week's reconciliation offset. Optimistic local update, then persist
-  // via the dedicated offsets path (never through syncTradesToSupabase).
-  const handleSaveOffset = async (weekKey: string, amount: number, note: string) => {
-    setWeekOffsets((prev) => ({
-      ...prev,
-      [weekKey]: { ...prev[weekKey], weekKey, amount, note },
-    }));
-    if (!session) return;
-    const saved = await saveWeekOffset(session.user.id, weekKey, amount, note);
-    if (saved) {
-      setWeekOffsets((prev) => ({ ...prev, [weekKey]: saved }));
-    }
-  };
+  const Tab = ({ id, label }: { id: typeof view; label: string }) => (
+    <button onClick={() => setView(id)} style={{ ...sans, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, padding: '6px 2px', color: view === id ? t.ink : t.faint, borderBottom: view === id ? '1px solid ' + t.ink : '1px solid transparent' }}>{label}</button>
+  );
 
-  const handleClearOffset = async (weekKey: string) => {
-    setWeekOffsets((prev) => {
-      const copy = { ...prev };
-      delete copy[weekKey];
-      return copy;
-    });
-    if (!session) return;
-    await deleteWeekOffset(session.user.id, weekKey);
-  };
+  const DownloadPanel = () => (
+    <span style={{ position: 'relative' }}>
+      <button onClick={() => setDlOpen(!dlOpen)} style={{ ...sans, fontSize: 13, fontWeight: 600, color: t.ink, background: 'none', border: '1px solid ' + t.hair, borderRadius: 3, padding: '6px 14px', cursor: 'pointer' }}>Download as Excel</button>
+      {dlOpen && (
+        <span style={{ position: 'absolute', right: 0, top: 38, zIndex: 5, background: t.bg, border: '1px solid ' + t.hair, borderRadius: 5, padding: '16px 18px', width: 270, display: 'block', boxShadow: '0 8px 28px rgba(0,0,0,0.28)' }}>
+          {[
+            { k: 'all' as const, label: 'Complete history (' + closed.length + ' trades)' },
+            { k: 'selected' as const, label: 'Selected trades (' + sel.length + ')' },
+            { k: 'range' as const, label: 'Date range' },
+          ].map((o) => (
+            <span key={o.k} onClick={() => setDlMode(o.k)} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '7px 0', cursor: 'pointer' }}>
+              <span style={{ width: 14, height: 14, borderRadius: '50%', border: '1.5px solid ' + (dlMode === o.k ? t.ink : t.hair), background: dlMode === o.k ? t.ink : 'none', display: 'inline-block' }} />
+              <span style={{ fontSize: 14, color: dlMode === o.k ? t.ink : t.faint }}>{o.label}</span>
+            </span>
+          ))}
+          {dlMode === 'range' && (
+            <span style={{ display: 'flex', gap: 10, alignItems: 'baseline', margin: '8px 0 4px 24px' }}>
+              <input value={dlFrom} placeholder="from" onChange={(e) => setDlFrom(e.target.value)} style={{ ...mono, fontSize: 13, width: 92, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink }} />
+              <span style={{ fontSize: 13, color: t.faint }}>to</span>
+              <input value={dlTo} placeholder="to" onChange={(e) => setDlTo(e.target.value)} style={{ ...mono, fontSize: 13, width: 92, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink }} />
+            </span>
+          )}
+          <div style={{ fontSize: SZ.label, color: t.faint, margin: dlMode === 'range' ? '2px 0 0 24px' : 0 }}>{dlMode === 'range' ? 'YYYY-MM-DD, by closing date' : ''}</div>
+          <button onClick={downloadExcel} disabled={dlMode === 'selected' && sel.length === 0} style={{ ...sans, marginTop: 12, width: '100%', fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '9px 0', cursor: 'pointer', opacity: dlMode === 'selected' && sel.length === 0 ? 0.45 : 1 }}>Download</button>
+        </span>
+      )}
+    </span>
+  );
 
-  // --- PIN-gated destructive actions ---
-  // Open the PIN modal, remembering the action to run once the PIN is confirmed.
-  const requirePin = (label: string, action: () => void) => {
-    setPinActionLabel(label);
-    setPendingAction(() => action);
-    setPinIntent('authorize');
-  };
-  const closePinModal = () => {
-    setPinIntent(null);
-    setPendingAction(null);
-    setPinActionLabel('');
-  };
-  const runPendingAction = () => {
-    if (pendingAction) pendingAction();
-    setPendingAction(null);
-  };
-
-  // The actual destructive operations — only invoked after the PIN is confirmed.
-  const doResetDatabase = async () => {
-    setTrades([]);
-    if (session) {
-      const { error } = await supabase.from('trades').delete().eq('user_id', session.user.id);
-      if (error) console.error('Failed to reset trades in Supabase:', error.message);
-      // Marks are trade-scoped mirrors — wiping trades without them would leave orphans.
-      await deleteAllWeeklyMarks(session.user.id);
-    }
-  };
-  const doDeleteTrade = (trade: Trade) => {
-    updateTradesState(trades.filter((t) => t.id !== trade.id));
-  };
-
-  // Gated UI entry points.
-  const handleResetDatabase = () =>
-    requirePin('Reset ALL data — permanently delete every trade in your ledger.', doResetDatabase);
-  const handleDeleteTrade = (trade: Trade) =>
-    requirePin(`Delete trade “${trade.symbol}” — this permanently removes it.`, () => doDeleteTrade(trade));
-
-  // Auth actions
-  const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
-    });
-    if (error) console.error('Google sign-in failed:', error.message);
-  };
-
-  const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) console.error('Sign-out failed:', error.message);
-  };
-
-  // Re-calculate real statistics for header widgets to mimic "High Density" top metrics
-  let headerTotalNetProfit = 0;
-  trades.forEach(trade => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const endLimitStr = trade.status === 'Closed' || trade.status === 'CarryForwardClosed'
-      ? (trade.direction === 'Long' ? (trade.sellDate || todayStr) : (trade.buyDate || todayStr))
-      : todayStr;
-
-    const activeWeeks = getWeeksBetween(trade.dateInitiated, endLimitStr);
-    
-    let tradeGrossSum = 0;
-    let tradeBrokerageSum = 0;
-
-    activeWeeks.forEach(w => {
-      const calc = calculateTradeForWeek(trade, w.weekKey);
-      if (calc.isActive) {
-        tradeGrossSum += calc.grossProfit;
-        tradeBrokerageSum += calc.brokerageDeducted;
-      }
-    });
-
-    headerTotalNetProfit += (tradeGrossSum - tradeBrokerageSum);
-  });
-
-  const activeTradesCount = trades.filter(t => t.status === 'CarryForwardLong' || t.status === 'CarryForwardShort').length;
-
-  // Open (carry-forward) positions — drive the hub's "active trades" badge.
-  const openTrades = trades.filter(t => t.status === 'CarryForwardLong' || t.status === 'CarryForwardShort');
-  const openCount = openTrades.length;
-  const instrumentForOpen = openTrades[0]?.symbol ?? '—';
-
-  // While the initial session check is in flight, hold a minimal splash to avoid flashing the login screen.
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-transparent text-[#9B5DE5] flex items-center justify-center font-mono text-xs uppercase tracking-widest">
-        Loading…
-      </div>
-    );
-  }
-
-  // Not signed in — show a simple "Sign in with Google" gate instead of the ledger.
+  // ---- auth gate ----
+  if (authLoading) return <div style={{ minHeight: '100vh', background: t.bg, color: t.faint, ...mono, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Loading…</div>;
   if (!session) {
     return (
-      <div className="min-h-screen bg-transparent text-slate-100 font-sans flex flex-col items-center justify-center relative overflow-hidden px-6">
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#7fb3d5]/4 rounded-full blur-[130px] pointer-events-none animate-pulse-slow" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[550px] h-[550px] bg-[#7fb3d5]/4 rounded-full blur-[150px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '3s' }} />
-        <div className="relative z-10 text-center space-y-8 max-w-sm w-full">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#7fb3d5]/10 border border-[#7fb3d5]/20 rounded-full text-[9px] text-[#7fb3d5] font-mono tracking-widest uppercase font-black">
-              ✦ Celestial Position Ledger ✦
-            </div>
-            <h1 className="text-3xl md:text-4xl font-black text-[#7fb3d5] tracking-widest uppercase font-sans select-none">
-              AILAHA PHALAM
-            </h1>
-          </div>
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            className="w-full bg-[#7fb3d5]/10 hover:bg-[#7fb3d5]/20 text-[#7fb3d5] border border-[#7fb3d5]/30 font-bold px-4 py-3 rounded-xl text-sm transition duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-[0.98]"
-          >
-            <LogIn className="w-4 h-4 text-[#7fb3d5]" />
-            Sign in with Google
-          </button>
+      <div style={{ minHeight: '100vh', background: t.bg, color: t.ink, ...sans, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28 }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '0.06em' }}>AILAHA PHALAM</div>
+          <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 4 }}>Weekly position ledger</div>
         </div>
+        <button onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })}
+          style={{ ...sans, fontSize: SZ.btn, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 4, padding: '11px 26px', cursor: 'pointer' }}>Sign in with Google</button>
       </div>
     );
   }
 
+  const headerDate = new Date(todayISO).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
   return (
-    <div className="min-h-screen bg-transparent text-slate-100 font-sans selection:bg-[#9B5DE5]/20 selection:text-[#9B5DE5] flex flex-col justify-between relative overflow-hidden">
-      {/* Immersive Background Glows matching Magi Sans style */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#7fb3d5]/4 rounded-full blur-[130px] pointer-events-none animate-pulse-slow" />
-      <div className="absolute top-[35%] right-[-10%] w-[500px] h-[500px] bg-[#7fb3d5]/3 rounded-full blur-[140px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '2.5s' }} />
-      <div className="absolute bottom-[-10%] left-[10%] w-[550px] h-[550px] bg-[#7fb3d5]/4 rounded-full blur-[150px] pointer-events-none animate-pulse-slow" style={{ animationDelay: '5s' }} />
+    <div style={{ minHeight: '100vh', background: t.bg, color: t.ink, ...sans, transition: 'background 180ms, color 180ms' }}>
+      <div style={{ maxWidth: 820, margin: '0 auto', padding: '48px 24px 96px' }}>
 
-      <div className="relative z-10">
-        {/* Aurora Canvas — always mounted, renders behind every page */}
-        <canvas id="aurora-canvas" />
-
-        {/* Premium High-Density Navigation/Header with Magi Colors — hidden on the revamped hub (it has its own header). */}
-        {currentView !== 'menu' && (
-        <header style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 50,
-          background: 'rgba(8,5,2,0.92)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          borderBottom: '1px solid rgba(201,168,76,0.15)',
-          padding: '0 24px',
-          overflow: 'hidden',
-        }}>
-          {/* Wave glow overlay */}
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            overflow: 'hidden',
-            pointerEvents: 'none',
-            zIndex: 0,
-          }}>
-            <div style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%,-50%)',
-              width: '600px',
-              height: '80px',
-              background: 'radial-gradient(ellipse 60% 100% at 50% 50%, rgba(201,130,30,0.08) 0%, rgba(0,100,200,0.05) 50%, transparent 100%)',
-              filter: 'blur(8px)',
-              animation: 'headerWave 8s ease-in-out infinite',
-            }} />
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 48, flexWrap: 'wrap', gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '0.06em' }}>AILAHA PHALAM</div>
+            <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 2 }}>{headerDate} · {weekLabel(todayISO)}</div>
           </div>
-          <div style={{
-            position: 'relative',
-            zIndex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            height: 56,
-            maxWidth: '100%',
-          }}>
-            {/* Logo */}
-            <div
-              onClick={() => setCurrentView('menu')}
-              title="Go to Homepage"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                flexShrink: 0,
-                cursor: 'pointer',
-              }}
-            >
-              <div style={{
-                width: 34, height: 34,
-                background: 'linear-gradient(135deg,#C9A84C,#E8D5A3)',
-                borderRadius: 9,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 15, fontWeight: 900, color: '#1A1200',
-                fontFamily: "'DM Serif Display', serif",
-              }}>A</div>
-              <div>
-                <div style={{
-                  fontSize: 14, fontWeight: 800,
-                  color: '#F0E6C8',
-                  fontFamily: "'DM Serif Display', serif",
-                  letterSpacing: '-0.2px', lineHeight: 1.2,
-                }}>Ailaha Phalam</div>
-                <div style={{
-                  fontSize: 8, letterSpacing: '2.5px',
-                  color: 'rgba(201,168,76,0.5)',
-                  textTransform: 'uppercase',
-                }}>Celestial Metrics</div>
+          <nav style={{ display: 'flex', gap: 22, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Tab id="live" label="Live trades" />
+            <Tab id="journal" label="Journal" />
+            <Tab id="closedv" label="Closed trades" />
+            <Tab id="add" label="Add trade" />
+            <span style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 6 }}>
+              <span style={{ fontSize: SZ.label, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Theme</span>
+              {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][]).map(([k, th2]) => (
+                <button key={k} onClick={() => setThemeKey(k)} title={th2.name} style={{ width: 22, height: 22, borderRadius: '50%', cursor: 'pointer', background: th2.swatch, border: '2px solid ' + (themeKey === k ? t.ink : t.hair) }} />
+              ))}
+            </span>
+            <button onClick={() => supabase.auth.signOut()} style={{ ...sans, fontSize: 12, color: t.faint, background: 'none', border: '1px solid ' + t.hair, borderRadius: 3, padding: '5px 11px', cursor: 'pointer' }}>Sign out</button>
+          </nav>
+        </header>
+
+        {/* PIN modal */}
+        {pinAsk && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+            <div style={{ background: t.bg, borderRadius: 6, padding: '26px 30px', width: 320, border: '1px solid ' + t.hair }}>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>{pinSet ? 'Set a PIN' : 'Enter PIN'}</div>
+              <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 4 }}>
+                {pinSet ? 'No PIN yet. Choose one (4+ digits) — it guards Edit and Delete.' : (pinAsk.action === 'delete' ? 'Deleting a closed trade.' : 'Editing a closed trade.')}
+              </div>
+              <input autoFocus type="password" inputMode="numeric" value={pinVal}
+                onChange={(e) => { setPinVal(e.target.value.replace(/\D/g, '')); setPinErr(''); }}
+                onKeyDown={(e) => e.key === 'Enter' && submitPin()}
+                style={{ ...mono, fontSize: 22, letterSpacing: '0.4em', width: '100%', marginTop: 18, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink, textAlign: 'center', padding: '6px 0' }} />
+              {pinErr && <div style={{ fontSize: SZ.meta, color: t.loss, marginTop: 8 }}>{pinErr}</div>}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 22 }}>
+                <button onClick={() => setPinAsk(null)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+                <button onClick={submitPin} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '8px 18px', cursor: 'pointer' }}>{pinSet ? 'Set PIN' : 'Unlock'}</button>
               </div>
             </div>
+          </div>
+        )}
 
-            {/* Center — active trades */}
-            {activeTradesCount > 0 && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                background: 'rgba(201,168,76,0.08)',
-                border: '1px solid rgba(201,168,76,0.2)',
-                borderRadius: 20, padding: '4px 14px',
-                fontSize: 11, color: '#C9A84C', fontWeight: 700,
-                letterSpacing: '0.5px',
-              }}>
-                <div style={{
-                  width: 6, height: 6,
-                  background: '#C9A84C', borderRadius: '50%',
-                  animation: 'pulse 1.5s infinite',
-                }} />
-                {activeTradesCount} Active · CF
+        {/* LIVE */}
+        {view === 'live' && (
+          <>
+            {showSaturday && (
+              <div style={{ border: '1px solid ' + t.ink, borderRadius: 4, padding: '18px 20px', marginBottom: 40 }}>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>Week close — {weekLabel(todayISO)}</div>
+                <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 4, marginBottom: 14 }}>Asked every Saturday evening. Closing values stamp the week's MTM.</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, padding: '7px 0', borderBottom: '1px solid ' + t.hair, marginBottom: 8 }}>
+                  <span style={{ fontSize: 15, fontWeight: 600, width: 140 }}>USD / INR</span>
+                  <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>last week {lastRateDisplay}</span>
+                  <input value={satRate} onChange={(e) => setSatRate(e.target.value.replace(/[^\d.]/g, ''))}
+                    style={{ ...mono, fontSize: SZ.num, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink, width: 100 }} />
+                </div>
+                {live.map((tr) => {
+                  const last = liveMtmRows(tr);
+                  const lastClose = last.length ? last[last.length - 1].close : entryVal(tr);
+                  return (
+                    <div key={tr.id} style={{ display: 'flex', alignItems: 'baseline', gap: 14, padding: '7px 0' }}>
+                      <span style={{ fontSize: 15, fontWeight: 600, width: 140 }}>{tr.symbol}</span>
+                      <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>last {nf(lastClose)}</span>
+                      <input placeholder="closing value" value={satVals[tr.id] || ''}
+                        onChange={(e) => setSatVals({ ...satVals, [tr.id]: e.target.value.replace(/[^\d.]/g, '') })}
+                        style={{ ...mono, fontSize: SZ.num, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink, width: 130 }} />
+                    </div>
+                  );
+                })}
+                <div style={{ marginTop: 16, display: 'flex', gap: 16 }}>
+                  <button onClick={saveSaturday} style={{ ...sans, fontSize: SZ.btn, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '9px 20px', cursor: 'pointer' }}>Save week close</button>
+                  <button onClick={() => setSatDismissed(true)} style={{ ...sans, fontSize: SZ.btn, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>Later</button>
+                </div>
               </div>
             )}
 
-            {/* Right — actions */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-            }}>
-              <button
-                type="button"
-                onClick={() => setShowAddForm(true)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  background: 'rgba(201,168,76,0.1)',
-                  border: '1px solid rgba(201,168,76,0.25)',
-                  borderRadius: 10, padding: '6px 14px',
-                  fontSize: 11, color: '#C9A84C', fontWeight: 700,
-                  cursor: 'pointer', letterSpacing: '0.5px',
-                  fontFamily: "'DM Sans', sans-serif",
-                }}
-              >+ New Trade</button>
+            <div style={{ fontSize: SZ.meta, color: t.faint, marginBottom: 8 }}>Open MTM · {live.length} live · after profit share</div>
+            <div style={{ ...mono, fontSize: SZ.hero, lineHeight: 1, fontWeight: 500, color: pl(totalLive) }}>{signed(totalLive)}</div>
+            <div style={{ height: 1, background: t.hair, margin: '36px 0 0' }} />
 
-              <button
-                type="button"
-                onClick={() => setPinIntent('change')}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid rgba(201,168,76,0.15)',
-                  borderRadius: 10, padding: '6px 14px',
-                  fontSize: 11, color: 'rgba(240,230,200,0.5)',
-                  cursor: 'pointer',
-                  fontFamily: "'DM Sans', sans-serif",
-                }}
-              >PIN</button>
+            {live.length === 0 && <div style={{ fontSize: 14, color: t.faint, marginTop: 24 }}>No live trades — add one from “Add trade”.</div>}
 
-              <button
-                type="button"
-                onClick={() => supabase.auth.signOut()}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid rgba(201,168,76,0.15)',
-                  borderRadius: 10, padding: '6px 14px',
-                  fontSize: 11, color: 'rgba(240,230,200,0.4)',
-                  cursor: 'pointer',
-                  fontFamily: "'DM Sans', sans-serif",
-                }}
-              >Sign out</button>
-            </div>
-          </div>
-        </header>
+            {live.map((tr) => {
+              const rows = liveMtmRows(tr); const m = liveMtm(tr);
+              const specName = specNameOf(tr.instrument); const meta = INSTR[specName];
+              return (
+                <div key={tr.id} style={{ borderBottom: '1px solid ' + t.hair, padding: '22px 0' }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: SZ.symbol, fontWeight: 600 }}>{tr.symbol}</span>
+                    <span style={{ fontSize: SZ.meta, color: t.faint }}>
+                      {specName} ×{meta.mult} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · {tr.currency} · share {realPct(tr)}% · opened {dmy(tr.dateInitiated)}
+                    </span>
+                    <span style={{ ...mono, fontSize: SZ.num, color: t.faint }}>entry {nf(entryVal(tr))}</span>
+                    <span style={{ ...mono, fontSize: 20, fontWeight: 600, marginLeft: 'auto', color: rows.length ? pl(m) : t.faint }}>{rows.length ? signed(m) : '—'}</span>
+                    {closing && closing.id === tr.id ? (
+                      <span style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+                        <input autoFocus placeholder="exit" value={closing.px}
+                          onChange={(e) => setClosing({ ...closing, px: e.target.value.replace(/[^\d.]/g, '') })}
+                          onKeyDown={(e) => e.key === 'Enter' && closeTrade()}
+                          style={{ ...mono, fontSize: SZ.num, width: 100, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
+                        <button onClick={closeTrade} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '6px 13px', cursor: 'pointer' }}>Close</button>
+                      </span>
+                    ) : (
+                      <button onClick={() => setClosing({ id: tr.id, px: '' })} style={ghost}>Close</button>
+                    )}
+                  </div>
+
+                  {rows.length > 0 ? (
+                    <div style={{ marginTop: 15 }}>
+                      {rows.map((r, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 18, padding: '6px 0', alignItems: 'baseline' }}>
+                          <span style={{ fontSize: SZ.meta, color: t.faint, width: 140 }}>{r.label}</span>
+                          <span style={{ ...mono, fontSize: SZ.numSm + 1, color: t.faint }}>close {nf(r.close)}</span>
+                          {tr.currency === 'USD' && (
+                            rateEdit === (tr.id + '-' + r.weekKey) ? (
+                              <input autoFocus defaultValue={r.rate}
+                                onBlur={(e) => { editRate(r.weekKey, +e.target.value.replace(/[^\d.]/g, '') || r.rate); setRateEdit(null); }}
+                                onKeyDown={(e) => { if (e.key === 'Enter') { editRate(r.weekKey, +(e.target as HTMLInputElement).value.replace(/[^\d.]/g, '') || r.rate); setRateEdit(null); } }}
+                                style={{ ...mono, fontSize: SZ.numSm, width: 66, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
+                            ) : (
+                              <button onClick={() => setRateEdit(tr.id + '-' + r.weekKey)} title="Edit this week's USD rate"
+                                style={{ ...mono, fontSize: SZ.numSm, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px dashed ' + t.hair, padding: 0 }}>@{r.rate}</button>
+                            )
+                          )}
+                          <span style={{ ...mono, fontSize: SZ.num, fontWeight: 500, color: pl(r.val) }}>{signed(r.val)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 12 }}>opened this week — first close stamps Saturday</div>
+                  )}
+                </div>
+              );
+            })}
+          </>
         )}
 
-        {/* Main Content Stage */}
-        <main style={{
-          width: '100%',
-          minHeight: 'calc(100vh - 56px)',
-          padding: '0',
-          position: 'relative',
-          zIndex: 1,
-        }}>
-          {currentView === 'menu' ? (
+        {/* JOURNAL */}
+        {view === 'journal' && (() => {
+          const byWeek: Record<string, Trade[]> = {};
+          closed.forEach((tr) => { const w = weekKeyOf(closeDateOf(tr)); (byWeek[w] = byWeek[w] || []).push(tr); });
+          const weeksDesc = Object.keys(byWeek).sort().reverse();
+          return (
             <>
-              {/* Hub */}
-              <div style={{
-                position: 'relative',
-                zIndex: 1,
-                minHeight: '100vh',
-                padding: '0 24px 40px',
-              }}>
-                {/* Header */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '24px 0 32px',
-                  borderBottom: '1px solid rgba(201,168,76,0.1)',
-                  marginBottom: '40px',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <div style={{
-                      width: 42, height: 42,
-                      background: 'linear-gradient(135deg,#C9A84C,#E8D5A3)',
-                      borderRadius: 12,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 18, fontWeight: 900, color: '#1A1200',
-                      fontFamily: "'DM Serif Display', serif",
-                      flexShrink: 0,
-                    }}>A</div>
-                    <div>
-                      <div style={{
-                        fontSize: 20, fontWeight: 800, color: '#F0E6C8',
-                        fontFamily: "'DM Serif Display', serif",
-                        letterSpacing: '-0.3px',
-                      }}>Ailaha Phalam</div>
-                      <div style={{
-                        fontSize: 9, letterSpacing: '3px',
-                        color: 'rgba(201,168,76,0.5)',
-                        textTransform: 'uppercase', marginTop: 2,
-                      }}>Celestial Metrics</div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      background: 'rgba(201,168,76,0.08)',
-                      border: '1px solid rgba(201,168,76,0.2)',
-                      borderRadius: 20, padding: '5px 14px',
-                      fontSize: 11, color: '#C9A84C', fontWeight: 700,
-                    }}>
-                      <div style={{
-                        width: 6, height: 6,
-                        background: '#C9A84C', borderRadius: '50%',
-                        animation: 'pulse 1.5s infinite',
-                      }} />
-                      {session?.user?.email?.split('@')[0] || 'AKS'}
-                    </div>
-                    <button
-                      onClick={() => supabase.auth.signOut()}
-                      style={{
-                        background: 'transparent',
-                        border: '1px solid rgba(201,168,76,0.2)',
-                        borderRadius: 8, padding: '6px 14px',
-                        fontSize: 11, color: 'rgba(240,230,200,0.5)',
-                        cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
-                      }}
-                    >Sign out</button>
-                  </div>
-                </div>
-
-                {/* Active trades badge */}
-                {openCount > 0 && (
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 8,
-                    background: 'rgba(201,168,76,0.06)',
-                    border: '1px solid rgba(201,168,76,0.15)',
-                    borderRadius: 12, padding: '8px 16px',
-                    marginBottom: 32, fontSize: 12, color: '#C9A84C', fontWeight: 600,
-                  }}>
-                    <span style={{
-                      width: 8, height: 8, background: '#C9A84C',
-                      borderRadius: '50%', display: 'inline-block',
-                      animation: 'pulse 1.5s infinite',
-                    }} />
-                    {openCount} active trade{openCount !== 1 ? 's' : ''} · CF {instrumentForOpen}
-                  </div>
-                )}
-
-                {/* 8 Tiles Grid */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: 16,
-                  maxWidth: 960,
-                  margin: '0 auto',
-                }}>
-
-                  {/* Tile 1 — Initiate Trade */}
-                  <div className="tile tile-1" onClick={() => setShowAddForm(true)}>
-                    <div className="tile-badge">New</div>
-                    <div className="tile-icon">✦</div>
-                    <div className="tile-title">Initiate Trade</div>
-                    <div className="tile-desc">Open a new position in the ledger</div>
-                  </div>
-
-                  {/* Tile 2 — Current Week */}
-                  <div className="tile tile-2" onClick={() => {
-                    const todayKey = getWeekInfo(new Date().toISOString().split('T')[0]).weekKey;
-                    if (weekKeysList.includes(todayKey)) {
-                      setSelectedWeekKey(todayKey);
-                    } else if (weekKeysList.length > 0) {
-                      setSelectedWeekKey(weekKeysList[weekKeysList.length - 1]);
-                    }
-                    setCurrentView('weekly');
-                  }}>
-                    <div className="tile-icon">◎</div>
-                    <div className="tile-title">Current Week</div>
-                    <div className="tile-desc">This week's trades and P&L</div>
-                  </div>
-
-                  {/* Tile 3 — Last Week */}
-                  <div className="tile tile-3" onClick={() => {
-                    if (weekKeysList.length >= 2) {
-                      setSelectedWeekKey(weekKeysList[weekKeysList.length - 2]);
-                    } else {
-                      const today = new Date();
-                      today.setDate(today.getDate() - 7);
-                      setSelectedWeekKey(getWeekInfo(today.toISOString().split('T')[0]).weekKey);
-                    }
-                    setCurrentView('weekly');
-                  }}>
-                    <div className="tile-icon">◷</div>
-                    <div className="tile-title">Last Week</div>
-                    <div className="tile-desc">Previous week performance</div>
-                  </div>
-
-                  {/* Tile 4 — History */}
-                  <div className="tile tile-4" onClick={() => setCurrentView('cumulative')}>
-                    <div className="tile-icon">⊛</div>
-                    <div className="tile-title">History</div>
-                    <div className="tile-desc">Full trade archive and search</div>
-                  </div>
-
-                  {/* Tile 5 — Summary */}
-                  <div className="tile tile-5" onClick={() => setCurrentView('summary')}>
-                    <div className="tile-icon">◈</div>
-                    <div className="tile-title">Summary</div>
-                    <div className="tile-desc">Cumulative stats and insights</div>
-                  </div>
-
-                  {/* Tile 6 — Export CSV */}
-                  <div className="tile tile-6" onClick={() => setCurrentView('export')}>
-                    <div className="tile-icon">⇣</div>
-                    <div className="tile-title">Export CSV</div>
-                    <div className="tile-desc">Download ledger data</div>
-                  </div>
-
-                  {/* Tile 7 — Trade Tracker */}
-                  <div className="tile tile-7" onClick={() => setCurrentView('tracker')}>
-                    {openCount > 0 && (
-                      <div className="tile-badge">{openCount} open</div>
-                    )}
-                    <div className="tile-icon">⊕</div>
-                    <div className="tile-title">Trade Tracker</div>
-                    <div className="tile-desc">Signal outcome with OHLC</div>
-                  </div>
-
-                  {/* Tile 8 — Signal Intelligence */}
-                  <div className="tile tile-8" onClick={() => setCurrentView('signals')}>
-                    <div className="tile-badge">Live</div>
-                    <div className="tile-icon">⟡</div>
-                    <div className="tile-title">Signal Intelligence</div>
-                    <div className="tile-desc">208 symbols · Manidhari signals</div>
-                  </div>
-
-                </div>
-
-                {/* Bottom brand */}
-                <div style={{
-                  textAlign: 'center',
-                  marginTop: 48,
-                  fontSize: 10,
-                  color: 'rgba(201,168,76,0.25)',
-                  letterSpacing: '2px',
-                  textTransform: 'uppercase',
-                }}>
-                  Pragatprabhavi Intelligence System
-                </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: SZ.meta, color: t.faint }}>Journal · realized by closing week · after share</span>
+                <DownloadPanel />
               </div>
+              <div style={{ ...mono, fontSize: 40, lineHeight: 1, fontWeight: 500, color: pl(totalClosed), marginBottom: 6 }}>{signed(totalClosed)}</div>
+              <div style={{ fontSize: SZ.meta, color: t.faint, marginBottom: 20 }}>A trade lives in the week it CLOSED — that is the week its profit belongs to.</div>
+              {sel.length > 0 && (
+                <div style={{ marginBottom: 24, padding: '13px 17px', border: '1px solid ' + t.ink, borderRadius: 4, display: 'flex', alignItems: 'baseline', gap: 16 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600 }}>{sel.length} selected</span>
+                  <span style={{ ...mono, fontSize: 22, fontWeight: 600, color: pl(selSum) }}>{signed(selSum)}</span>
+                  <button onClick={() => setSel([])} style={{ ...sans, marginLeft: 'auto', fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>clear</button>
+                </div>
+              )}
+              {weeksDesc.map((w) => {
+                const trs = byWeek[w].slice().sort((a, b) => closeDateOf(b).localeCompare(closeDateOf(a)));
+                const wkTotal = trs.reduce((s, tr) => s + realized(tr), 0);
+                const anyDate = closeDateOf(trs[0]);
+                return (
+                  <div key={w} style={{ marginBottom: 34 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, paddingBottom: 10, borderBottom: '1px solid ' + t.ink }}>
+                      <span style={{ fontSize: 15, fontWeight: 600 }}>{weekLabel(anyDate)}</span>
+                      <span style={{ fontSize: SZ.meta, color: t.faint }}>{trs.length} trade{trs.length > 1 ? 's' : ''}</span>
+                      <span style={{ ...mono, fontSize: 20, fontWeight: 600, marginLeft: 'auto', color: pl(wkTotal) }}>{signed(wkTotal)}</span>
+                    </div>
+                    {trs.map((tr) => {
+                      const p = realized(tr); const c = closeDateOf(tr); const held = heldDays(tr.dateInitiated, c);
+                      return (
+                        <div key={tr.id} style={{ display: 'flex', alignItems: 'baseline', gap: 16, padding: '13px 0', borderBottom: '1px solid ' + t.hair, flexWrap: 'wrap' }}>
+                          <span onClick={() => setSel((s) => s.includes(tr.id) ? s.filter((i) => i !== tr.id) : [...s, tr.id])}
+                            style={{ display: 'inline-block', width: 15, height: 15, borderRadius: 3, cursor: 'pointer', alignSelf: 'center', border: '1.5px solid ' + (sel.includes(tr.id) ? t.ink : t.hair), background: sel.includes(tr.id) ? t.ink : 'none' }} />
+                          <span style={{ ...sans, fontSize: SZ.num, fontWeight: 600, width: 130 }}>{tr.symbol}</span>
+                          <span style={{ fontSize: SZ.meta, color: t.faint }}>initiated {dmy(tr.dateInitiated)}</span>
+                          <span style={{ fontSize: SZ.meta, color: t.faint }}>closed {dmy(c)}</span>
+                          <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>held {held}d</span>
+                          <span style={{ fontSize: SZ.meta, color: t.faint }}>{sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · share {realPct(tr)}%</span>
+                          <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, marginLeft: 'auto', color: pl(p) }}>{signed(p)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+              {weeksDesc.length === 0 && <div style={{ fontSize: 14, color: t.faint }}>No closed trades yet — the journal fills as trades close.</div>}
             </>
-          ) : currentView === 'tracker' ? (
-            <TradeTracker session={session} setCurrentView={setCurrentView} />
-          ) : currentView === 'signals' ? (
-            <SignalIntelligence setCurrentView={setCurrentView} />
-          ) : (
-            <div className="space-y-5">
-              {/* Back navigation strip */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 28px',
-                borderBottom: '1px solid rgba(201,168,76,0.08)',
-                background: 'rgba(8,5,2,0.7)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                position: 'sticky',
-                top: 56,
-                zIndex: 39,
-              }}>
-                <button
-                  type="button"
-                  id="back-to-menu-btn"
-                  onClick={() => setCurrentView('menu')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'rgba(240,230,200,0.55)',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    letterSpacing: '0.5px',
-                    fontFamily: "'DM Sans', sans-serif",
-                    padding: '4px 0',
-                  }}
-                >
-                  <ArrowLeft style={{
-                    width: 14, height: 14,
-                    color: '#C9A84C',
-                  }} />
-                  Back to Hub Menu
-                </button>
-                <span style={{
-                  fontSize: 9,
-                  fontWeight: 700,
-                  letterSpacing: '3px',
-                  textTransform: 'uppercase',
-                  color: 'rgba(201,168,76,0.35)',
-                  fontFamily: "'DM Sans', sans-serif",
-                }}>
-                  {currentView === 'weekly' && 'Weekly Ledger'}
-                  {currentView === 'cumulative' && 'Cumulative Analytics'}
-                  {currentView === 'summary' && 'Portfolio Summary'}
-                  {currentView === 'export' && 'Export Workspace'}
-                </span>
+          );
+        })()}
+
+        {/* CLOSED */}
+        {view === 'closedv' && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: SZ.meta, color: t.faint }}>Realized · {closed.length} trades · after share</span>
+              <DownloadPanel />
+            </div>
+            <div style={{ ...mono, fontSize: SZ.big, lineHeight: 1, fontWeight: 500, color: pl(totalClosed) }}>{signed(totalClosed)}</div>
+            {sel.length > 0 && (
+              <div style={{ marginTop: 18, padding: '13px 17px', border: '1px solid ' + t.ink, borderRadius: 4, display: 'flex', alignItems: 'baseline', gap: 16 }}>
+                <span style={{ fontSize: 14, fontWeight: 600 }}>{sel.length} selected</span>
+                <span style={{ ...mono, fontSize: 22, fontWeight: 600, color: pl(selSum) }}>{signed(selSum)}</span>
+                <button onClick={() => setSel([])} style={{ ...sans, marginLeft: 'auto', fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>clear</button>
               </div>
+            )}
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16 }}>
+              <thead><tr>
+                <th style={{ borderBottom: '1px solid ' + t.hair, width: 36 }} />
+                {th('Closed')}{th('Symbol')}{th('Side')}{th('Qty', true)}{th('Entry', true)}{th('Exit', true)}{th('Share', true)}{th('P&L', true)}
+                <th style={{ borderBottom: '1px solid ' + t.hair, width: 110 }} />
+              </tr></thead>
+              <tbody>
+                {closed.map((tr) => {
+                  const p = realized(tr); const on = sel.includes(tr.id); const editing = editRow && editRow.id === tr.id;
+                  return (
+                    <tr key={tr.id} style={{ background: on ? (themeKey === 'white' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.045)') : 'transparent' }}>
+                      <td style={{ borderBottom: '1px solid ' + t.hair, cursor: 'pointer' }} onClick={() => setSel((s) => on ? s.filter((i) => i !== tr.id) : [...s, tr.id])}>
+                        <span style={{ display: 'inline-block', width: 15, height: 15, borderRadius: 3, border: '1.5px solid ' + (on ? t.ink : t.hair), background: on ? t.ink : 'none' }} />
+                      </td>
+                      <td style={td({ color: t.faint, fontSize: SZ.numSm })}>{dmy(closeDateOf(tr))}</td>
+                      <td style={{ ...td(), ...sans, fontWeight: 600, fontSize: SZ.num }}>{tr.symbol}</td>
+                      <td style={{ ...td(), ...sans, fontSize: 14, color: tr.direction === 'Long' ? t.ink : t.faint }}>{sideOf(tr)}</td>
+                      <td style={td({ textAlign: 'right' })}>{tr.numberOfLots}</td>
+                      <td style={td({ textAlign: 'right' })}>{nf(entryVal(tr))}</td>
+                      <td style={td({ textAlign: 'right' })}>
+                        {editing ? (
+                          <input autoFocus value={editRow!.exit} onChange={(e) => setEditRow({ ...editRow!, exit: e.target.value.replace(/[^\d.]/g, '') })} onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                            style={{ ...mono, fontSize: SZ.num, width: 92, textAlign: 'right', border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
+                        ) : nf(exitVal(tr))}
+                      </td>
+                      <td style={td({ textAlign: 'right', fontSize: 14, color: t.faint })}>{realPct(tr)}%</td>
+                      <td style={td({ textAlign: 'right', fontWeight: 600, color: pl(p) })}>{signed(p)}</td>
+                      <td style={{ ...td(), textAlign: 'right' }}>
+                        {editing ? (
+                          <button onClick={saveEdit} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '5px 12px', cursor: 'pointer' }}>Save</button>
+                        ) : (
+                          <span style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                            <button onClick={() => act('edit', tr.id)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Edit</button>
+                            <button onClick={() => act('delete', tr.id)} style={{ ...sans, fontSize: 13, color: themeKey === 'white' ? t.loss : t.ink, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Delete</button>
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {closed.length === 0 && <div style={{ fontSize: 14, color: t.faint, marginTop: 16 }}>No closed trades yet.</div>}
+            <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 14 }}>
+              Checkbox sums selected trades. Edit and Delete sit behind the PIN{pinOk ? ' — unlocked this session' : (pinHash ? '' : ' — first use sets it')}.
+            </div>
+          </>
+        )}
 
-              {currentView === 'weekly' && (
-                <motion.div
-                  initial={{ opacity: 0, y: 3 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <WeeklyReport
-                    trades={trades}
-                    selectedWeekKey={selectedWeekKey}
-                    onSelectWeek={setSelectedWeekKey}
-                    onUpdateFridayClosingPrice={handleUpdateFridayClosingPrice}
-                    onOpenCheckPnL={setCheckPnLTrade}
-                    onOpenCloseTrade={setCloseTradeTarget}
-                    onOpenCarryForward={(trade, weekKey) => setCarryForwardTarget({ trade, weekKey })}
-                    onOpenEditTrade={setEditTradeTarget}
-                    onOpenWhatIf={setWhatIfTradeTarget}
-                    onDeleteTrade={handleDeleteTrade}
-                    weekOffsets={weekOffsets}
-                    onSaveOffset={handleSaveOffset}
-                    onClearOffset={handleClearOffset}
-                  />
-                </motion.div>
-              )}
-
-              {currentView === 'cumulative' && (
-                <motion.div
-                  initial={{ opacity: 0, y: 3 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <CumulativeStats trades={trades} weekOffsets={weekOffsets} />
-                </motion.div>
-              )}
-
-              {currentView === 'summary' && (
-                <motion.div
-                  initial={{ opacity: 0, y: 3 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <InstrumentSummary trades={trades} />
-                </motion.div>
-              )}
-
-              {currentView === 'export' && (
-                <motion.div
-                  initial={{ opacity: 0, y: 3 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <ExportLedgerView trades={trades} onOpenEditTrade={setEditTradeTarget} weekOffsets={weekOffsets} />
-                </motion.div>
+        {/* ADD */}
+        {view === 'add' && (
+          <div style={{ maxWidth: 580 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 28 }}>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>Initiate new contract</div>
+              <div style={{ ...mono, fontSize: SZ.meta, color: t.faint }}>{weekLabel(todayISO)}</div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px 30px' }}>
+              <div><label style={lbl}>Symbol / security</label>
+                <input placeholder="e.g. NIFTY25S" value={form.sym} onChange={(e) => setForm({ ...form, sym: e.target.value })} style={inp} /></div>
+              <div><label style={lbl}>Instrument</label>
+                <select value={form.instr} onChange={(e) => setForm({ ...form, instr: e.target.value as SpecInstrument, ccy: INSTR[e.target.value as SpecInstrument].ccy })}
+                  style={{ ...inp, ...sans, fontSize: SZ.num - 1, cursor: 'pointer', background: t.bg }}>
+                  {(Object.keys(INSTR) as SpecInstrument[]).map((k) => <option key={k} value={k}>{k}</option>)}
+                </select></div>
+              <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 10 }}>
+                <button onClick={() => setForm({ ...form, side: 'LONG' })} style={toggle(form.side === 'LONG')}>LONG · buy first</button>
+                <button onClick={() => setForm({ ...form, side: 'SHORT' })} style={toggle(form.side === 'SHORT')}>SHORT · sell first</button>
+              </div>
+              <div><label style={lbl}>{form.side === 'LONG' ? 'Buy' : 'Sell'} price</label>
+                <input placeholder="0.00" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value.replace(/[^\d.]/g, '') })} style={inp} /></div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                <div><label style={lbl}>Multiplier</label><div style={{ ...mono, fontSize: SZ.num, padding: '6px 0' }}>×{INSTR[form.instr].mult}</div></div>
+                <div><label style={lbl}>Lots</label>
+                  <input value={form.qty} onChange={(e) => setForm({ ...form, qty: e.target.value.replace(/\D/g, '') })} style={inp} /></div>
+              </div>
+              <div><label style={lbl}>Initiation date</label>
+                <input value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} style={inp} /></div>
+              <div><label style={lbl}>Accounting currency</label>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={() => setForm({ ...form, ccy: 'INR' })} style={toggle(form.ccy === 'INR')}>₹ INR</button>
+                  <button onClick={() => setForm({ ...form, ccy: 'USD' })} style={toggle(form.ccy === 'USD')}>$ USD</button>
+                </div></div>
+              <div><label style={lbl}>Realization · profit share</label>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={() => setForm({ ...form, real: 1.0 })} style={toggle(form.real === 1.0)}>FULL 1.0</button>
+                  <button onClick={() => setForm({ ...form, real: 0.8 })} style={toggle(form.real === 0.8)}>80% 0.8</button>
+                </div>
+                <div style={{ fontSize: SZ.label, color: t.faint, marginTop: 6 }}>MTM and realized P&L both wear this.</div></div>
+              <div><label style={lbl}>Entry-leg brokerage ({form.ccy === 'USD' ? '$' : '₹'}, optional)</label>
+                <input placeholder="blank = auto formula (legacy)" value={form.brok} onChange={(e) => setForm({ ...form, brok: e.target.value.replace(/[^\d.]/g, '') })} style={inp} />
+                <div style={{ fontSize: SZ.label, color: t.faint, marginTop: 6 }}>Charged this week. Exit leg at close.</div></div>
+              {form.ccy === 'USD' && (
+                <div style={{ gridColumn: '1 / -1', fontSize: SZ.meta, color: t.faint }}>
+                  USD → ₹ converts at each week's closing rate (this week's asked Saturday · last week {lastRateDisplay}).
+                </div>
               )}
             </div>
-          )}
-        </main>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 14, marginTop: 36, paddingTop: 20, borderTop: '1px solid ' + t.hair }}>
+              <button onClick={() => setForm({ ...form, sym: '', price: '' })} style={{ ...sans, fontSize: SZ.btn, color: t.faint, background: 'none', border: '1px solid ' + t.hair, borderRadius: 3, padding: '10px 20px', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={deploy} style={{ ...sans, fontSize: SZ.btn, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '10px 24px', cursor: 'pointer' }}>Confirm &amp; deploy</button>
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Humble Aesthetic Footer — hidden on the revamped hub (it has its own bottom brand). */}
-      {currentView !== 'menu' && (
-      <footer style={{
-        borderTop: '1px solid rgba(201,168,76,0.08)',
-        padding: '12px 24px',
-        textAlign: 'center',
-        fontSize: 9,
-        color: 'rgba(201,168,76,0.2)',
-        letterSpacing: '2.5px',
-        textTransform: 'uppercase',
-        background: 'rgba(8,5,2,0.6)',
-      }}>
-        Ailaha Phalam · Position Ledger Logistics Engine
-      </footer>
-      )}
-
-
-      {/* Modals & Popups */}
-      {showAddForm && (
-        <NewTradeForm
-          onAddTrade={handleAddTrade}
-          onClose={() => setShowAddForm(false)}
-        />
-      )}
-
-      {checkPnLTrade && (
-        <CheckPnLModal
-          trade={checkPnLTrade}
-          onClose={() => setCheckPnLTrade(null)}
-        />
-      )}
-
-      {closeTradeTarget && (
-        <CloseTradeModal
-          trade={closeTradeTarget}
-          onConfirmClose={handleConfirmCloseTrade}
-          onClose={() => setCloseTradeTarget(null)}
-        />
-      )}
-
-      {carryForwardTarget && (
-        <CarryForwardModal
-          trade={carryForwardTarget.trade}
-          weekKey={carryForwardTarget.weekKey}
-          onUpdateFridayClosingPrice={handleUpdateFridayClosingPrice}
-          onClose={() => setCarryForwardTarget(null)}
-        />
-      )}
-
-      {editTradeTarget && (
-        <EditTradeModal
-          trade={editTradeTarget}
-          onSave={handleSaveEditedTrade}
-          onClose={() => setEditTradeTarget(null)}
-        />
-      )}
-
-      {whatIfTradeTarget && (
-        <WhatIfCloseModal
-          trade={whatIfTradeTarget}
-          onClose={() => setWhatIfTradeTarget(null)}
-        />
-      )}
-
-      {pinIntent && session && (
-        <PinModal
-          userId={session.user.id}
-          pinHash={pinHash}
-          intent={pinIntent}
-          actionLabel={pinActionLabel}
-          onAuthorized={runPendingAction}
-          onPinHashChange={setPinHash}
-          onClose={closePinModal}
-        />
-      )}
     </div>
   );
+}
+
+function dmyInput(iso: string) {
+  const d = new Date(iso);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()}`;
 }
