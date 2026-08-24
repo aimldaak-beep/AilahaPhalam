@@ -172,12 +172,21 @@ Theme choice persists in `localStorage` (`ap_theme`), default Forest. Swatches s
 Add trade; Team access + Sign out are tiny links under the date (kept out of the nav so the nav
 matches the design spec).
 
-## 16. Type scale (raised — the live `SZ` map in `App.tsx`)
-`hero 64 · big 50 · symbol 20 · num 19 · numSm 17 · meta 15 · label 13 · btn 15`; plus row-MTM 22,
-nav tabs 15, weekly-row values 19, journal total 44. Content column is **content-box, max-width
-960px** (widened from the spec's 820 so the larger type keeps single-line rows — nav one line, MTM
-right-anchored — with zero wraps at 1280px). `DESIGN_SPEC.jsx` (repo root) is the original mockup;
-these SZ values supersede its.
+## 16. Type scale + layout grid
+Type scale (`SZ` map in `App.tsx`): `hero 64 · big 50 · symbol 20 · num 19 · numSm 17 · meta 15 ·
+label 13 · btn 15`; plus row-MTM 22, nav tabs 15, weekly-row values 19, journal total 44.
+
+**Content column: content-box, max-width 1140px.** The live-trade card is a **fixed invisible CSS
+grid** (no visible gridlines) — every value has a fixed place, identical tracks on every card so
+values align vertically across trades:
+- Zone 1 identity — `grid 200px | 1fr | 380px`: SYMBOL (ellipsis-guarded) · meta · 4 uniform 84px
+  ghost actions (What-if · Edit · Close · Delete), never wrapping.
+- Zone 2 numbers — `grid repeat(4, 220px)`: ENTRY · BROKERAGE (entry leg, §9) · CURRENT P&L (22/600) · CLOSED VALUE.
+- Zone 3 weekly ledger — indent 200, `grid 160 | 150 | 100 | 150` per week row.
+- What-if / Edit / inline-close / exit inputs open inside the grid cells; the card grows, columns never move.
+- Journal rows use the same discipline (`grid 30 | 200 | 130 | 130 | 90 | 1fr | 150`); week-close panel on the 220px rhythm.
+
+`DESIGN_SPEC.jsx` (repo root) is the original flex mockup; the raised SZ values and the grid layout supersede it.
 
 ## 17. Archive (pre-wipe v1 ledger)
 `archive/2026-08-24/` holds the COMPLETE pre-wipe v1 database (CSV + JSON per table, verified
