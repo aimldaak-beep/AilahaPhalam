@@ -31,7 +31,7 @@ type ThemeKey = keyof typeof THEMES;
 type PinAction = 'edit' | 'delete' | 'live-edit' | 'live-delete' | 'team';
 type EditState = {
   id: string; kind: 'live' | 'closed';
-  symbol: string; instr: SpecInstrument; side: 'LONG' | 'SHORT'; lots: string; entry: string; date: string;
+  symbol: string; instr: SpecInstrument; side: 'LONG' | 'SHORT'; lots: string; mult: string; entry: string; date: string;
   ccy: 'INR' | 'USD'; real: number; entryBrok: string;
   exit: string; exitBrok: string; closedDate: string;   // closed-only (blank for live)
   origInstr: SpecInstrument; origCcy: 'INR' | 'USD';
@@ -102,7 +102,7 @@ export default function App() {
   const [dlMode, setDlMode] = useState<'all' | 'selected' | 'range'>('all');
   const [dlFrom, setDlFrom] = useState('');
   const [dlTo, setDlTo] = useState('');
-  const [form, setForm] = useState({ sym: '', instr: 'DOW' as SpecInstrument, side: 'LONG' as 'LONG' | 'SHORT', qty: '1', price: '', date: dmyInput(todayISO), ccy: 'USD' as 'USD' | 'INR', real: 0.8, brok: '' });
+  const [form, setForm] = useState({ sym: '', instr: 'DOW' as SpecInstrument, side: 'LONG' as 'LONG' | 'SHORT', qty: '1', mult: '5', price: '', date: dmyInput(todayISO), ccy: 'USD' as 'USD' | 'INR', real: 0.8, brok: '' });
 
   // ---- auth ----
   useEffect(() => {
@@ -248,7 +248,8 @@ export default function App() {
   };
 
   const deploy = () => {
-    if (!form.sym || !form.price) return;
+    const mult = +form.mult;
+    if (!form.sym || !form.price || !(mult > 0)) return;   // multiplier is required, > 0
     const meta = INSTR[form.instr];
     const ccy = form.ccy;
     const price = +form.price;
@@ -264,7 +265,7 @@ export default function App() {
       sellPrice: form.side === 'LONG' ? null : price,
       buyDate: form.side === 'LONG' ? isoFromForm(form.date) : null,
       sellDate: form.side === 'LONG' ? null : isoFromForm(form.date),
-      lotSize: meta.mult,
+      lotSize: mult,
       numberOfLots: +form.qty || 1,
       status: form.side === 'LONG' ? 'CarryForwardLong' : 'CarryForwardShort',
       currency: ccy,
@@ -334,7 +335,7 @@ export default function App() {
     setEdit({
       id: tr.id, kind,
       symbol: tr.symbol, instr: spec, origInstr: spec,
-      side: sideOf(tr), lots: String(tr.numberOfLots), entry: String(entryVal(tr)),
+      side: sideOf(tr), lots: String(tr.numberOfLots), mult: String(tr.lotSize), entry: String(entryVal(tr)),
       date: dmyInput(tr.dateInitiated), ccy: tr.currency, origCcy: tr.currency,
       real: tr.realizationRate ?? 1.0, entryBrok: tr.entryBrokerage != null ? String(tr.entryBrokerage) : '',
       exit: kind === 'closed' ? String(exitVal(tr)) : '',
@@ -350,6 +351,7 @@ export default function App() {
     const meta = INSTR[e.instr];
     const entry = +e.entry || 0;
     const lots = parseInt(e.lots) || orig.numberOfLots;
+    const mult = +e.mult > 0 ? +e.mult : orig.lotSize;   // per-trade multiplier (editable)
     const iso = isoFromForm(e.date);
     const newInitWeek = weekKeyOf(iso);
     const fcp = orig.fridayClosingPrices || {};
@@ -361,7 +363,7 @@ export default function App() {
     const dir: TradeDirection = e.side === 'LONG' ? 'Long' : 'Short';
     const base: Trade = {
       ...orig,
-      symbol: e.symbol.toUpperCase().trim() || orig.symbol, instrument: meta.v1, lotSize: meta.mult,
+      symbol: e.symbol.toUpperCase().trim() || orig.symbol, instrument: meta.v1, lotSize: mult,
       direction: dir, numberOfLots: lots, dateInitiated: iso,
       currency: e.ccy, realizationRate: e.real,
       entryBrokerage: e.entryBrok.trim() === '' ? null : +e.entryBrok,
@@ -420,11 +422,11 @@ export default function App() {
       return (!dlFrom || c >= dlFrom) && (!dlTo || c <= dlTo);
     });
     if (!rows.length) return;
-    const head = ['Symbol', 'Instrument', 'Side', 'Lots', 'Entry', 'Exit', 'Initiated', 'Closed', 'Held (days)', 'Week', 'Currency', 'Share', 'P&L (INR)'];
+    const head = ['Symbol', 'Instrument', 'Multiplier', 'Side', 'Lots', 'Entry', 'Exit', 'Initiated', 'Closed', 'Held (days)', 'Week', 'Currency', 'Share', 'P&L (INR)'];
     const lines = rows.map((tr) => {
       const c = closeDateOf(tr);
       return [
-        tr.symbol, specNameOf(tr.instrument), sideOf(tr), tr.numberOfLots, entryVal(tr), exitVal(tr),
+        tr.symbol, specNameOf(tr.instrument), tr.lotSize, sideOf(tr), tr.numberOfLots, entryVal(tr), exitVal(tr),
         tr.dateInitiated, c, heldDays(tr.dateInitiated, c), weekLabel(c), tr.currency,
         realPct(tr) + '%', realized(tr),
       ].join(',');
@@ -505,8 +507,8 @@ export default function App() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 220px)', rowGap: 18, marginTop: 18, alignItems: 'start' }}>
           {cell('Symbol', <input autoFocus value={e.symbol} onChange={(x) => setE({ symbol: x.target.value })} onKeyDown={onEditKey} style={gridInput(170)} />)}
           {cell('Instrument', (
-            <select value={e.instr} onChange={(x) => setE({ instr: x.target.value as SpecInstrument, ccy: INSTR[x.target.value as SpecInstrument].ccy })} style={selStyle}>
-              {(Object.keys(INSTR) as SpecInstrument[]).map((k) => <option key={k} value={k}>{k} ×{INSTR[k].mult}</option>)}
+            <select value={e.instr} onChange={(x) => { const k = x.target.value as SpecInstrument; const d = INSTR[k].mult; setE({ instr: k, ccy: INSTR[k].ccy, mult: d == null ? '' : String(d) }); }} style={selStyle}>
+              {(Object.keys(INSTR) as SpecInstrument[]).map((k) => <option key={k} value={k}>{k}{INSTR[k].mult != null ? ` ×${INSTR[k].mult}` : ''}</option>)}
             </select>
           ))}
           {cell('Side', (
@@ -516,6 +518,7 @@ export default function App() {
             </span>
           ))}
           {cell('Lots', <input value={e.lots} onChange={(x) => setE({ lots: x.target.value.replace(/\D/g, '') })} onKeyDown={onEditKey} style={gridInput(80)} />)}
+          {cell('Multiplier', <input value={e.mult} onChange={(x) => setE({ mult: x.target.value.replace(/[^\d.]/g, '') })} onKeyDown={onEditKey} style={gridInput(100)} />)}
           {cell('Entry price', <input value={e.entry} onChange={(x) => setE({ entry: x.target.value.replace(/[^\d.]/g, '') })} onKeyDown={onEditKey} style={gridInput(150)} />)}
           {cell('Init date', <input value={e.date} onChange={(x) => setE({ date: x.target.value })} onKeyDown={onEditKey} style={gridInput(150)} />)}
           {cell('Currency', (
@@ -747,7 +750,7 @@ export default function App() {
                   <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr 380px', alignItems: 'baseline', gap: 14 }}>
                     <span title={tr.symbol} style={{ fontSize: SZ.symbol, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tr.symbol}</span>
                     <span style={{ fontSize: SZ.meta, color: t.faint, lineHeight: 1.5 }}>
-                      {specName} ×{meta.mult} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · {tr.currency} · share {realPct(tr)}% · opened {dmy(tr.dateInitiated)}
+                      {specName} ×{tr.lotSize} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · {tr.currency} · share {realPct(tr)}% · opened {dmy(tr.dateInitiated)}
                     </span>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
                       <button onClick={() => { setClosing(null); setWhatIf(whatIf && whatIf.id === tr.id ? null : { id: tr.id, exit: '', rate: String(latestUsdRate(tr)) }); }} style={actBtn}>What-if</button>
@@ -876,7 +879,7 @@ export default function App() {
                           <span style={{ fontSize: SZ.meta, color: t.faint }}>initiated {dmy(tr.dateInitiated)}</span>
                           <span style={{ fontSize: SZ.meta, color: t.faint }}>closed {dmy(c)}</span>
                           <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>held {held}d</span>
-                          <span style={{ fontSize: SZ.meta, color: t.faint }}>{sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · share {realPct(tr)}%</span>
+                          <span style={{ fontSize: SZ.meta, color: t.faint }}>{sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · ×{tr.lotSize} · share {realPct(tr)}%</span>
                           <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, textAlign: 'right', color: pl(p) }}>{signed(p)}</span>
                         </div>
                       );
@@ -907,7 +910,7 @@ export default function App() {
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16 }}>
               <thead><tr>
                 <th style={{ borderBottom: '1px solid ' + t.hair, width: 36 }} />
-                {th('Closed')}{th('Symbol')}{th('Side')}{th('Qty', true)}{th('Entry', true)}{th('Exit', true)}{th('Share', true)}{th('P&L', true)}
+                {th('Closed')}{th('Symbol')}{th('Side')}{th('Qty', true)}{th('Mult', true)}{th('Entry', true)}{th('Exit', true)}{th('Share', true)}{th('P&L', true)}
                 <th style={{ borderBottom: '1px solid ' + t.hair, width: 110 }} />
               </tr></thead>
               <tbody>
@@ -923,6 +926,7 @@ export default function App() {
                       <td style={{ ...td(), ...sans, fontWeight: 600, fontSize: SZ.num }}>{tr.symbol}</td>
                       <td style={{ ...td(), ...sans, fontSize: 15, color: tr.direction === 'Long' ? t.ink : t.faint }}>{sideOf(tr)}</td>
                       <td style={td({ textAlign: 'right' })}>{tr.numberOfLots}</td>
+                      <td style={td({ textAlign: 'right', color: t.faint })}>×{tr.lotSize}</td>
                       <td style={td({ textAlign: 'right' })}>{nf(entryVal(tr))}</td>
                       <td style={td({ textAlign: 'right' })}>{nf(exitVal(tr))}</td>
                       <td style={td({ textAlign: 'right', fontSize: 15, color: t.faint })}>{realPct(tr)}%</td>
@@ -935,7 +939,7 @@ export default function App() {
                       </td>
                     </tr>
                     {editing && (
-                      <tr><td colSpan={10} style={{ borderBottom: '1px solid ' + t.hair, padding: '4px 0 22px' }}>{editForm()}</td></tr>
+                      <tr><td colSpan={11} style={{ borderBottom: '1px solid ' + t.hair, padding: '4px 0 22px' }}>{editForm()}</td></tr>
                     )}
                     </Fragment>
                   );
@@ -960,7 +964,7 @@ export default function App() {
               <div><label style={lbl}>Symbol / security</label>
                 <input placeholder="e.g. NIFTY25S" value={form.sym} onChange={(e) => setForm({ ...form, sym: e.target.value })} style={inp} /></div>
               <div><label style={lbl}>Instrument</label>
-                <select value={form.instr} onChange={(e) => setForm({ ...form, instr: e.target.value as SpecInstrument, ccy: INSTR[e.target.value as SpecInstrument].ccy })}
+                <select value={form.instr} onChange={(e) => { const k = e.target.value as SpecInstrument; const d = INSTR[k].mult; setForm({ ...form, instr: k, ccy: INSTR[k].ccy, mult: d == null ? '' : String(d) }); }}
                   style={{ ...inp, ...sans, fontSize: SZ.num - 1, cursor: 'pointer', background: t.bg }}>
                   {(Object.keys(INSTR) as SpecInstrument[]).map((k) => <option key={k} value={k}>{k}</option>)}
                 </select></div>
@@ -971,7 +975,8 @@ export default function App() {
               <div><label style={lbl}>{form.side === 'LONG' ? 'Buy' : 'Sell'} price</label>
                 <input placeholder="0.00" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value.replace(/[^\d.]/g, '') })} style={inp} /></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                <div><label style={lbl}>Multiplier</label><div style={{ ...mono, fontSize: SZ.num, padding: '6px 0' }}>×{INSTR[form.instr].mult}</div></div>
+                <div><label style={lbl}>Multiplier · lot size</label>
+                  <input placeholder={form.instr === 'NSE FUT' ? "e.g. 250" : "size"} value={form.mult} onChange={(e) => setForm({ ...form, mult: e.target.value.replace(/[^\d.]/g, '') })} style={inp} /></div>
                 <div><label style={lbl}>Lots</label>
                   <input value={form.qty} onChange={(e) => setForm({ ...form, qty: e.target.value.replace(/\D/g, '') })} style={inp} /></div>
               </div>

@@ -18,14 +18,18 @@ import {
 // Spec instrument -> { multiplier (lotSize), default currency, v1 enum for brokerage }.
 // The v1 enum decides the brokerage branch in calculateTurnoverAndBrokerage:
 //   'Futures'|'Gift Nifty'  -> 0.0003 * turnover ;  the four indices -> $5 * lots.
-export type SpecInstrument = 'DOW' | 'NASDAQ' | 'SNP' | 'NIKKEI' | 'GIFTNIFTY' | 'NIFTY FUT';
-export const INSTR: Record<SpecInstrument, { mult: number; ccy: 'USD' | 'INR'; v1: Instrument }> = {
+export type SpecInstrument = 'DOW' | 'NASDAQ' | 'SNP' | 'NIKKEI' | 'GIFTNIFTY' | 'NIFTY FUT' | 'NSE FUT';
+// `mult` is only the AUTO-FILL default for the forms (null = blank, user must enter the
+// script's lot size). The engine NEVER reads this at compute time — it uses the trade's
+// stored per-trade `lotSize`. NSE FUT is a stock-future (RELIANCE 250, TCS 175, …).
+export const INSTR: Record<SpecInstrument, { mult: number | null; ccy: 'USD' | 'INR'; v1: Instrument }> = {
   DOW:        { mult: 5,   ccy: 'USD', v1: 'DOW' },
   NASDAQ:     { mult: 20,  ccy: 'USD', v1: 'Nasdaq' },
   SNP:        { mult: 50,  ccy: 'USD', v1: 'SnP' },
   NIKKEI:     { mult: 100, ccy: 'USD', v1: 'Nikkei' },
   GIFTNIFTY:  { mult: 50,  ccy: 'USD', v1: 'Gift Nifty' },
   'NIFTY FUT':{ mult: 75,  ccy: 'INR', v1: 'Futures' },
+  'NSE FUT':  { mult: null, ccy: 'INR', v1: 'NSE Futures' },
 };
 // Reverse map: v1 enum -> spec display name (for rendering stored trades).
 export const specNameOf = (v1: Instrument): SpecInstrument => {
