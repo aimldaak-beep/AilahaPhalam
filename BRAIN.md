@@ -92,10 +92,10 @@ week the exit-leg). **Realization scales BOTH MTM and realized** (it multiplies 
 `estimateInstantPnL` is the What-if variant. All money renders through `inr()/signed()/nf()` (en-IN
 lakh/crore) with `font-variant-numeric: tabular-nums`.
 
-## 8. Instruments
-Spec name → multiplier (lot size) → default currency → v1 enum (selects the brokerage branch):
+## 8. Instruments & the per-trade multiplier law
+Spec name → auto-fill multiplier → default currency → v1 enum (selects the brokerage branch):
 
-| Instrument | Multiplier | Currency | v1 enum |
+| Instrument | Auto-fill mult | Currency | v1 enum |
 |---|---|---|---|
 | DOW | 5 | USD | `DOW` |
 | NASDAQ | 20 | USD | `Nasdaq` |
@@ -103,10 +103,16 @@ Spec name → multiplier (lot size) → default currency → v1 enum (selects th
 | NIKKEI | 100 | USD | `Nikkei` |
 | GIFTNIFTY | 50 | USD | `Gift Nifty` |
 | NIFTY FUT | 75 | INR | `Futures` |
+| **NSE FUT** | **(blank)** | INR | `NSE Futures` |
 
-Add-trade auto-fills the multiplier from the instrument; currency defaults per the table but is
-toggleable (₹INR / $USD). (Note: v1's form used lotSize 250 for Futures — v2 deliberately uses the
-spec's 75; the brokerage formula is unaffected.)
+**The multiplier is a per-trade EDITABLE value** (v1 behavior). Selecting an instrument auto-fills it
+from the table; the user can override it per trade (validated > 0). **NSE FUT** is the stock-future
+row: INR-native, its multiplier is **blank on select** — the user must enter the script's lot size
+(RELIANCE 250, TCS 175, …); symbol is free text. The trade STORES its own `lotSize`; the engine and
+all display read that stored value (MTM, realized, what-if, brokerage, meta, tables, CSV) — the
+`INSTR` map's `mult` is ONLY a form auto-fill default, never read at compute time. The multiplier is
+editable in full-Edit on both live and closed trades; saving recomputes the whole chain.
+(`INSTR.mult` in `v2engine.ts` is `number | null`; NSE FUT is `null`.)
 
 ## 9. Brokerage — legacy auto-formulas (VERBATIM from `src/types.ts` `calculateTurnoverAndBrokerage`)
 ```ts
@@ -161,8 +167,9 @@ initiation week are removed on save, noted in the confirm.
 
 ## 14. Download as Excel (Journal + Closed)
 Three modes: **complete history · selected trades · date range** (by closing date). CSV columns:
-`Symbol, Instrument, Side, Lots, Entry, Exit, Initiated, Closed, Held (days), Week, Currency, Share,
-P&L (INR)`.
+`Symbol, Instrument, Multiplier, Side, Lots, Entry, Exit, Initiated, Closed, Held (days), Week,
+Currency, Share, P&L (INR)`. The Journal meta and the Closed table's **Mult** column also show the
+trade's stored multiplier.
 
 ## 15. Themes (exact hex)
 | Token | White | Forest |
