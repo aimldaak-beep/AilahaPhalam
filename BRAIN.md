@@ -104,6 +104,8 @@ Spec name → auto-fill multiplier → default currency → v1 enum (selects the
 | GIFTNIFTY | 50 | USD | `Gift Nifty` |
 | NIFTY FUT | 75 | INR | `Futures` |
 | **NSE FUT** | **(blank)** | INR | `NSE Futures` |
+| **COPPER-HG** (COMEX) | 25000 | USD ($) | `COPPER-HG` |
+| **COPPER-MHG** (COMEX) | 2500 | USD ($) | `COPPER-MHG` |
 
 **The multiplier is a per-trade EDITABLE value** (v1 behavior). Selecting an instrument auto-fills it
 from the table; the user can override it per trade (validated > 0). **NSE FUT** is the stock-future
@@ -113,6 +115,14 @@ all display read that stored value (MTM, realized, what-if, brokerage, meta, tab
 `INSTR` map's `mult` is ONLY a form auto-fill default, never read at compute time. The multiplier is
 editable in full-Edit on both live and closed trades; saving recomputes the whole chain.
 (`INSTR.mult` in `v2engine.ts` is `number | null`; NSE FUT is `null`.)
+
+**COMEX group (`comex:true`) — display-only $ currency, NO FX.** COPPER-HG (25000) and COPPER-MHG
+(2500), tick 0.0005, 4-decimal prices. COMEX trades render P&L/prices in **$** and are **excluded
+from every ₹ aggregate** (live hero, closed total, journal week, selected-sum) — shown as their own
+`$` line. There is **no USD/INR rate stored, fetched, or applied**: a COMEX trade is stored with an
+internal `currency:'INR'` so the FX engine leaves it at rate 1, and the `$`/USD label is derived from
+the instrument (`isComex`/`dispCcy`/`sgn`/`px` in `v2engine.ts`). COMEX auto-brokerage = 0. Adding
+GOLD-GC/SILVER-SI later is a one-line `INSTR` entry (comex:true) + `Instrument` union value.
 
 ## 9. Brokerage — legacy auto-formulas (VERBATIM from `src/types.ts` `calculateTurnoverAndBrokerage`)
 ```ts
