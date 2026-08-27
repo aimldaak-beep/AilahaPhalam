@@ -16,6 +16,7 @@ import {
   INSTR, SpecInstrument, specNameOf, inr, signed, nf,
   weekKeyOf, mondayOf, todayStr, weekLabel, heldDays,
   isOpen, isClosed, liveMtmRows, liveMtm, realized, closeDateOf, latestUsdRate, entryLegBrokerage,
+  isComex, dispCcy, amt, sgn, px, usd, signedUsd,
 } from './lib/v2engine';
 import {
   fetchWeeklyMarks, syncWeeklyMarksForTrade, deleteWeeklyMarksForTrade, overlayMissingMarks,
@@ -190,9 +191,16 @@ export default function App() {
   const update = (next: Trade[]) => { const prev = trades; setTrades(next); void persist(prev, next); };
 
   // ---- derived totals ----
-  const totalLive = useMemo(() => live.reduce((s, tr) => s + liveMtm(tr), 0), [live]);
-  const totalClosed = useMemo(() => closed.reduce((s, tr) => s + realized(tr), 0), [closed]);
-  const selSum = useMemo(() => closed.filter((tr) => sel.includes(tr.id)).reduce((s, tr) => s + realized(tr), 0), [sel, closed]);
+  // Aggregates are ₹-only (COMEX/$ trades excluded); COMEX shows as a separate $ line.
+  const totalLive = useMemo(() => live.filter((tr) => !isComex(tr)).reduce((s, tr) => s + liveMtm(tr), 0), [live]);
+  const totalLiveUSD = useMemo(() => live.filter(isComex).reduce((s, tr) => s + liveMtm(tr), 0), [live]);
+  const hasComexLive = useMemo(() => live.some(isComex), [live]);
+  const totalClosed = useMemo(() => closed.filter((tr) => !isComex(tr)).reduce((s, tr) => s + realized(tr), 0), [closed]);
+  const totalClosedUSD = useMemo(() => closed.filter(isComex).reduce((s, tr) => s + realized(tr), 0), [closed]);
+  const hasComexClosed = useMemo(() => closed.some(isComex), [closed]);
+  const selSum = useMemo(() => closed.filter((tr) => sel.includes(tr.id) && !isComex(tr)).reduce((s, tr) => s + realized(tr), 0), [sel, closed]);
+  const selSumUSD = useMemo(() => closed.filter((tr) => sel.includes(tr.id) && isComex(tr)).reduce((s, tr) => s + realized(tr), 0), [sel, closed]);
+  const selHasComex = useMemo(() => closed.some((tr) => sel.includes(tr.id) && isComex(tr)), [sel, closed]);
 
   // ---- actions ----
   const saveSaturday = () => {
@@ -251,7 +259,9 @@ export default function App() {
     const mult = +form.mult;
     if (!form.sym || !form.price || !(mult > 0)) return;   // multiplier is required, > 0
     const meta = INSTR[form.instr];
-    const ccy = form.ccy;
+    const comex = meta.comex === true;
+    // COMEX renders in $ with NO FX — stored with internal INR currency so the engine leaves rate at 1.
+    const ccy: 'INR' | 'USD' = comex ? 'INR' : form.ccy;
     const price = +form.price;
     const now = `trade_${Date.now()}_${Math.floor(performance.now())}`;
     const brok = form.brok.trim() !== '' ? +form.brok : null;
@@ -271,7 +281,7 @@ export default function App() {
       currency: ccy,
       usdToInrRate: ccy === 'USD' ? (lastRateDisplay || 83.24) : 1,
       fridayUsdToInrRates: {},
-      realizationRate: ccy === 'INR' ? 1.0 : form.real,
+      realizationRate: comex ? form.real : (ccy === 'INR' ? 1.0 : form.real),
       fridayClosingPrices: {},
       entryBrokerage: brok,
       exitBrokerage: null,
@@ -336,7 +346,7 @@ export default function App() {
       id: tr.id, kind,
       symbol: tr.symbol, instr: spec, origInstr: spec,
       side: sideOf(tr), lots: String(tr.numberOfLots), mult: String(tr.lotSize), entry: String(entryVal(tr)),
-      date: dmyInput(tr.dateInitiated), ccy: tr.currency, origCcy: tr.currency,
+      date: dmyInput(tr.dateInitiated), ccy: dispCcy(tr), origCcy: dispCcy(tr),
       real: tr.realizationRate ?? 1.0, entryBrok: tr.entryBrokerage != null ? String(tr.entryBrokerage) : '',
       exit: kind === 'closed' ? String(exitVal(tr)) : '',
       exitBrok: kind === 'closed' && tr.exitBrokerage != null ? String(tr.exitBrokerage) : '',
@@ -365,7 +375,7 @@ export default function App() {
       ...orig,
       symbol: e.symbol.toUpperCase().trim() || orig.symbol, instrument: meta.v1, lotSize: mult,
       direction: dir, numberOfLots: lots, dateInitiated: iso,
-      currency: e.ccy, realizationRate: e.real,
+      currency: INSTR[e.instr].comex ? 'INR' : e.ccy, realizationRate: e.real,
       entryBrokerage: e.entryBrok.trim() === '' ? null : +e.entryBrok,
       fridayClosingPrices: cleanFcp, fridayUsdToInrRates: cleanRates,
     };
@@ -427,7 +437,7 @@ export default function App() {
       const c = closeDateOf(tr);
       return [
         tr.symbol, specNameOf(tr.instrument), tr.lotSize, sideOf(tr), tr.numberOfLots, entryVal(tr), exitVal(tr),
-        tr.dateInitiated, c, heldDays(tr.dateInitiated, c), weekLabel(c), tr.currency,
+        tr.dateInitiated, c, heldDays(tr.dateInitiated, c), weekLabel(c), dispCcy(tr),
         realPct(tr) + '%', realized(tr),
       ].join(',');
     });
@@ -721,7 +731,7 @@ export default function App() {
                   return (
                     <div key={tr.id} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 220px)', alignItems: 'baseline', padding: '7px 0' }}>
                       <span style={{ fontSize: 15, fontWeight: 600 }}>{tr.symbol}</span>
-                      <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>last {nf(lastClose)}</span>
+                      <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>last {px(tr, lastClose)}</span>
                       <input placeholder="closing value" value={satVals[tr.id] || ''}
                         onChange={(e) => setSatVals({ ...satVals, [tr.id]: e.target.value.replace(/[^\d.]/g, '') })}
                         style={{ ...mono, fontSize: SZ.num, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink, width: 130 }} />
@@ -737,6 +747,7 @@ export default function App() {
 
             <div style={{ fontSize: SZ.meta, color: t.faint, marginBottom: 8 }}>Open MTM · {live.length} live · after profit share</div>
             <div style={{ ...mono, fontSize: SZ.hero, lineHeight: 1, fontWeight: 500, color: pl(totalLive) }}>{signed(totalLive)}</div>
+            {hasComexLive && <div style={{ ...mono, fontSize: SZ.big, lineHeight: 1, fontWeight: 500, color: pl(totalLiveUSD), marginTop: 10 }}>{signedUsd(totalLiveUSD)} <span style={{ ...sans, fontSize: SZ.label, color: t.faint }}>COMEX · $ · no FX</span></div>}
             <div style={{ height: 1, background: t.hair, margin: '36px 0 0' }} />
 
             {live.length === 0 && <div style={{ fontSize: 15, color: t.faint, marginTop: 24 }}>No live trades — add one from “Add trade”.</div>}
@@ -750,7 +761,7 @@ export default function App() {
                   <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr 380px', alignItems: 'baseline', gap: 14 }}>
                     <span title={tr.symbol} style={{ fontSize: SZ.symbol, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tr.symbol}</span>
                     <span style={{ fontSize: SZ.meta, color: t.faint, lineHeight: 1.5 }}>
-                      {specName} ×{tr.lotSize} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · {tr.currency} · share {realPct(tr)}% · opened {dmy(tr.dateInitiated)}
+                      {specName} ×{tr.lotSize} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · {dispCcy(tr)} · share {realPct(tr)}% · opened {dmy(tr.dateInitiated)}
                     </span>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
                       <button onClick={() => { setClosing(null); setWhatIf(whatIf && whatIf.id === tr.id ? null : { id: tr.id, exit: '', rate: String(latestUsdRate(tr)) }); }} style={actBtn}>What-if</button>
@@ -763,10 +774,10 @@ export default function App() {
                   {/* ZONE 2 — numbers strip: 4 fixed 220px slots (or the full edit grid, same tracks) */}
                   {edit && edit.id === tr.id ? editForm() : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 220px)', marginTop: 18, alignItems: 'start' }}>
-                      <div><div style={slotLabel}>Entry</div><div style={{ ...mono, fontSize: SZ.num, color: t.ink }}>{nf(entryVal(tr))}</div></div>
-                      <div><div style={slotLabel}>Brokerage · entry leg</div><div style={{ ...mono, fontSize: SZ.num, color: t.ink }}>{(tr.currency === 'USD' ? '$' : '₹') + nf(Math.round(entryLegBrokerage(tr)))}</div></div>
-                      <div><div style={slotLabel}>Current P&amp;L</div><div style={{ ...mono, fontSize: 22, fontWeight: 600, color: rows.length ? pl(m) : t.faint }}>{rows.length ? signed(m) : '—'}</div></div>
-                      <div><div style={slotLabel}>Closed value</div><div style={{ ...mono, fontSize: SZ.num, color: t.faint }}>{rows.length ? nf(rows[rows.length - 1].close) : '—'}</div></div>
+                      <div><div style={slotLabel}>Entry</div><div style={{ ...mono, fontSize: SZ.num, color: t.ink }}>{px(tr, entryVal(tr))}</div></div>
+                      <div><div style={slotLabel}>Brokerage · entry leg</div><div style={{ ...mono, fontSize: SZ.num, color: t.ink }}>{(dispCcy(tr) === 'USD' ? '$' : '₹') + nf(Math.round(entryLegBrokerage(tr)))}</div></div>
+                      <div><div style={slotLabel}>Current P&amp;L</div><div style={{ ...mono, fontSize: 22, fontWeight: 600, color: rows.length ? pl(m) : t.faint }}>{rows.length ? sgn(tr, m) : '—'}</div></div>
+                      <div><div style={slotLabel}>Closed value</div><div style={{ ...mono, fontSize: SZ.num, color: t.faint }}>{rows.length ? px(tr, rows[rows.length - 1].close) : '—'}</div></div>
                     </div>
                   )}
 
@@ -792,7 +803,7 @@ export default function App() {
                         {tr.currency === 'USD' ? (
                           <input value={whatIf.rate} onChange={(e) => setWhatIf({ ...whatIf, rate: e.target.value.replace(/[^\d.]/g, '') })} onKeyDown={(e) => e.key === 'Escape' && setWhatIf(null)} style={gridInput(76)} />
                         ) : <span />}
-                        <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, textAlign: 'right', color: whatIf.exit ? pl(pnl) : t.faint }}>{whatIf.exit ? signed(pnl) : '—'}
+                        <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, textAlign: 'right', color: whatIf.exit ? pl(pnl) : t.faint }}>{whatIf.exit ? sgn(tr, pnl) : '—'}
                           <button onClick={() => setWhatIf(null)} title="Close (Esc)" style={{ ...sans, fontSize: 15, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 10px' }}>✕</button>
                         </span>
                       </div>
@@ -812,7 +823,7 @@ export default function App() {
                               style={{ ...mono, fontSize: SZ.numSm + 1, width: 120, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
                           ) : (
                             <button onClick={() => setCloseEdit(tr.id + '-' + r.weekKey)} title="Edit this week's closing value"
-                              style={{ ...mono, fontSize: SZ.numSm + 1, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px dashed ' + t.hair, padding: 0, textAlign: 'left' }}>close {nf(r.close)}</button>
+                              style={{ ...mono, fontSize: SZ.numSm + 1, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px dashed ' + t.hair, padding: 0, textAlign: 'left' }}>close {px(tr, r.close)}</button>
                           )}
                           {tr.currency === 'USD' ? (
                             rateEdit === (tr.id + '-' + r.weekKey) ? (
@@ -825,7 +836,7 @@ export default function App() {
                                 style={{ ...mono, fontSize: SZ.numSm, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px dashed ' + t.hair, padding: 0, textAlign: 'left' }}>@{r.rate}</button>
                             )
                           ) : <span />}
-                          <span style={{ ...mono, fontSize: SZ.num, fontWeight: 500, textAlign: 'right', color: pl(r.val) }}>{signed(r.val)}</span>
+                          <span style={{ ...mono, fontSize: SZ.num, fontWeight: 500, textAlign: 'right', color: pl(r.val) }}>{sgn(tr, r.val)}</span>
                         </div>
                       ))}
                     </div>
@@ -850,17 +861,21 @@ export default function App() {
                 <DownloadPanel />
               </div>
               <div style={{ ...mono, fontSize: 44, lineHeight: 1, fontWeight: 500, color: pl(totalClosed), marginBottom: 6 }}>{signed(totalClosed)}</div>
+              {hasComexClosed && <div style={{ ...mono, fontSize: 28, lineHeight: 1, fontWeight: 500, color: pl(totalClosedUSD), marginBottom: 6 }}>{signedUsd(totalClosedUSD)} <span style={{ ...sans, fontSize: SZ.label, color: t.faint }}>COMEX · $</span></div>}
               <div style={{ fontSize: SZ.meta, color: t.faint, marginBottom: 20 }}>A trade lives in the week it CLOSED — that is the week its profit belongs to.</div>
               {sel.length > 0 && (
                 <div style={{ marginBottom: 24, padding: '13px 17px', border: '1px solid ' + t.ink, borderRadius: 4, display: 'flex', alignItems: 'baseline', gap: 16 }}>
                   <span style={{ fontSize: 15, fontWeight: 600 }}>{sel.length} selected</span>
                   <span style={{ ...mono, fontSize: 22, fontWeight: 600, color: pl(selSum) }}>{signed(selSum)}</span>
+                  {selHasComex && <span style={{ ...mono, fontSize: 22, fontWeight: 600, color: pl(selSumUSD) }}>{signedUsd(selSumUSD)}</span>}
                   <button onClick={() => setSel([])} style={{ ...sans, marginLeft: 'auto', fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>clear</button>
                 </div>
               )}
               {weeksDesc.map((w) => {
                 const trs = byWeek[w].slice().sort((a, b) => closeDateOf(b).localeCompare(closeDateOf(a)));
-                const wkTotal = trs.reduce((s, tr) => s + realized(tr), 0);
+                const wkTotal = trs.filter((x) => !isComex(x)).reduce((s, tr) => s + realized(tr), 0);
+                const wkTotalUSD = trs.filter(isComex).reduce((s, tr) => s + realized(tr), 0);
+                const wkHasComex = trs.some(isComex);
                 const anyDate = closeDateOf(trs[0]);
                 return (
                   <div key={w} style={{ marginBottom: 34 }}>
@@ -868,6 +883,7 @@ export default function App() {
                       <span style={{ fontSize: 15, fontWeight: 600 }}>{weekLabel(anyDate)}</span>
                       <span style={{ fontSize: SZ.meta, color: t.faint }}>{trs.length} trade{trs.length > 1 ? 's' : ''}</span>
                       <span style={{ ...mono, fontSize: 22, fontWeight: 600, marginLeft: 'auto', color: pl(wkTotal) }}>{signed(wkTotal)}</span>
+                      {wkHasComex && <span style={{ ...mono, fontSize: 22, fontWeight: 600, color: pl(wkTotalUSD) }}>{signedUsd(wkTotalUSD)}</span>}
                     </div>
                     {trs.map((tr) => {
                       const p = realized(tr); const c = closeDateOf(tr); const held = heldDays(tr.dateInitiated, c);
@@ -880,7 +896,7 @@ export default function App() {
                           <span style={{ fontSize: SZ.meta, color: t.faint }}>closed {dmy(c)}</span>
                           <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>held {held}d</span>
                           <span style={{ fontSize: SZ.meta, color: t.faint }}>{sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · ×{tr.lotSize} · share {realPct(tr)}%</span>
-                          <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, textAlign: 'right', color: pl(p) }}>{signed(p)}</span>
+                          <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, textAlign: 'right', color: pl(p) }}>{sgn(tr, p)}</span>
                         </div>
                       );
                     })}
@@ -900,6 +916,7 @@ export default function App() {
               <DownloadPanel />
             </div>
             <div style={{ ...mono, fontSize: SZ.big, lineHeight: 1, fontWeight: 500, color: pl(totalClosed) }}>{signed(totalClosed)}</div>
+            {hasComexClosed && <div style={{ ...mono, fontSize: 28, lineHeight: 1, fontWeight: 500, color: pl(totalClosedUSD), marginTop: 8 }}>{signedUsd(totalClosedUSD)} <span style={{ ...sans, fontSize: SZ.label, color: t.faint }}>COMEX · $</span></div>}
             {sel.length > 0 && (
               <div style={{ marginTop: 18, padding: '13px 17px', border: '1px solid ' + t.ink, borderRadius: 4, display: 'flex', alignItems: 'baseline', gap: 16 }}>
                 <span style={{ fontSize: 15, fontWeight: 600 }}>{sel.length} selected</span>
@@ -927,10 +944,10 @@ export default function App() {
                       <td style={{ ...td(), ...sans, fontSize: 15, color: tr.direction === 'Long' ? t.ink : t.faint }}>{sideOf(tr)}</td>
                       <td style={td({ textAlign: 'right' })}>{tr.numberOfLots}</td>
                       <td style={td({ textAlign: 'right', color: t.faint })}>×{tr.lotSize}</td>
-                      <td style={td({ textAlign: 'right' })}>{nf(entryVal(tr))}</td>
-                      <td style={td({ textAlign: 'right' })}>{nf(exitVal(tr))}</td>
+                      <td style={td({ textAlign: 'right' })}>{px(tr, entryVal(tr))}</td>
+                      <td style={td({ textAlign: 'right' })}>{px(tr, exitVal(tr))}</td>
                       <td style={td({ textAlign: 'right', fontSize: 15, color: t.faint })}>{realPct(tr)}%</td>
-                      <td style={td({ textAlign: 'right', fontWeight: 600, color: pl(p) })}>{signed(p)}</td>
+                      <td style={td({ textAlign: 'right', fontWeight: 600, color: pl(p) })}>{sgn(tr, p)}</td>
                       <td style={{ ...td(), textAlign: 'right' }}>
                         <span style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                           <button onClick={() => editing ? setEdit(null) : act('edit', tr.id)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{editing ? 'Close' : 'Edit'}</button>
@@ -964,9 +981,12 @@ export default function App() {
               <div><label style={lbl}>Symbol / security</label>
                 <input placeholder="e.g. NIFTY25S" value={form.sym} onChange={(e) => setForm({ ...form, sym: e.target.value })} style={inp} /></div>
               <div><label style={lbl}>Instrument</label>
-                <select value={form.instr} onChange={(e) => { const k = e.target.value as SpecInstrument; const d = INSTR[k].mult; setForm({ ...form, instr: k, ccy: INSTR[k].ccy, mult: d == null ? '' : String(d) }); }}
+                <select value={form.instr} onChange={(e) => { const k = e.target.value as SpecInstrument; const m = INSTR[k]; setForm({ ...form, instr: k, ccy: m.ccy, mult: m.mult == null ? '' : String(m.mult), real: m.comex ? 1.0 : form.real }); }}
                   style={{ ...inp, ...sans, fontSize: SZ.num - 1, cursor: 'pointer', background: t.bg }}>
-                  {(Object.keys(INSTR) as SpecInstrument[]).map((k) => <option key={k} value={k}>{k}</option>)}
+                  {(Object.keys(INSTR) as SpecInstrument[]).filter((k) => !INSTR[k].comex).map((k) => <option key={k} value={k}>{k}</option>)}
+                  <optgroup label="COMEX">
+                    {(Object.keys(INSTR) as SpecInstrument[]).filter((k) => INSTR[k].comex).map((k) => <option key={k} value={k}>{k}</option>)}
+                  </optgroup>
                 </select></div>
               <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 10 }}>
                 <button onClick={() => setForm({ ...form, side: 'LONG' })} style={toggle(form.side === 'LONG')}>LONG · buy first</button>

@@ -18,11 +18,14 @@ import {
 // Spec instrument -> { multiplier (lotSize), default currency, v1 enum for brokerage }.
 // The v1 enum decides the brokerage branch in calculateTurnoverAndBrokerage:
 //   'Futures'|'Gift Nifty'  -> 0.0003 * turnover ;  the four indices -> $5 * lots.
-export type SpecInstrument = 'DOW' | 'NASDAQ' | 'SNP' | 'NIKKEI' | 'GIFTNIFTY' | 'NIFTY FUT' | 'NSE FUT';
+export type SpecInstrument = 'DOW' | 'NASDAQ' | 'SNP' | 'NIKKEI' | 'GIFTNIFTY' | 'NIFTY FUT' | 'NSE FUT' | 'COPPER-HG' | 'COPPER-MHG';
 // `mult` is only the AUTO-FILL default for the forms (null = blank, user must enter the
 // script's lot size). The engine NEVER reads this at compute time — it uses the trade's
 // stored per-trade `lotSize`. NSE FUT is a stock-future (RELIANCE 250, TCS 175, …).
-export const INSTR: Record<SpecInstrument, { mult: number | null; ccy: 'USD' | 'INR'; v1: Instrument }> = {
+// COMEX entries (comex:true) render in $ with NO FX conversion (see isComex/dispCcy below);
+// they are stored with an internal INR currency so the FX engine leaves them at rate 1. A
+// future COMEX row (GOLD-GC, SILVER-SI, …) is a one-line addition here.
+export const INSTR: Record<SpecInstrument, { mult: number | null; ccy: 'USD' | 'INR'; v1: Instrument; comex?: boolean; tick?: number; group?: string }> = {
   DOW:        { mult: 5,   ccy: 'USD', v1: 'DOW' },
   NASDAQ:     { mult: 20,  ccy: 'USD', v1: 'Nasdaq' },
   SNP:        { mult: 50,  ccy: 'USD', v1: 'SnP' },
@@ -30,7 +33,21 @@ export const INSTR: Record<SpecInstrument, { mult: number | null; ccy: 'USD' | '
   GIFTNIFTY:  { mult: 50,  ccy: 'USD', v1: 'Gift Nifty' },
   'NIFTY FUT':{ mult: 75,  ccy: 'INR', v1: 'Futures' },
   'NSE FUT':  { mult: null, ccy: 'INR', v1: 'NSE Futures' },
+  'COPPER-HG':  { mult: 25000, ccy: 'USD', v1: 'COPPER-HG',  comex: true, tick: 0.0005, group: 'COMEX' },
+  'COPPER-MHG': { mult: 2500,  ccy: 'USD', v1: 'COPPER-MHG', comex: true, tick: 0.0005, group: 'COMEX' },
 };
+
+// COMEX / USD-display helpers. A trade is COMEX iff its instrument's config is comex:true.
+// Such trades render in $ with NO FX (their raw P&L stands in USD) and are excluded from ₹ aggregates.
+export const isComex = (t: Trade): boolean => INSTR[specNameOf(t.instrument)]?.comex === true;
+export const dispCcy = (t: Trade): 'USD' | 'INR' => (isComex(t) ? 'USD' : t.currency);
+// Trade-scoped money: identical to inr()/signed()/nf() for non-COMEX (byte-identical), $ for COMEX.
+export const amt = (t: Trade, v: number) => (isComex(t) ? '$' : '₹') + Math.abs(v).toLocaleString(isComex(t) ? 'en-US' : 'en-IN', { maximumFractionDigits: 0 });
+export const sgn = (t: Trade, v: number) => (v >= 0 ? '+' : '−') + amt(t, v);
+export const px = (t: Trade, v: number) => (isComex(t) ? (+v).toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : nf(v));
+// $-only aggregate formatting (separate line where aggregates appear).
+export const usd = (v: number) => '$' + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
+export const signedUsd = (v: number) => (v >= 0 ? '+' : '−') + usd(v);
 // Reverse map: v1 enum -> spec display name (for rendering stored trades).
 export const specNameOf = (v1: Instrument): SpecInstrument => {
   const hit = (Object.keys(INSTR) as SpecInstrument[]).find((k) => INSTR[k].v1 === v1);

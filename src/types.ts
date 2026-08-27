@@ -13,7 +13,9 @@ export type Instrument =
   | 'SnP' 
   | 'Gift Nifty'
   | 'NSE Futures'
-  | 'NSE Options';
+  | 'NSE Options'
+  | 'COPPER-HG'
+  | 'COPPER-MHG';
 
 export type TradeDirection = 'Long' | 'Short';
 
@@ -159,7 +161,10 @@ export function calculateTurnoverAndBrokerage(
   const turnover = price * lots * lotSize;
   let brokerage = 0;
 
-  if (instrument === 'Futures' || instrument === 'Option' || instrument === 'NG' || instrument === 'Gift Nifty' || instrument === 'NSE Futures' || instrument === 'NSE Options') {
+  if (instrument === 'COPPER-HG' || instrument === 'COPPER-MHG') {
+    // COMEX copper: no auto brokerage (P&L = (exit-entry) × lot_size × lots). Manual override still applies.
+    brokerage = 0;
+  } else if (instrument === 'Futures' || instrument === 'Option' || instrument === 'NG' || instrument === 'Gift Nifty' || instrument === 'NSE Futures' || instrument === 'NSE Options') {
     brokerage = 0.0003 * turnover;
   } else {
     // DOW/Nasdaq/SnP/Nikkei is $5 per lot flat
