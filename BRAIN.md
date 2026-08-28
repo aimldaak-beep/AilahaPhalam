@@ -72,11 +72,35 @@ can self-check) and service-key-WRITE only (client JWT writes are RLS-blocked by
   3. Never asks a week earlier than a trade's initiation week, and never re-asks a week already marked.
   - Saving stamps `data.fridayClosingPrices[endWeekKey]` (and the USD rate) on the asked trades.
 
-## 6. Weekly USD rates
-One USD/INR rate per week. The Saturday panel asks a single rate (pre-filled from the previous
-week's stored rate) applied to all USD trades that week. Past rates are **inline-editable** in the
-MTM ledger rows (the dashed `@rate` button → type → Enter). Stored per trade in
-`data.fridayUsdToInrRates[weekKey]`; INR trades use rate 1.
+## 6. Weekly USD/INR — the FX SETTLEMENT MODEL (supersedes the old per-trade-rate law)
+One USD/INR rate per Mon–Sun week, kept in a server-side **weekly rate store** — the ONE source
+of FX truth. **There is NO hardcoded fallback rate anywhere** (the old `83.24` ghost is dead, in
+code AND in the stored trades); a missing rate renders loudly as **"FX rate not set"**, never a
+silent default.
+
+- **Provisional:** through the week ALL USD figures (live MTM, mid-week closes, What-if prefill)
+  convert at the current week's provisional rate. It shows small under the ₹ headline
+  (dashed → click to edit) and is editable until the week settles.
+- **Settlement:** the Saturday panel (Sat ≥18:00 IST → Sun) asks the week's **closing rate**;
+  Save re-prices the week at it and **FREEZES** it — the rate is stamped into every live USD
+  trade's `data.fridayUsdToInrRates[weekKey]` and onto `closedUsdToInrRate` of every USD trade
+  closed that week, and the store marks the week `settled`. **Settled weeks never re-price**
+  (their `@rate` in the ledger is plain text, not editable). The panel also appears with no
+  trades to ask when an unsettled week still owes its rate.
+- **Carry-forward:** the settled rate is the next week's provisional base (resolution walks back
+  to the most recent earlier stored week).
+- **Store:** `src/lib/fxmodel.ts` (pure model: `rateForWeek`, `isSettled`) +
+  `src/lib/fxrates.ts` (persistence). No DDL is reachable, so the store is an RLS-scoped
+  **sentinel row in `public.trades`** (`data.kind='fx_weekly_rates'`, `data.id='fx_weekly_rates_v1'`,
+  one per user) — filtered out of the trade list on load (`isDocRow`), never touched by the trade
+  persist diff. Server-side ⇒ survives reload/redeploy/device.
+- **Engine:** `types.ts` has NO fallback (missing rate ⇒ NaN); `v2engine.withFx` overlays store
+  rates onto unstamped weeks (per-trade stamps — i.e. settled weeks — always win), via a module
+  FX context set by the app (`setFxContext`). `Trade.usdToInrRate` is null on new USD trades and
+  is only the What-if instant-rate carrier. Regression proofs: `scripts/fx-weekly-proof.ts`
+  (12 checks: NaN loudness, ₹@rate math, freeze, carry-forward), `scripts/fx-baseline.ts`
+  (INR trades byte-identical). Migration/seed: `scripts/migrate_fx_weekly.py`
+  (2026-08-28: killed stored 83.24 on NASDAQ/DOW, COPPER→USD, seeded 2026-W35 = 95.55).
 
 ## 7. MTM math (the engine — `types.ts`, unchanged)
 For a live trade, each stamped week produces one ledger row:
@@ -116,13 +140,14 @@ all display read that stored value (MTM, realized, what-if, brokerage, meta, tab
 editable in full-Edit on both live and closed trades; saving recomputes the whole chain.
 (`INSTR.mult` in `v2engine.ts` is `number | null`; NSE FUT is `null`.)
 
-**COMEX group (`comex:true`) — display-only $ currency, NO FX.** COPPER-HG (25000) and COPPER-MHG
-(2500), tick 0.0005, 4-decimal prices. COMEX trades render P&L/prices in **$** and are **excluded
-from every ₹ aggregate** (live hero, closed total, journal week, selected-sum) — shown as their own
-`$` line. There is **no USD/INR rate stored, fetched, or applied**: a COMEX trade is stored with an
-internal `currency:'INR'` so the FX engine leaves it at rate 1, and the `$`/USD label is derived from
-the instrument (`isComex`/`dispCcy`/`sgn`/`px` in `v2engine.ts`). COMEX auto-brokerage = 0. Adding
-GOLD-GC/SILVER-SI later is a one-line `INSTR` entry (comex:true) + `Instrument` union value.
+**COMEX group (`comex:true`) — ordinary USD trades under the weekly FX settlement model (§6);
+the old "display-only $, no FX" law is DEAD.** COPPER-HG (25000) and COPPER-MHG (2500), tick
+0.0005, 4-decimal native prices. COMEX trades are stored `currency:'USD'`, convert at the weekly
+rate, and sit **inside the one ₹ headline** like DOW/NASDAQ; `$` survives only as small per-trade
+native detail (4-decimal prices via `px`, and the small `signedUsd(nativePnl(t))` line under
+Current P&L — `nativePnl` reruns the engine at rate 1). COMEX auto-brokerage = 0 (manual per-leg
+override still applies, converted like any USD brokerage). Adding GOLD-GC/SILVER-SI later is a
+one-line `INSTR` entry (comex:true) + `Instrument` union value.
 
 ## 9. Brokerage — legacy auto-formulas (VERBATIM from `src/types.ts` `calculateTurnoverAndBrokerage`)
 ```ts

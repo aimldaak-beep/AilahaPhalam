@@ -39,7 +39,10 @@ export interface Trade {
   numberOfLots: number;
   status: TradeStatus;
   currency: 'INR' | 'USD';
-  usdToInrRate: number;
+  // Instant/what-if conversion rate only. null = not set. The weekly ledger NEVER reads
+  // this — per-week rates come exclusively from fridayUsdToInrRates (stamped from the
+  // weekly rate store; see lib/fxrates.ts). There is NO hardcoded fallback rate.
+  usdToInrRate: number | null;
   fridayUsdToInrRates: Record<string, number>;
   closedUsdToInrRate?: number;
   realizationRate: number; // 0.8 or 1.0
@@ -229,12 +232,15 @@ export function calculateTradeForWeek(trade: Trade, targetWeekKey: string): Week
   const exitPrice = trade.direction === 'Long' ? trade.sellPrice : trade.buyPrice;
 
   // Determine exchange rate for this week
+  // The week's rate comes ONLY from what is stamped on the trade (the weekly rate
+  // store overlays unstamped weeks via withFx in v2engine). No numeric fallback:
+  // a missing rate is NaN so the UI must show "FX rate not set", never a default.
   let weeklyExchangeRate = 1.0;
   if (trade.currency === 'USD') {
     if (isClosingWeek) {
-      weeklyExchangeRate = trade.closedUsdToInrRate ?? trade.fridayUsdToInrRates?.[targetWeekKey] ?? trade.usdToInrRate ?? 83.24;
+      weeklyExchangeRate = trade.closedUsdToInrRate ?? trade.fridayUsdToInrRates?.[targetWeekKey] ?? NaN;
     } else {
-      weeklyExchangeRate = trade.fridayUsdToInrRates?.[targetWeekKey] ?? trade.usdToInrRate ?? 83.24;
+      weeklyExchangeRate = trade.fridayUsdToInrRates?.[targetWeekKey] ?? NaN;
     }
   }
 
@@ -409,7 +415,8 @@ export function estimateInstantPnL(trade: Trade, currentPrice: number): InstantP
     points = initiatorPrice - currentPrice;
   }
 
-  const instantExchangeRate = trade.currency === 'USD' ? (trade.usdToInrRate ?? 83.24) : 1.0;
+  // No fallback rate: an unset usdToInrRate yields NaN and the UI shows "FX rate not set".
+  const instantExchangeRate = trade.currency === 'USD' ? (trade.usdToInrRate ?? NaN) : 1.0;
 
   let grossProfit = points * trade.lotSize * trade.numberOfLots;
   if (trade.currency === 'USD') {

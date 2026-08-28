@@ -13,11 +13,12 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 import { Trade, TradeDirection, estimateInstantPnL } from './types';
 import {
-  INSTR, SpecInstrument, specNameOf, inr, signed, nf,
+  INSTR, SpecInstrument, specNameOf, signed, nf,
   weekKeyOf, mondayOf, todayStr, weekLabel, heldDays,
   isOpen, isClosed, liveMtmRows, liveMtm, realized, closeDateOf, latestUsdRate, entryLegBrokerage,
-  isComex, dispCcy, amt, sgn, px, usd, signedUsd,
+  dispCcy, sgn, px, signedUsd, nativePnl, setFxContext, getWeekKeyForClose,
 } from './lib/v2engine';
+import { FxWeeks, rateForWeek, isSettled, fetchFxWeeks, saveFxWeeks, isDocRow } from './lib/fxrates';
 import {
   fetchWeeklyMarks, syncWeeklyMarksForTrade, deleteWeeklyMarksForTrade, overlayMissingMarks,
 } from './lib/marks';
@@ -63,8 +64,6 @@ export default function App() {
 
   const todayISO = todayStr();
   const curWeekKey = weekKeyOf(todayISO);
-  const prevWeekISO = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
-  const prevWeekKey = weekKeyOf(prevWeekISO);
 
   // ---- Week-close timing law (JOB 1), evaluated in IST ----
   // The panel is a Saturday-evening (≥18:00 IST) through Sunday ritual, for the week
@@ -84,8 +83,11 @@ export default function App() {
   const [satOpen, setSatOpen] = useState(true);
   const [satDismissed, setSatDismissed] = useState(false);
   const [satVals, setSatVals] = useState<Record<string, string>>({});
-  const [satRate, setSatRate] = useState('83.24');
-  const [closing, setClosing] = useState<{ id: string; px: string } | null>(null);
+  const [satRate, setSatRate] = useState(''); // prefilled from the weekly rate store — never a constant
+  const [satErr, setSatErr] = useState('');
+  const [fx, setFx] = useState<FxWeeks | null>(null); // weekly USD/INR store; null = loading
+  const [provEdit, setProvEdit] = useState<string | null>(null); // editing the provisional rate
+  const [closing, setClosing] = useState<{ id: string; px: string; err?: string } | null>(null);
   const [pinOk, setPinOk] = useState(false);
   const [pinAsk, setPinAsk] = useState<{ action: PinAction; id: string } | null>(null);
   const [pinSet, setPinSet] = useState(false); // true when the modal is in SET-PIN mode
@@ -120,10 +122,19 @@ export default function App() {
       .then(async ({ data, error }) => {
         if (cancelled) return;
         if (error) { console.error('load trades:', error.message); setTrades([]); return; }
-        const loaded = (data ?? []).map((r) => r.data as Trade);
+        // The trades table also carries the FX-store sentinel row — never a Trade.
+        const loaded = (data ?? []).filter((r) => !isDocRow(r.data)).map((r) => r.data as Trade);
         const marks = await fetchWeeklyMarks();
         if (!cancelled) setTrades(overlayMissingMarks(loaded, marks));
       });
+    return () => { cancelled = true; };
+  }, [session]);
+
+  // ---- load the weekly USD/INR rate store (server-side; the ONE FX source) ----
+  useEffect(() => {
+    if (!session) { setFx(null); setFxContext({}); return; }
+    let cancelled = false;
+    fetchFxWeeks().then((w) => { if (!cancelled) { setFxContext(w); setFx(w); } });
     return () => { cancelled = true; };
   }, [session]);
 
@@ -148,20 +159,45 @@ export default function App() {
   const live = useMemo(() => trades.filter(isOpen), [trades]);
   const closed = useMemo(() => trades.filter(isClosed), [trades]);
 
-  // Saturday panel: prefill this week's rate from last week's stored rate.
+  // ---- weekly FX (single source: the server-side store; NO fallback constant) ----
+  const fxw: FxWeeks = fx ?? {};
+  const provRate = rateForWeek(fxw, curWeekKey);            // this week's provisional; null = not set
+  const curSettled = isSettled(fxw, curWeekKey);
+  const anyUsd = trades.some((tr) => tr.currency === 'USD');
+  const saveFx = (next: FxWeeks) => { setFxContext(next); setFx(next); void saveFxWeeks(next); };
+
+  // Set/edit one week's rate — allowed only while the week is UNSETTLED. Also re-prices
+  // that week's provisional per-trade stamps + mid-week USD closes so the store stays
+  // the one source of truth. Settled weeks never re-price.
+  const setWeekRate = (weekKey: string, rate: number) => {
+    if (!(rate > 0) || isSettled(fxw, weekKey)) return;
+    saveFx({ ...fxw, [weekKey]: { rate, settled: false } });
+    const next = trades.map((tr) => {
+      if (tr.currency !== 'USD') return tr;
+      let out = tr;
+      if (out.fridayUsdToInrRates?.[weekKey] != null)
+        out = { ...out, fridayUsdToInrRates: { ...out.fridayUsdToInrRates, [weekKey]: rate } };
+      if (getWeekKeyForClose(out) === weekKey && out.closedUsdToInrRate != null)
+        out = { ...out, closedUsdToInrRate: rate };
+      return out;
+    });
+    if (next.some((x, i) => x !== trades[i])) update(next);
+  };
+
+  // Saturday settlement panel prefill: the ending week's provisional rate from the store.
   useEffect(() => {
-    const lastRate = live.map((tr) => tr.fridayUsdToInrRates?.[prevWeekKey]).find((x) => x != null);
-    if (lastRate != null) setSatRate(String(lastRate));
-  }, [live, prevWeekKey]);
+    if (fx == null) return;
+    const r = rateForWeek(fx, endWeekKey);
+    setSatRate((cur) => (cur === '' && r != null ? String(r) : cur));
+  }, [fx, endWeekKey]);
 
   // Trades this Saturday actually asks: initiated before this Saturday, ending week not yet marked.
   const satTrades = live.filter((tr) => tr.dateInitiated < saturdayISO && tr.fridayClosingPrices[endWeekKey] == null);
-  const showSaturday = inCloseWindow && !satDismissed && satTrades.length > 0;
-
-  const lastRateDisplay = (() => {
-    const r = live.map((tr) => tr.fridayUsdToInrRates?.[prevWeekKey]).find((x) => x != null);
-    return r != null ? r : 83.24;
-  })();
+  // The weekend settlement is also owed when USD money moved this week (live or closed
+  // in-week) and the ending week's rate hasn't been settled yet — even with no closes to ask.
+  const needsFxSettle = fx != null && !isSettled(fxw, endWeekKey)
+    && trades.some((tr) => tr.currency === 'USD' && (isOpen(tr) || getWeekKeyForClose(tr) === endWeekKey));
+  const showSaturday = inCloseWindow && !satDismissed && (satTrades.length > 0 || needsFxSettle);
 
   // ---- persistence: diff prev vs next, mirror to Supabase ----
   const persist = async (prev: Trade[], next: Trade[]) => {
@@ -191,42 +227,41 @@ export default function App() {
   const update = (next: Trade[]) => { const prev = trades; setTrades(next); void persist(prev, next); };
 
   // ---- derived totals ----
-  // Aggregates are ₹-only (COMEX/$ trades excluded); COMEX shows as a separate $ line.
-  const totalLive = useMemo(() => live.filter((tr) => !isComex(tr)).reduce((s, tr) => s + liveMtm(tr), 0), [live]);
-  const totalLiveUSD = useMemo(() => live.filter(isComex).reduce((s, tr) => s + liveMtm(tr), 0), [live]);
-  const hasComexLive = useMemo(() => live.some(isComex), [live]);
-  const totalClosed = useMemo(() => closed.filter((tr) => !isComex(tr)).reduce((s, tr) => s + realized(tr), 0), [closed]);
-  const totalClosedUSD = useMemo(() => closed.filter(isComex).reduce((s, tr) => s + realized(tr), 0), [closed]);
-  const hasComexClosed = useMemo(() => closed.some(isComex), [closed]);
-  const selSum = useMemo(() => closed.filter((tr) => sel.includes(tr.id) && !isComex(tr)).reduce((s, tr) => s + realized(tr), 0), [sel, closed]);
-  const selSumUSD = useMemo(() => closed.filter((tr) => sel.includes(tr.id) && isComex(tr)).reduce((s, tr) => s + realized(tr), 0), [sel, closed]);
-  const selHasComex = useMemo(() => closed.some((tr) => sel.includes(tr.id) && isComex(tr)), [sel, closed]);
+  // ONE ₹ headline: every trade (USD legs converted at the weekly rate) sums into it.
+  // NaN means some USD week has no rate — rendered loudly as "FX rate not set".
+  // fx is a dependency: the engine resolves unstamped weeks through the rate store.
+  const totalLive = useMemo(() => live.reduce((s, tr) => s + liveMtm(tr), 0), [live, fx]);
+  const totalClosed = useMemo(() => closed.reduce((s, tr) => s + realized(tr), 0), [closed, fx]);
+  const selSum = useMemo(() => closed.filter((tr) => sel.includes(tr.id)).reduce((s, tr) => s + realized(tr), 0), [sel, closed, fx]);
 
   // ---- actions ----
+  // WEEKEND SETTLEMENT (Sat/Sun): stamps the asked closing values, then FREEZES the
+  // ending week's USD/INR at the entered closing rate — every USD trade active that week
+  // (and every USD trade closed during it) permanently stamps this rate, the store marks
+  // the week settled, and the settled rate becomes next week's provisional base.
   const saveSaturday = () => {
     const rate = parseFloat(satRate);
-    // Stamp the ENDING week (endWeekKey), only on the trades this Saturday asked.
+    const usdInWeek = trades.some((tr) => tr.currency === 'USD' && (isOpen(tr) || getWeekKeyForClose(tr) === endWeekKey));
+    if (usdInWeek && !(rate > 0)) { setSatErr('FX rate not set — enter this week’s USD/INR closing rate to settle.'); return; }
+    setSatErr('');
     const asked = new Set(satTrades.map((x) => x.id));
     const next = trades.map((tr) => {
-      if (!asked.has(tr.id)) return tr;
-      const v = satVals[tr.id];
-      if (v == null || v === '') return tr;
-      return {
-        ...tr,
-        fridayClosingPrices: { ...tr.fridayClosingPrices, [endWeekKey]: +v },
-        fridayUsdToInrRates: tr.currency === 'USD' && !isNaN(rate)
-          ? { ...tr.fridayUsdToInrRates, [endWeekKey]: rate } : (tr.fridayUsdToInrRates || {}),
-      };
+      let out = tr;
+      if (asked.has(tr.id)) {
+        const v = satVals[tr.id];
+        if (v != null && v !== '') out = { ...out, fridayClosingPrices: { ...out.fridayClosingPrices, [endWeekKey]: +v } };
+      }
+      if (tr.currency === 'USD' && rate > 0) {
+        if (isOpen(tr) && weekKeyOf(tr.dateInitiated) <= endWeekKey)
+          out = { ...out, fridayUsdToInrRates: { ...out.fridayUsdToInrRates, [endWeekKey]: rate } };
+        if (getWeekKeyForClose(tr) === endWeekKey)
+          out = { ...out, closedUsdToInrRate: rate, fridayUsdToInrRates: { ...out.fridayUsdToInrRates, [endWeekKey]: rate } };
+      }
+      return out;
     });
     update(next);
+    if (rate > 0) saveFx({ ...fxw, [endWeekKey]: { rate, settled: true, settledAt: new Date().toISOString() } });
     setSatVals({}); setSatDismissed(true);
-  };
-
-  const editRate = (weekKey: string, rate: number) => {
-    const next = trades.map((tr) =>
-      tr.currency === 'USD' && tr.fridayUsdToInrRates?.[weekKey] != null
-        ? { ...tr, fridayUsdToInrRates: { ...tr.fridayUsdToInrRates, [weekKey]: rate } } : tr);
-    update(next);
   };
 
   // Inline-editable weekly CLOSE value (per trade), same UX as @rate — no PIN. MTM recomputes.
@@ -241,7 +276,14 @@ export default function App() {
     const tr = live.find((x) => x.id === closing.id);
     if (!tr) return;
     const exit = +closing.px;
-    const curRate = tr.fridayUsdToInrRates?.[curWeekKey] ?? (parseFloat(satRate) || tr.usdToInrRate);
+    // Mid-week USD closes convert at the CURRENT week's provisional rate — no rate, no
+    // silent close. The weekend settlement later recomputes + freezes this stamp.
+    let curRate: number | undefined = tr.closedUsdToInrRate ?? undefined;
+    if (tr.currency === 'USD') {
+      const r = tr.fridayUsdToInrRates?.[curWeekKey] ?? rateForWeek(fxw, curWeekKey);
+      if (r == null) { setClosing({ ...closing, err: 'FX rate not set — set this week’s USD/INR rate first.' }); return; }
+      curRate = r;
+    }
     const updated: Trade = {
       ...tr,
       status: 'Closed',
@@ -250,7 +292,7 @@ export default function App() {
       sellDate: tr.direction === 'Long' ? todayISO : tr.sellDate,
       buyDate: tr.direction === 'Long' ? tr.buyDate : todayISO,
       closedUsdToInrRate: tr.currency === 'USD' ? curRate : tr.closedUsdToInrRate,
-    };
+    } as Trade;
     update(trades.map((x) => (x.id === tr.id ? updated : x)));
     setClosing(null);
   };
@@ -259,9 +301,9 @@ export default function App() {
     const mult = +form.mult;
     if (!form.sym || !form.price || !(mult > 0)) return;   // multiplier is required, > 0
     const meta = INSTR[form.instr];
-    const comex = meta.comex === true;
-    // COMEX renders in $ with NO FX — stored with internal INR currency so the engine leaves rate at 1.
-    const ccy: 'INR' | 'USD' = comex ? 'INR' : form.ccy;
+    // Weekly FX settlement model: COMEX is an ordinary USD trade (converted at the
+    // weekly rate like DOW/NASDAQ); $ remains only as native per-trade detail.
+    const ccy: 'INR' | 'USD' = form.ccy;
     const price = +form.price;
     const now = `trade_${Date.now()}_${Math.floor(performance.now())}`;
     const brok = form.brok.trim() !== '' ? +form.brok : null;
@@ -279,9 +321,10 @@ export default function App() {
       numberOfLots: +form.qty || 1,
       status: form.side === 'LONG' ? 'CarryForwardLong' : 'CarryForwardShort',
       currency: ccy,
-      usdToInrRate: ccy === 'USD' ? (lastRateDisplay || 83.24) : 1,
+      // Never a stored snapshot rate: the weekly store is the one FX source.
+      usdToInrRate: ccy === 'USD' ? null : 1,
       fridayUsdToInrRates: {},
-      realizationRate: comex ? form.real : (ccy === 'INR' ? 1.0 : form.real),
+      realizationRate: ccy === 'INR' ? 1.0 : form.real,
       fridayClosingPrices: {},
       entryBrokerage: brok,
       exitBrokerage: null,
@@ -375,7 +418,7 @@ export default function App() {
       ...orig,
       symbol: e.symbol.toUpperCase().trim() || orig.symbol, instrument: meta.v1, lotSize: mult,
       direction: dir, numberOfLots: lots, dateInitiated: iso,
-      currency: INSTR[e.instr].comex ? 'INR' : e.ccy, realizationRate: e.real,
+      currency: e.ccy, realizationRate: e.real,
       entryBrokerage: e.entryBrok.trim() === '' ? null : +e.entryBrok,
       fridayClosingPrices: cleanFcp, fridayUsdToInrRates: cleanRates,
     };
@@ -453,6 +496,8 @@ export default function App() {
   const mono = { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontVariantNumeric: 'tabular-nums' as const };
   const sans = { fontFamily: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" };
   const pl = (v: number) => (v >= 0 ? t.profit : t.loss);
+  // Loud missing-FX marker — shown wherever a USD conversion has no weekly rate.
+  const fxNa = (size = 15) => <span style={{ ...sans, fontSize: size, fontWeight: 600, color: t.loss }}>FX rate not set</span>;
   const th = (h: string, right?: boolean) => (
     <th key={h} style={{ ...sans, fontSize: SZ.label, fontWeight: 500, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase', padding: '14px 0 10px', textAlign: right ? 'right' : 'left', borderBottom: '1px solid ' + t.hair }}>{h}</th>
   );
@@ -718,13 +763,14 @@ export default function App() {
             {showSaturday && (
               <div style={{ border: '1px solid ' + t.ink, borderRadius: 4, padding: '18px 20px', marginBottom: 40 }}>
                 <div style={{ fontSize: 15, fontWeight: 600 }}>Week close — {weekLabel(endWeekMondayISO)}</div>
-                <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 4, marginBottom: 14 }}>Asked Saturday evening through Sunday. Closing values stamp the ending week's MTM.</div>
+                <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 4, marginBottom: 14 }}>Asked Saturday evening through Sunday. Closing values stamp the ending week's MTM; the USD/INR closing rate settles &amp; freezes the week and becomes next week's base.</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 220px)', alignItems: 'baseline', padding: '7px 0', borderBottom: '1px solid ' + t.hair, marginBottom: 8 }}>
-                  <span style={{ fontSize: 15, fontWeight: 600 }}>USD / INR</span>
-                  <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>last week {lastRateDisplay}</span>
-                  <input value={satRate} onChange={(e) => setSatRate(e.target.value.replace(/[^\d.]/g, ''))}
+                  <span style={{ fontSize: 15, fontWeight: 600 }}>USD / INR closing</span>
+                  <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>{rateForWeek(fxw, endWeekKey) != null ? `provisional ${rateForWeek(fxw, endWeekKey)}` : 'no rate this week'}</span>
+                  <input value={satRate} onChange={(e) => { setSatRate(e.target.value.replace(/[^\d.]/g, '')); setSatErr(''); }}
                     style={{ ...mono, fontSize: SZ.num, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink, width: 120 }} />
                 </div>
+                {satTrades.length === 0 && <div style={{ fontSize: SZ.meta, color: t.faint, padding: '7px 0' }}>No closing values to ask — settling the week's USD/INR rate.</div>}
                 {satTrades.map((tr) => {
                   const last = liveMtmRows(tr);
                   const lastClose = last.length ? last[last.length - 1].close : entryVal(tr);
@@ -738,16 +784,38 @@ export default function App() {
                     </div>
                   );
                 })}
+                {satErr && <div style={{ fontSize: SZ.meta, fontWeight: 600, color: t.loss, marginTop: 10 }}>{satErr}</div>}
                 <div style={{ marginTop: 16, display: 'flex', gap: 16 }}>
-                  <button onClick={saveSaturday} style={{ ...sans, fontSize: SZ.btn, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '9px 20px', cursor: 'pointer' }}>Save week close</button>
+                  <button onClick={saveSaturday} style={{ ...sans, fontSize: SZ.btn, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '9px 20px', cursor: 'pointer' }}>Settle week close</button>
                   <button onClick={() => setSatDismissed(true)} style={{ ...sans, fontSize: SZ.btn, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>Later</button>
                 </div>
               </div>
             )}
 
             <div style={{ fontSize: SZ.meta, color: t.faint, marginBottom: 8 }}>Open MTM · {live.length} live · after profit share</div>
-            <div style={{ ...mono, fontSize: SZ.hero, lineHeight: 1, fontWeight: 500, color: pl(totalLive) }}>{signed(totalLive)}</div>
-            {hasComexLive && <div style={{ ...mono, fontSize: SZ.big, lineHeight: 1, fontWeight: 500, color: pl(totalLiveUSD), marginTop: 10 }}>{signedUsd(totalLiveUSD)} <span style={{ ...sans, fontSize: SZ.label, color: t.faint }}>COMEX · $ · no FX</span></div>}
+            {isNaN(totalLive)
+              ? <div style={{ ...mono, fontSize: 34, lineHeight: 1, fontWeight: 600, color: t.loss }}>FX rate not set</div>
+              : <div style={{ ...mono, fontSize: SZ.hero, lineHeight: 1, fontWeight: 500, color: pl(totalLive) }}>{signed(totalLive)}</div>}
+            {/* Weekly USD/INR — the one rate everything converts at. Editable until the week settles Saturday. */}
+            {anyUsd && (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', marginTop: 12, fontSize: SZ.meta, color: t.faint }}>
+                <span style={{ ...sans, fontSize: SZ.label, letterSpacing: '0.05em', textTransform: 'uppercase' }}>USD/INR · {weekLabel(todayISO)}</span>
+                {fx == null ? <span>…</span> : curSettled ? (
+                  <span style={{ ...mono, fontSize: SZ.numSm, color: t.ink }}>{provRate} <span style={{ ...sans, fontSize: SZ.label, color: t.faint }}>settled · frozen</span></span>
+                ) : provEdit != null ? (
+                  <input autoFocus value={provEdit} onChange={(e) => setProvEdit(e.target.value.replace(/[^\d.]/g, ''))}
+                    onBlur={() => { const v = parseFloat(provEdit); if (v > 0) setWeekRate(curWeekKey, v); setProvEdit(null); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { const v = parseFloat(provEdit); if (v > 0) setWeekRate(curWeekKey, v); setProvEdit(null); } if (e.key === 'Escape') setProvEdit(null); }}
+                    style={{ ...mono, fontSize: SZ.numSm, width: 76, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
+                ) : provRate != null ? (
+                  <button onClick={() => setProvEdit(String(provRate))} title="Edit this week's provisional rate"
+                    style={{ ...mono, fontSize: SZ.numSm, color: t.ink, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px dashed ' + t.hair, padding: 0 }}>{provRate}</button>
+                ) : (
+                  <button onClick={() => setProvEdit('')} style={{ ...sans, fontSize: SZ.meta, fontWeight: 600, color: t.loss, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px dashed ' + t.loss, padding: 0 }}>FX rate not set — set now</button>
+                )}
+                {fx != null && !curSettled && provRate != null && <span style={{ fontSize: SZ.label }}>provisional · settles Saturday</span>}
+              </div>
+            )}
             <div style={{ height: 1, background: t.hair, margin: '36px 0 0' }} />
 
             {live.length === 0 && <div style={{ fontSize: 15, color: t.faint, marginTop: 24 }}>No live trades — add one from “Add trade”.</div>}
@@ -764,7 +832,7 @@ export default function App() {
                       {specName} ×{tr.lotSize} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · {dispCcy(tr)} · share {realPct(tr)}% · opened {dmy(tr.dateInitiated)}
                     </span>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                      <button onClick={() => { setClosing(null); setWhatIf(whatIf && whatIf.id === tr.id ? null : { id: tr.id, exit: '', rate: String(latestUsdRate(tr)) }); }} style={actBtn}>What-if</button>
+                      <button onClick={() => { setClosing(null); setWhatIf(whatIf && whatIf.id === tr.id ? null : { id: tr.id, exit: '', rate: String(latestUsdRate(tr) ?? '') }); }} style={actBtn}>What-if</button>
                       <button onClick={() => { setWhatIf(null); setClosing(null); act('live-edit', tr.id); }} style={actBtn}>Edit</button>
                       <button onClick={() => { setWhatIf(null); setClosing({ id: tr.id, px: '' }); }} style={actBtn}>Close</button>
                       <button onClick={() => act('live-delete', tr.id)} style={actDanger}>Delete</button>
@@ -776,7 +844,13 @@ export default function App() {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 220px)', marginTop: 18, alignItems: 'start' }}>
                       <div><div style={slotLabel}>Entry</div><div style={{ ...mono, fontSize: SZ.num, color: t.ink }}>{px(tr, entryVal(tr))}</div></div>
                       <div><div style={slotLabel}>Brokerage · entry leg</div><div style={{ ...mono, fontSize: SZ.num, color: t.ink }}>{(dispCcy(tr) === 'USD' ? '$' : '₹') + nf(Math.round(entryLegBrokerage(tr)))}</div></div>
-                      <div><div style={slotLabel}>Current P&amp;L</div><div style={{ ...mono, fontSize: 22, fontWeight: 600, color: rows.length ? pl(m) : t.faint }}>{rows.length ? sgn(tr, m) : '—'}</div></div>
+                      <div><div style={slotLabel}>Current P&amp;L</div>
+                        <div style={{ ...mono, fontSize: 22, fontWeight: 600, color: rows.length ? (isNaN(m) ? t.loss : pl(m)) : t.faint }}>{rows.length ? (isNaN(m) ? fxNa(17) : sgn(tr, m)) : '—'}</div>
+                        {/* $ survives only as small native per-trade detail */}
+                        {tr.currency === 'USD' && rows.length > 0 && !isNaN(m) && (
+                          <div style={{ ...mono, fontSize: SZ.label, color: t.faint, marginTop: 3 }}>{signedUsd(nativePnl(tr))} native</div>
+                        )}
+                      </div>
                       <div><div style={slotLabel}>Closed value</div><div style={{ ...mono, fontSize: SZ.num, color: t.faint }}>{rows.length ? px(tr, rows[rows.length - 1].close) : '—'}</div></div>
                     </div>
                   )}
@@ -786,15 +860,17 @@ export default function App() {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 220px)', marginTop: 14, alignItems: 'end' }}>
                       <div><div style={slotLabel}>Exit price</div>
                         <span style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
-                          <input autoFocus placeholder="exit" value={closing.px} onChange={(e) => setClosing({ ...closing, px: e.target.value.replace(/[^\d.]/g, '') })} onKeyDown={(e) => e.key === 'Enter' && closeTrade()} style={gridInput(110)} />
+                          <input autoFocus placeholder="exit" value={closing.px} onChange={(e) => setClosing({ ...closing, px: e.target.value.replace(/[^\d.]/g, ''), err: undefined })} onKeyDown={(e) => e.key === 'Enter' && closeTrade()} style={gridInput(110)} />
                           <button onClick={closeTrade} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '6px 13px', cursor: 'pointer' }}>Close</button>
-                        </span></div>
+                        </span>
+                        {closing.err && <div style={{ ...sans, fontSize: SZ.meta, fontWeight: 600, color: t.loss, marginTop: 8, whiteSpace: 'nowrap' }}>{closing.err}</div>}
+                      </div>
                     </div>
                   )}
 
                   {/* What-if — opens in zone 3 grid tracks (indent 200) */}
                   {whatIf && whatIf.id === tr.id && !(edit && edit.id === tr.id) && (() => {
-                    const hypoRate = tr.currency === 'USD' ? (parseFloat(whatIf.rate) || latestUsdRate(tr)) : 1;
+                    const hypoRate = tr.currency === 'USD' ? (parseFloat(whatIf.rate) || latestUsdRate(tr) || NaN) : 1;
                     const pnl = whatIf.exit ? Math.round(estimateInstantPnL({ ...tr, usdToInrRate: hypoRate }, +whatIf.exit).netProfit) : 0;
                     return (
                       <div style={{ display: 'grid', gridTemplateColumns: '160px 150px 100px 150px', marginLeft: 200, marginTop: 16, alignItems: 'baseline', columnGap: 18 }}>
@@ -803,7 +879,7 @@ export default function App() {
                         {tr.currency === 'USD' ? (
                           <input value={whatIf.rate} onChange={(e) => setWhatIf({ ...whatIf, rate: e.target.value.replace(/[^\d.]/g, '') })} onKeyDown={(e) => e.key === 'Escape' && setWhatIf(null)} style={gridInput(76)} />
                         ) : <span />}
-                        <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, textAlign: 'right', color: whatIf.exit ? pl(pnl) : t.faint }}>{whatIf.exit ? sgn(tr, pnl) : '—'}
+                        <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, textAlign: 'right', color: whatIf.exit ? (isNaN(pnl) ? t.loss : pl(pnl)) : t.faint }}>{whatIf.exit ? (isNaN(pnl) ? fxNa(SZ.meta) : sgn(tr, pnl)) : '—'}
                           <button onClick={() => setWhatIf(null)} title="Close (Esc)" style={{ ...sans, fontSize: 15, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 10px' }}>✕</button>
                         </span>
                       </div>
@@ -826,17 +902,22 @@ export default function App() {
                               style={{ ...mono, fontSize: SZ.numSm + 1, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px dashed ' + t.hair, padding: 0, textAlign: 'left' }}>close {px(tr, r.close)}</button>
                           )}
                           {tr.currency === 'USD' ? (
-                            rateEdit === (tr.id + '-' + r.weekKey) ? (
-                              <input autoFocus defaultValue={r.rate}
-                                onBlur={(e) => { editRate(r.weekKey, +e.target.value.replace(/[^\d.]/g, '') || r.rate); setRateEdit(null); }}
-                                onKeyDown={(e) => { if (e.key === 'Enter') { editRate(r.weekKey, +(e.target as HTMLInputElement).value.replace(/[^\d.]/g, '') || r.rate); setRateEdit(null); } }}
+                            rateEdit === (tr.id + '-' + r.weekKey) && !isSettled(fxw, r.weekKey) ? (
+                              <input autoFocus defaultValue={isNaN(r.rate) ? '' : r.rate}
+                                onBlur={(e) => { setWeekRate(r.weekKey, +e.target.value.replace(/[^\d.]/g, '')); setRateEdit(null); }}
+                                onKeyDown={(e) => { if (e.key === 'Enter') { setWeekRate(r.weekKey, +(e.target as HTMLInputElement).value.replace(/[^\d.]/g, '')); setRateEdit(null); } if (e.key === 'Escape') setRateEdit(null); }}
                                 style={{ ...mono, fontSize: SZ.numSm, width: 66, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
+                            ) : isNaN(r.rate) ? (
+                              <button onClick={() => setRateEdit(tr.id + '-' + r.weekKey)} style={{ ...sans, fontSize: SZ.label, fontWeight: 600, color: t.loss, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px dashed ' + t.loss, padding: 0, textAlign: 'left' }}>@ rate not set</button>
+                            ) : isSettled(fxw, r.weekKey) ? (
+                              // Settled week — the rate is frozen; it never re-prices.
+                              <span title="Settled — frozen" style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>@{r.rate}</span>
                             ) : (
-                              <button onClick={() => setRateEdit(tr.id + '-' + r.weekKey)} title="Edit this week's USD rate"
+                              <button onClick={() => setRateEdit(tr.id + '-' + r.weekKey)} title="Edit this week's USD rate (provisional — until settled)"
                                 style={{ ...mono, fontSize: SZ.numSm, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px dashed ' + t.hair, padding: 0, textAlign: 'left' }}>@{r.rate}</button>
                             )
                           ) : <span />}
-                          <span style={{ ...mono, fontSize: SZ.num, fontWeight: 500, textAlign: 'right', color: pl(r.val) }}>{sgn(tr, r.val)}</span>
+                          <span style={{ ...mono, fontSize: SZ.num, fontWeight: 500, textAlign: 'right', color: isNaN(r.val) ? t.loss : pl(r.val) }}>{isNaN(r.val) ? fxNa(SZ.label) : sgn(tr, r.val)}</span>
                         </div>
                       ))}
                     </div>
@@ -860,30 +941,25 @@ export default function App() {
                 <span style={{ fontSize: SZ.meta, color: t.faint }}>Journal · realized by closing week · after share</span>
                 <DownloadPanel />
               </div>
-              <div style={{ ...mono, fontSize: 44, lineHeight: 1, fontWeight: 500, color: pl(totalClosed), marginBottom: 6 }}>{signed(totalClosed)}</div>
-              {hasComexClosed && <div style={{ ...mono, fontSize: 28, lineHeight: 1, fontWeight: 500, color: pl(totalClosedUSD), marginBottom: 6 }}>{signedUsd(totalClosedUSD)} <span style={{ ...sans, fontSize: SZ.label, color: t.faint }}>COMEX · $</span></div>}
+              <div style={{ ...mono, fontSize: 44, lineHeight: 1, fontWeight: 500, color: isNaN(totalClosed) ? t.loss : pl(totalClosed), marginBottom: 6 }}>{isNaN(totalClosed) ? fxNa(28) : signed(totalClosed)}</div>
               <div style={{ fontSize: SZ.meta, color: t.faint, marginBottom: 20 }}>A trade lives in the week it CLOSED — that is the week its profit belongs to.</div>
               {sel.length > 0 && (
                 <div style={{ marginBottom: 24, padding: '13px 17px', border: '1px solid ' + t.ink, borderRadius: 4, display: 'flex', alignItems: 'baseline', gap: 16 }}>
                   <span style={{ fontSize: 15, fontWeight: 600 }}>{sel.length} selected</span>
-                  <span style={{ ...mono, fontSize: 22, fontWeight: 600, color: pl(selSum) }}>{signed(selSum)}</span>
-                  {selHasComex && <span style={{ ...mono, fontSize: 22, fontWeight: 600, color: pl(selSumUSD) }}>{signedUsd(selSumUSD)}</span>}
+                  <span style={{ ...mono, fontSize: 22, fontWeight: 600, color: isNaN(selSum) ? t.loss : pl(selSum) }}>{isNaN(selSum) ? fxNa() : signed(selSum)}</span>
                   <button onClick={() => setSel([])} style={{ ...sans, marginLeft: 'auto', fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>clear</button>
                 </div>
               )}
               {weeksDesc.map((w) => {
                 const trs = byWeek[w].slice().sort((a, b) => closeDateOf(b).localeCompare(closeDateOf(a)));
-                const wkTotal = trs.filter((x) => !isComex(x)).reduce((s, tr) => s + realized(tr), 0);
-                const wkTotalUSD = trs.filter(isComex).reduce((s, tr) => s + realized(tr), 0);
-                const wkHasComex = trs.some(isComex);
+                const wkTotal = trs.reduce((s, tr) => s + realized(tr), 0);
                 const anyDate = closeDateOf(trs[0]);
                 return (
                   <div key={w} style={{ marginBottom: 34 }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, paddingBottom: 10, borderBottom: '1px solid ' + t.ink }}>
                       <span style={{ fontSize: 15, fontWeight: 600 }}>{weekLabel(anyDate)}</span>
                       <span style={{ fontSize: SZ.meta, color: t.faint }}>{trs.length} trade{trs.length > 1 ? 's' : ''}</span>
-                      <span style={{ ...mono, fontSize: 22, fontWeight: 600, marginLeft: 'auto', color: pl(wkTotal) }}>{signed(wkTotal)}</span>
-                      {wkHasComex && <span style={{ ...mono, fontSize: 22, fontWeight: 600, color: pl(wkTotalUSD) }}>{signedUsd(wkTotalUSD)}</span>}
+                      <span style={{ ...mono, fontSize: 22, fontWeight: 600, marginLeft: 'auto', color: isNaN(wkTotal) ? t.loss : pl(wkTotal) }}>{isNaN(wkTotal) ? fxNa() : signed(wkTotal)}</span>
                     </div>
                     {trs.map((tr) => {
                       const p = realized(tr); const c = closeDateOf(tr); const held = heldDays(tr.dateInitiated, c);
@@ -896,7 +972,7 @@ export default function App() {
                           <span style={{ fontSize: SZ.meta, color: t.faint }}>closed {dmy(c)}</span>
                           <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>held {held}d</span>
                           <span style={{ fontSize: SZ.meta, color: t.faint }}>{sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · ×{tr.lotSize} · share {realPct(tr)}%</span>
-                          <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, textAlign: 'right', color: pl(p) }}>{sgn(tr, p)}</span>
+                          <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, textAlign: 'right', color: isNaN(p) ? t.loss : pl(p) }}>{isNaN(p) ? fxNa(SZ.label) : sgn(tr, p)}</span>
                         </div>
                       );
                     })}
@@ -915,12 +991,11 @@ export default function App() {
               <span style={{ fontSize: SZ.meta, color: t.faint }}>Realized · {closed.length} trades · after share</span>
               <DownloadPanel />
             </div>
-            <div style={{ ...mono, fontSize: SZ.big, lineHeight: 1, fontWeight: 500, color: pl(totalClosed) }}>{signed(totalClosed)}</div>
-            {hasComexClosed && <div style={{ ...mono, fontSize: 28, lineHeight: 1, fontWeight: 500, color: pl(totalClosedUSD), marginTop: 8 }}>{signedUsd(totalClosedUSD)} <span style={{ ...sans, fontSize: SZ.label, color: t.faint }}>COMEX · $</span></div>}
+            <div style={{ ...mono, fontSize: SZ.big, lineHeight: 1, fontWeight: 500, color: isNaN(totalClosed) ? t.loss : pl(totalClosed) }}>{isNaN(totalClosed) ? fxNa(28) : signed(totalClosed)}</div>
             {sel.length > 0 && (
               <div style={{ marginTop: 18, padding: '13px 17px', border: '1px solid ' + t.ink, borderRadius: 4, display: 'flex', alignItems: 'baseline', gap: 16 }}>
                 <span style={{ fontSize: 15, fontWeight: 600 }}>{sel.length} selected</span>
-                <span style={{ ...mono, fontSize: 22, fontWeight: 600, color: pl(selSum) }}>{signed(selSum)}</span>
+                <span style={{ ...mono, fontSize: 22, fontWeight: 600, color: isNaN(selSum) ? t.loss : pl(selSum) }}>{isNaN(selSum) ? fxNa() : signed(selSum)}</span>
                 <button onClick={() => setSel([])} style={{ ...sans, marginLeft: 'auto', fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>clear</button>
               </div>
             )}
@@ -947,7 +1022,7 @@ export default function App() {
                       <td style={td({ textAlign: 'right' })}>{px(tr, entryVal(tr))}</td>
                       <td style={td({ textAlign: 'right' })}>{px(tr, exitVal(tr))}</td>
                       <td style={td({ textAlign: 'right', fontSize: 15, color: t.faint })}>{realPct(tr)}%</td>
-                      <td style={td({ textAlign: 'right', fontWeight: 600, color: pl(p) })}>{sgn(tr, p)}</td>
+                      <td style={td({ textAlign: 'right', fontWeight: 600, color: isNaN(p) ? t.loss : pl(p) })}>{isNaN(p) ? fxNa(SZ.label) : sgn(tr, p)}</td>
                       <td style={{ ...td(), textAlign: 'right' }}>
                         <span style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                           <button onClick={() => editing ? setEdit(null) : act('edit', tr.id)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{editing ? 'Close' : 'Edit'}</button>
@@ -981,7 +1056,7 @@ export default function App() {
               <div><label style={lbl}>Symbol / security</label>
                 <input placeholder="e.g. NIFTY25S" value={form.sym} onChange={(e) => setForm({ ...form, sym: e.target.value })} style={inp} /></div>
               <div><label style={lbl}>Instrument</label>
-                <select value={form.instr} onChange={(e) => { const k = e.target.value as SpecInstrument; const m = INSTR[k]; setForm({ ...form, instr: k, ccy: m.ccy, mult: m.mult == null ? '' : String(m.mult), real: m.comex ? 1.0 : form.real }); }}
+                <select value={form.instr} onChange={(e) => { const k = e.target.value as SpecInstrument; const m = INSTR[k]; setForm({ ...form, instr: k, ccy: m.ccy, mult: m.mult == null ? '' : String(m.mult) }); }}
                   style={{ ...inp, ...sans, fontSize: SZ.num - 1, cursor: 'pointer', background: t.bg }}>
                   {(Object.keys(INSTR) as SpecInstrument[]).filter((k) => !INSTR[k].comex).map((k) => <option key={k} value={k}>{k}</option>)}
                   <optgroup label="COMEX">
@@ -1017,8 +1092,10 @@ export default function App() {
                 <input placeholder="blank = auto formula (legacy)" value={form.brok} onChange={(e) => setForm({ ...form, brok: e.target.value.replace(/[^\d.]/g, '') })} style={inp} />
                 <div style={{ fontSize: SZ.label, color: t.faint, marginTop: 6 }}>Charged this week. Exit leg at close.</div></div>
               {form.ccy === 'USD' && (
-                <div style={{ gridColumn: '1 / -1', fontSize: SZ.meta, color: t.faint }}>
-                  USD → ₹ converts at each week's closing rate (this week's asked Saturday · last week {lastRateDisplay}).
+                <div style={{ gridColumn: '1 / -1', fontSize: SZ.meta, color: form.ccy === 'USD' && provRate == null ? t.loss : t.faint }}>
+                  {provRate != null
+                    ? <>USD → ₹ converts at the weekly rate — this week provisional {provRate}{curSettled ? ' (settled)' : ''}, frozen at Saturday's closing rate.</>
+                    : <>FX rate not set for this week — USD figures will show "FX rate not set" until it is.</>}
                 </div>
               )}
             </div>

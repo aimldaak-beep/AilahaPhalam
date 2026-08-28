@@ -14,6 +14,34 @@ import {
   getWeekInfo, getWeeksBetween, calculateTradeForWeek, getWeekKeyForClose,
   calculateTurnoverAndBrokerage,
 } from '../types';
+import { FxWeeks, rateForWeek } from './fxmodel';
+
+// ---- weekly FX context (single source: the fxrates store; NO fallback constant) ----
+// App calls setFxContext once the store loads / changes; every engine helper below
+// resolves unstamped weeks through it. A week no rate can be resolved for computes to
+// NaN, which the UI must render as "FX rate not set" — never a silent default.
+let FX_WEEKS: FxWeeks = {};
+export const setFxContext = (weeks: FxWeeks) => { FX_WEEKS = weeks; };
+export const fxContext = (): FxWeeks => FX_WEEKS;
+
+/**
+ * Overlay resolved weekly rates onto a USD trade for computation. Weeks already
+ * stamped on the trade (settled weeks) always win — settled weeks never re-price.
+ * INR trades are returned as the SAME object (byte-identical path).
+ */
+export function withFx(t: Trade): Trade {
+  if (t.currency !== 'USD') return t;
+  const endStr = (t.direction === 'Long' ? t.sellDate : t.buyDate) ?? todayStr();
+  const eff: Record<string, number> = { ...t.fridayUsdToInrRates };
+  let changed = false;
+  for (const w of getWeeksBetween(t.dateInitiated, endStr)) {
+    if (eff[w.weekKey] == null) {
+      const r = rateForWeek(FX_WEEKS, w.weekKey);
+      if (r != null) { eff[w.weekKey] = r; changed = true; }
+    }
+  }
+  return changed ? { ...t, fridayUsdToInrRates: eff } : t;
+}
 
 // Spec instrument -> { multiplier (lotSize), default currency, v1 enum for brokerage }.
 // The v1 enum decides the brokerage branch in calculateTurnoverAndBrokerage:
@@ -37,17 +65,24 @@ export const INSTR: Record<SpecInstrument, { mult: number | null; ccy: 'USD' | '
   'COPPER-MHG': { mult: 2500,  ccy: 'USD', v1: 'COPPER-MHG', comex: true, tick: 0.0005, group: 'COMEX' },
 };
 
-// COMEX / USD-display helpers. A trade is COMEX iff its instrument's config is comex:true.
-// Such trades render in $ with NO FX (their raw P&L stands in USD) and are excluded from ₹ aggregates.
+// COMEX helpers. A trade is COMEX iff its instrument's config is comex:true. Under the
+// weekly FX settlement model COMEX trades are ordinary USD trades (currency 'USD',
+// converted at the weekly rate, inside the one ₹ MTM) — comex now only governs native
+// price formatting (4-decimal ticks). $ survives only as small per-trade native detail.
 export const isComex = (t: Trade): boolean => INSTR[specNameOf(t.instrument)]?.comex === true;
 export const dispCcy = (t: Trade): 'USD' | 'INR' => (isComex(t) ? 'USD' : t.currency);
-// Trade-scoped money: identical to inr()/signed()/nf() for non-COMEX (byte-identical), $ for COMEX.
-export const amt = (t: Trade, v: number) => (isComex(t) ? '$' : '₹') + Math.abs(v).toLocaleString(isComex(t) ? 'en-US' : 'en-IN', { maximumFractionDigits: 0 });
+// Trade-scoped money: every P&L figure is ₹ (USD legs already converted by the engine).
+export const amt = (_t: Trade, v: number) => '₹' + Math.abs(v).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 export const sgn = (t: Trade, v: number) => (v >= 0 ? '+' : '−') + amt(t, v);
 export const px = (t: Trade, v: number) => (isComex(t) ? (+v).toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : nf(v));
-// $-only aggregate formatting (separate line where aggregates appear).
+// $ formatting for the small per-trade NATIVE detail line.
 export const usd = (v: number) => '$' + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
 export const signedUsd = (v: number) => (v >= 0 ? '+' : '−') + usd(v);
+/** Native-currency net P&L of a USD trade (no FX): the same engine run at rate 1. */
+export const nativePnl = (t: Trade): number => {
+  const n = { ...t, currency: 'INR' as const };
+  return isOpen(t) ? liveMtm(n) : realized(n);
+};
 // Reverse map: v1 enum -> spec display name (for rendering stored trades).
 export const specNameOf = (v1: Instrument): SpecInstrument => {
   const hit = (Object.keys(INSTR) as SpecInstrument[]).find((k) => INSTR[k].v1 === v1);
@@ -94,35 +129,41 @@ export interface MtmRow { weekKey: string; monday: string; label: string; close:
 /** Live MTM ledger rows — one per week that has a stamped close, brokerage &
  *  realization included (uses the unchanged v1 calculateTradeForWeek). */
 export function liveMtmRows(t: Trade): MtmRow[] {
+  const te = withFx(t); // settled stamps win; unstamped weeks resolve via the rate store
   const rows: MtmRow[] = [];
-  const weeks = getWeeksBetween(t.dateInitiated, todayStr());
+  const weeks = getWeeksBetween(te.dateInitiated, todayStr());
   for (const w of weeks) {
-    const close = t.fridayClosingPrices[w.weekKey];
+    const close = te.fridayClosingPrices[w.weekKey];
     if (close == null) continue; // no stamped close yet -> no row (matches spec)
-    const calc = calculateTradeForWeek(t, w.weekKey);
+    const calc = calculateTradeForWeek(te, w.weekKey);
     rows.push({
       weekKey: w.weekKey, monday: w.mondayDateStr, label: weekLabel(w.mondayDateStr),
-      close, rate: t.fridayUsdToInrRates?.[w.weekKey] ?? t.usdToInrRate ?? 83.24, val: Math.round(calc.netProfit),
+      // NaN rate = FX rate not set for that week — rendered loudly, never defaulted.
+      close, rate: te.currency === 'USD' ? (te.fridayUsdToInrRates?.[w.weekKey] ?? NaN) : 1,
+      val: Math.round(calc.netProfit),
     });
   }
   return rows;
 }
 export const liveMtm = (t: Trade) => liveMtmRows(t).reduce((s, r) => s + r.val, 0);
 
-/** Latest known USD/INR rate for a trade — last stamped weekly rate, else the
- *  trade's entry rate, else 83.24. Prefills the What-if hypothetical rate. */
-export function latestUsdRate(t: Trade): number {
+/** Latest known USD/INR rate for a trade — last weekly-row rate, else the current
+ *  week's rate from the store. null = FX rate not set (no fallback constant). */
+export function latestUsdRate(t: Trade): number | null {
   const rows = liveMtmRows(t);
-  return rows.length ? rows[rows.length - 1].rate : (t.usdToInrRate ?? 83.24);
+  const last = rows.length ? rows[rows.length - 1].rate : NaN;
+  if (!isNaN(last)) return last;
+  return rateForWeek(FX_WEEKS, weekKeyOf(todayStr()));
 }
 
 /** Realized P&L for a closed trade = sum of every active week's net (entry-leg
  *  brokerage in the init week, exit-leg at close, realization scaled). */
 export function realized(t: Trade): number {
-  const endStr = getGloballyCloseDate(t) ?? todayStr();
+  const te = withFx(t);
+  const endStr = getGloballyCloseDate(te) ?? todayStr();
   let sum = 0;
-  for (const w of getWeeksBetween(t.dateInitiated, endStr)) {
-    const calc = calculateTradeForWeek(t, w.weekKey);
+  for (const w of getWeeksBetween(te.dateInitiated, endStr)) {
+    const calc = calculateTradeForWeek(te, w.weekKey);
     if (calc.isActive) sum += calc.netProfit;
   }
   return Math.round(sum);
