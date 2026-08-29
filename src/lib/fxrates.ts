@@ -23,7 +23,7 @@ import { supabase } from './supabase';
 import { FxWeeks, FX_DOC_ID, FX_DOC_KIND } from './fxmodel';
 
 export type { FxWeek, FxWeeks } from './fxmodel';
-export { FX_DOC_ID, FX_DOC_KIND, isDocRow, rateForWeek, isSettled } from './fxmodel';
+export { FX_DOC_ID, FX_DOC_KIND, isDocRow, rateForWeek, isSettled, shiftISO } from './fxmodel';
 
 /** Load the signed-in user's weekly-rate store. {} when none exists yet. */
 export async function fetchFxWeeks(): Promise<FxWeeks> {

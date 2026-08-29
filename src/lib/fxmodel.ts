@@ -11,7 +11,9 @@
  * and NO hardcoded fallback anywhere — a missing rate is null / "FX rate not set".
  */
 
-export interface FxWeek { rate: number; settled: boolean; settledAt?: string }
+/** `entered`: the rate was typed into the settlement form and saved as progress (still
+ *  provisional, not frozen) — the only case the form may show it back pre-filled. */
+export interface FxWeek { rate: number; settled: boolean; settledAt?: string; entered?: boolean }
 export type FxWeeks = Record<string, FxWeek>; // weekKey "YYYY-Www" -> rate
 
 export const FX_DOC_ID = 'fx_weekly_rates_v1';
@@ -36,3 +38,9 @@ export function rateForWeek(weeks: FxWeeks, weekKey: string): number | null {
 
 export const isSettled = (weeks: FxWeeks, weekKey: string): boolean =>
   weeks[weekKey]?.settled === true;
+
+/** ISO date shifted by whole days (UTC-safe for date-only strings). */
+export const shiftISO = (iso: string, days: number): string => {
+  const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().split('T')[0];
+};

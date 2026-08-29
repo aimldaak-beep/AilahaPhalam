@@ -18,7 +18,7 @@ import {
   isOpen, isClosed, liveMtmRows, liveMtm, realized, closeDateOf, latestUsdRate, entryLegBrokerage,
   dispCcy, sgn, px, signedUsd, nativePnl, setFxContext, getWeekKeyForClose,
 } from './lib/v2engine';
-import { FxWeeks, rateForWeek, isSettled, fetchFxWeeks, saveFxWeeks, isDocRow } from './lib/fxrates';
+import { FxWeeks, rateForWeek, isSettled, fetchFxWeeks, saveFxWeeks, isDocRow, shiftISO } from './lib/fxrates';
 import {
   fetchWeeklyMarks, syncWeeklyMarksForTrade, deleteWeeklyMarksForTrade, overlayMissingMarks,
 } from './lib/marks';
@@ -65,17 +65,20 @@ export default function App() {
   const todayISO = todayStr();
   const curWeekKey = weekKeyOf(todayISO);
 
-  // ---- Week-close timing law (JOB 1), evaluated in IST ----
-  // The panel is a Saturday-evening (≥18:00 IST) through Sunday ritual, for the week
-  // that is ENDING. It asks only trades initiated BEFORE that Saturday, never re-asks a
-  // marked week, and never asks a week earlier than a trade's initiation.
+  // ---- Settlement ask law ("the Saturday voice"), evaluated in IST ----
+  // From Saturday 17:00 IST the ENDING week is asked. If it is still unsettled after
+  // Sunday, it stays asked (overdue) from Monday until settled. Exactly one week is ever
+  // asked: the most recent one whose Saturday 17:00 has passed. Trades initiated on or
+  // after that Saturday wait for the next one.
   const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
   const p2 = (n: number) => String(n).padStart(2, '0');
   const istDateISO = `${nowIST.getFullYear()}-${p2(nowIST.getMonth() + 1)}-${p2(nowIST.getDate())}`;
-  const inCloseWindow = (nowIST.getDay() === 6 && nowIST.getHours() >= 18) || nowIST.getDay() === 0;
-  const endWeekKey = weekKeyOf(istDateISO);
-  const endWeekMondayISO = mondayOf(istDateISO);
-  const saturdayISO = (() => { const d = new Date(endWeekMondayISO + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + 5); return d.toISOString().split('T')[0]; })();
+  const satPassed = (nowIST.getDay() === 6 && nowIST.getHours() >= 17) || nowIST.getDay() === 0;
+  const askDateISO = satPassed ? istDateISO : shiftISO(istDateISO, -7);
+  const endWeekKey = weekKeyOf(askDateISO);
+  const endWeekMondayISO = mondayOf(askDateISO);
+  const saturdayISO = shiftISO(endWeekMondayISO, 5);
+  const askOverdue = !satPassed; // Monday onward with the week still open = red
 
   const [rateEdit, setRateEdit] = useState<string | null>(null);
   const [closeEdit, setCloseEdit] = useState<string | null>(null);
@@ -161,17 +164,21 @@ export default function App() {
 
   // ---- weekly FX (single source: the server-side store; NO fallback constant) ----
   const fxw: FxWeeks = fx ?? {};
-  const provRate = rateForWeek(fxw, curWeekKey);            // this week's provisional; null = not set
-  const curSettled = isSettled(fxw, curWeekKey);
+  // W-header: once the current week is settled (Sat/Sun after settlement) the header and
+  // the provisional control advance to NEXT week, whose base is the settled rate.
+  const headKey = isSettled(fxw, curWeekKey) ? weekKeyOf(shiftISO(mondayOf(todayISO), 7)) : curWeekKey;
+  const headMondayISO = headKey === curWeekKey ? mondayOf(todayISO) : shiftISO(mondayOf(todayISO), 7);
+  const provRate = rateForWeek(fxw, headKey);               // header week's provisional; null = not set
+  const curSettled = isSettled(fxw, headKey);
   const anyUsd = trades.some((tr) => tr.currency === 'USD');
   const saveFx = (next: FxWeeks) => { setFxContext(next); setFx(next); void saveFxWeeks(next); };
 
   // Set/edit one week's rate — allowed only while the week is UNSETTLED. Also re-prices
   // that week's provisional per-trade stamps + mid-week USD closes so the store stays
   // the one source of truth. Settled weeks never re-price.
-  const setWeekRate = (weekKey: string, rate: number) => {
+  const setWeekRate = (weekKey: string, rate: number, entered = false) => {
     if (!(rate > 0) || isSettled(fxw, weekKey)) return;
-    saveFx({ ...fxw, [weekKey]: { rate, settled: false } });
+    saveFx({ ...fxw, [weekKey]: { rate, settled: false, ...(entered ? { entered: true } : {}) } });
     const next = trades.map((tr) => {
       if (tr.currency !== 'USD') return tr;
       let out = tr;
@@ -184,20 +191,24 @@ export default function App() {
     if (next.some((x, i) => x !== trades[i])) update(next);
   };
 
-  // Saturday settlement panel prefill: the ending week's provisional rate from the store.
+  // Settlement form: the rate field is NEVER pre-filled with the provisional (shown beside
+  // it for reference only). The one exception is a rate AKS typed and saved as progress.
   useEffect(() => {
     if (fx == null) return;
-    const r = rateForWeek(fx, endWeekKey);
-    setSatRate((cur) => (cur === '' && r != null ? String(r) : cur));
+    const w = fx[endWeekKey];
+    if (w?.entered && !w.settled) setSatRate((cur) => (cur === '' ? String(w.rate) : cur));
   }, [fx, endWeekKey]);
 
-  // Trades this Saturday actually asks: initiated before this Saturday, ending week not yet marked.
-  const satTrades = live.filter((tr) => tr.dateInitiated < saturdayISO && tr.fridayClosingPrices[endWeekKey] == null);
-  // The weekend settlement is also owed when USD money moved this week (live or closed
-  // in-week) and the ending week's rate hasn't been settled yet — even with no closes to ask.
-  const needsFxSettle = fx != null && !isSettled(fxw, endWeekKey)
-    && trades.some((tr) => tr.currency === 'USD' && (isOpen(tr) || getWeekKeyForClose(tr) === endWeekKey));
-  const showSaturday = inCloseWindow && !satDismissed && (satTrades.length > 0 || needsFxSettle);
+  // Every live trade initiated before the asked week's Saturday owes a Saturday close-stamp
+  // (a weekly mark — the position stays open). Already-saved stamps show back as progress.
+  const satTrades = live.filter((tr) => tr.dateInitiated < saturdayISO);
+  const satStampOf = (tr: Trade): string => satVals[tr.id] ?? (tr.fridayClosingPrices[endWeekKey] != null ? String(tr.fridayClosingPrices[endWeekKey]) : '');
+  // The week is owed a settlement when it is unsettled and any trade was active in it
+  // (INR-only weeks included — the rate and the stamps are asked regardless).
+  const activeInAskWeek = trades.some((tr) => weekKeyOf(tr.dateInitiated) <= endWeekKey && (isOpen(tr) || (getWeekKeyForClose(tr) ?? '') >= endWeekKey));
+  const settleDue = fx != null && !isSettled(fxw, endWeekKey) && (satTrades.length > 0 || activeInAskWeek);
+  const showSaturday = settleDue && !satDismissed && view === 'live';
+  const showSettleBanner = settleDue && !showSaturday;
 
   // ---- persistence: diff prev vs next, mirror to Supabase ----
   const persist = async (prev: Trade[], next: Trade[]) => {
@@ -239,29 +250,51 @@ export default function App() {
   // ending week's USD/INR at the entered closing rate — every USD trade active that week
   // (and every USD trade closed during it) permanently stamps this rate, the store marks
   // the week settled, and the settled rate becomes next week's provisional base.
+  // Stamp the typed Saturday closes onto the asked trades (typed values only — nothing is
+  // ever auto-filled). Shared by "Save progress" and the atomic settle.
+  const stampSatCloses = (base: Trade[]) => {
+    const asked = new Set(satTrades.map((x) => x.id));
+    return base.map((tr) => {
+      if (!asked.has(tr.id)) return tr;
+      const v = satVals[tr.id];
+      if (v == null || v === '' || !(+v > 0) || tr.fridayClosingPrices[endWeekKey] === +v) return tr;
+      return { ...tr, fridayClosingPrices: { ...tr.fridayClosingPrices, [endWeekKey]: +v } };
+    });
+  };
+  // PARTIAL ENTRY: keep what's typed (stamps + rate as an entered provisional) and come
+  // back later. The week stays UNSETTLED until the rate and every live stamp exist.
+  const saveSaturdayProgress = () => {
+    const rate = parseFloat(satRate);
+    const next = stampSatCloses(trades);
+    if (next.some((x, i) => x !== trades[i])) update(next);
+    if (rate > 0) setWeekRate(endWeekKey, rate, true);
+    setSatVals({});
+    setSatErr(`Progress saved — ${weekLabel(endWeekMondayISO)} stays unsettled until the closing rate and every live close are in.`);
+  };
   const saveSaturday = () => {
     const rate = parseFloat(satRate);
-    const usdInWeek = trades.some((tr) => tr.currency === 'USD' && (isOpen(tr) || getWeekKeyForClose(tr) === endWeekKey));
-    if (usdInWeek && !(rate > 0)) { setSatErr('FX rate not set — enter this week’s USD/INR closing rate to settle.'); return; }
+    const missing = satTrades.filter((tr) => !(+satStampOf(tr) > 0)).map((tr) => tr.symbol);
+    if (!(rate > 0)) { setSatErr('FX rate not set — enter this week’s USD/INR closing rate to settle.'); return; }
+    if (missing.length) { setSatErr(`Saturday close missing for ${missing.join(', ')} — every live trade needs its close-stamp to settle.`); return; }
     setSatErr('');
-    const asked = new Set(satTrades.map((x) => x.id));
-    const next = trades.map((tr) => {
+    const next = stampSatCloses(trades).map((tr) => {
+      if (tr.currency !== 'USD') return tr;
       let out = tr;
-      if (asked.has(tr.id)) {
-        const v = satVals[tr.id];
-        if (v != null && v !== '') out = { ...out, fridayClosingPrices: { ...out.fridayClosingPrices, [endWeekKey]: +v } };
-      }
-      if (tr.currency === 'USD' && rate > 0) {
-        if (isOpen(tr) && weekKeyOf(tr.dateInitiated) <= endWeekKey)
-          out = { ...out, fridayUsdToInrRates: { ...out.fridayUsdToInrRates, [endWeekKey]: rate } };
-        if (getWeekKeyForClose(tr) === endWeekKey)
-          out = { ...out, closedUsdToInrRate: rate, fridayUsdToInrRates: { ...out.fridayUsdToInrRates, [endWeekKey]: rate } };
-      }
+      if (isOpen(tr) && weekKeyOf(tr.dateInitiated) <= endWeekKey)
+        out = { ...out, fridayUsdToInrRates: { ...out.fridayUsdToInrRates, [endWeekKey]: rate } };
+      if (getWeekKeyForClose(tr) === endWeekKey)
+        out = { ...out, closedUsdToInrRate: rate, fridayUsdToInrRates: { ...out.fridayUsdToInrRates, [endWeekKey]: rate } };
       return out;
     });
     update(next);
-    if (rate > 0) saveFx({ ...fxw, [endWeekKey]: { rate, settled: true, settledAt: new Date().toISOString() } });
-    setSatVals({}); setSatDismissed(true);
+    // Freeze the week and roll the settled rate forward as next week's provisional base.
+    const nextKey = weekKeyOf(shiftISO(endWeekMondayISO, 7));
+    saveFx({
+      ...fxw,
+      [endWeekKey]: { rate, settled: true, settledAt: new Date().toISOString() },
+      [nextKey]: fxw[nextKey]?.settled ? fxw[nextKey] : { rate, settled: false },
+    });
+    setSatVals({}); setSatRate(''); setSatDismissed(true);
   };
 
   // Inline-editable weekly CLOSE value (per trade), same UX as @rate — no PIN. MTM recomputes.
@@ -642,10 +675,22 @@ export default function App() {
     <div style={{ minHeight: '100vh', background: t.bg, color: t.ink, ...sans, transition: 'background 180ms, color 180ms' }}>
       <div style={{ maxWidth: 1140, margin: '0 auto', padding: '48px 24px 96px' }}>
 
+        {/* SETTLEMENT BANNER — the ask never goes quiet: dismissed panel or another view → loud top banner; overdue (Monday onward) → red. */}
+        {showSettleBanner && (
+          <div role="alert" onClick={() => { setSatDismissed(false); setSatErr(''); setView('live'); }}
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, padding: '12px 18px', marginBottom: 28, borderRadius: 4, cursor: 'pointer',
+              background: askOverdue ? '#C2402E' : t.ink, color: askOverdue ? '#FFFFFF' : t.bg }}>
+            <span style={{ fontSize: SZ.meta, fontWeight: 600 }}>
+              {askOverdue ? 'OVERDUE · ' : ''}{weekLabel(endWeekMondayISO)} is unsettled — enter the USD/INR closing rate and each live trade's Saturday close.
+            </span>
+            <span style={{ fontSize: SZ.btn, fontWeight: 600, whiteSpace: 'nowrap' }}>Settle now →</span>
+          </div>
+        )}
+
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 48 }}>
           <div>
             <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '0.06em' }}>AILAHA PHALAM</div>
-            <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 2 }}>{headerDate} · {weekLabel(todayISO)}</div>
+            <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 2 }}>{headerDate} · {weekLabel(headMondayISO)}</div>
             {/* Team access + Sign out — kept out of the nav so the nav matches DESIGN_SPEC exactly; tiny faint links under the date. */}
             <div style={{ display: 'flex', gap: 14, marginTop: 6 }}>
               <button onClick={() => act('team', '')} title="Manage who can sign in" style={{ ...sans, fontSize: SZ.label, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Team access</button>
@@ -761,32 +806,33 @@ export default function App() {
         {view === 'live' && (
           <>
             {showSaturday && (
-              <div style={{ border: '1px solid ' + t.ink, borderRadius: 4, padding: '18px 20px', marginBottom: 40 }}>
-                <div style={{ fontSize: 15, fontWeight: 600 }}>Week close — {weekLabel(endWeekMondayISO)}</div>
-                <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 4, marginBottom: 14 }}>Asked Saturday evening through Sunday. Closing values stamp the ending week's MTM; the USD/INR closing rate settles &amp; freezes the week and becomes next week's base.</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 220px)', alignItems: 'baseline', padding: '7px 0', borderBottom: '1px solid ' + t.hair, marginBottom: 8 }}>
-                  <span style={{ fontSize: 15, fontWeight: 600 }}>USD / INR closing</span>
-                  <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>{rateForWeek(fxw, endWeekKey) != null ? `provisional ${rateForWeek(fxw, endWeekKey)}` : 'no rate this week'}</span>
-                  <input value={satRate} onChange={(e) => { setSatRate(e.target.value.replace(/[^\d.]/g, '')); setSatErr(''); }}
-                    style={{ ...mono, fontSize: SZ.num, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink, width: 120 }} />
+              <div role="region" aria-label="Weekly settlement" style={{ border: '2px solid ' + (askOverdue ? '#C2402E' : t.ink), borderRadius: 4, padding: '20px 22px', marginBottom: 40 }}>
+                <div style={{ fontSize: SZ.symbol, fontWeight: 600, color: askOverdue ? '#C2402E' : t.ink }}>{askOverdue ? 'Overdue settlement — ' : 'Settlement — '}{weekLabel(endWeekMondayISO)}</div>
+                <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 4, marginBottom: 14 }}>One form: the week's USD/INR closing rate + each live trade's Saturday close (a weekly close-stamp — positions stay open). Settle stamps every close, prices the week's MTM at the settled rate, freezes it, and rolls the rate into next week. Nothing is ever pre-filled — only your entered numbers count.</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '300px 250px 260px', alignItems: 'baseline', padding: '7px 0', borderBottom: '1px solid ' + t.hair, marginBottom: 8 }}>
+                  <span style={{ fontSize: 15, fontWeight: 600 }}>{weekLabel(endWeekMondayISO).split(' · ')[0]} USDINR closing rate</span>
+                  <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>{rateForWeek(fxw, endWeekKey) != null ? `provisional ${rateForWeek(fxw, endWeekKey)} · reference` : 'no provisional this week'}</span>
+                  <input placeholder="closing rate" value={satRate} onChange={(e) => { setSatRate(e.target.value.replace(/[^\d.]/g, '')); setSatErr(''); }}
+                    style={{ ...mono, fontSize: SZ.num, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink, width: 190 }} />
                 </div>
-                {satTrades.length === 0 && <div style={{ fontSize: SZ.meta, color: t.faint, padding: '7px 0' }}>No closing values to ask — settling the week's USD/INR rate.</div>}
+                {satTrades.length === 0 && <div style={{ fontSize: SZ.meta, color: t.faint, padding: '7px 0' }}>No live trades to stamp — settling the week's USD/INR rate.</div>}
                 {satTrades.map((tr) => {
-                  const last = liveMtmRows(tr);
+                  const last = liveMtmRows(tr).filter((r) => r.weekKey < endWeekKey);
                   const lastClose = last.length ? last[last.length - 1].close : entryVal(tr);
                   return (
-                    <div key={tr.id} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 220px)', alignItems: 'baseline', padding: '7px 0' }}>
-                      <span style={{ fontSize: 15, fontWeight: 600 }}>{tr.symbol}</span>
+                    <div key={tr.id} style={{ display: 'grid', gridTemplateColumns: '300px 250px 260px', alignItems: 'baseline', padding: '7px 0' }}>
+                      <span style={{ fontSize: 15, fontWeight: 600 }}>{tr.symbol} <span style={{ color: t.faint, fontWeight: 400 }}>· {specNameOf(tr.instrument)} — Saturday close price</span></span>
                       <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>last {px(tr, lastClose)}</span>
-                      <input placeholder="closing value" value={satVals[tr.id] || ''}
-                        onChange={(e) => setSatVals({ ...satVals, [tr.id]: e.target.value.replace(/[^\d.]/g, '') })}
-                        style={{ ...mono, fontSize: SZ.num, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink, width: 130 }} />
+                      <input placeholder="Saturday close" aria-label={`${tr.symbol} Saturday close price`} value={satStampOf(tr)}
+                        onChange={(e) => { setSatVals({ ...satVals, [tr.id]: e.target.value.replace(/[^\d.]/g, '') }); setSatErr(''); }}
+                        style={{ ...mono, fontSize: SZ.num, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink, width: 190 }} />
                     </div>
                   );
                 })}
-                {satErr && <div style={{ fontSize: SZ.meta, fontWeight: 600, color: t.loss, marginTop: 10 }}>{satErr}</div>}
-                <div style={{ marginTop: 16, display: 'flex', gap: 16 }}>
-                  <button onClick={saveSaturday} style={{ ...sans, fontSize: SZ.btn, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '9px 20px', cursor: 'pointer' }}>Settle week close</button>
+                {satErr && <div style={{ fontSize: SZ.meta, fontWeight: 600, color: satErr.startsWith('Progress saved') ? t.faint : t.loss, marginTop: 10 }}>{satErr}</div>}
+                <div style={{ marginTop: 16, display: 'flex', gap: 16, alignItems: 'baseline' }}>
+                  <button onClick={saveSaturday} style={{ ...sans, fontSize: SZ.btn, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '9px 20px', cursor: 'pointer' }}>Settle {weekLabel(endWeekMondayISO).split(' · ')[0]}</button>
+                  <button onClick={saveSaturdayProgress} style={{ ...sans, fontSize: SZ.btn, fontWeight: 600, color: t.ink, background: 'none', border: '1px solid ' + t.hair, borderRadius: 3, padding: '8px 16px', cursor: 'pointer' }}>Save progress</button>
                   <button onClick={() => setSatDismissed(true)} style={{ ...sans, fontSize: SZ.btn, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>Later</button>
                 </div>
               </div>
@@ -799,13 +845,13 @@ export default function App() {
             {/* Weekly USD/INR — the one rate everything converts at. Editable until the week settles Saturday. */}
             {anyUsd && (
               <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', marginTop: 12, fontSize: SZ.meta, color: t.faint }}>
-                <span style={{ ...sans, fontSize: SZ.label, letterSpacing: '0.05em', textTransform: 'uppercase' }}>USD/INR · {weekLabel(todayISO)}</span>
+                <span style={{ ...sans, fontSize: SZ.label, letterSpacing: '0.05em', textTransform: 'uppercase' }}>USD/INR · {weekLabel(headMondayISO)}</span>
                 {fx == null ? <span>…</span> : curSettled ? (
                   <span style={{ ...mono, fontSize: SZ.numSm, color: t.ink }}>{provRate} <span style={{ ...sans, fontSize: SZ.label, color: t.faint }}>settled · frozen</span></span>
                 ) : provEdit != null ? (
                   <input autoFocus value={provEdit} onChange={(e) => setProvEdit(e.target.value.replace(/[^\d.]/g, ''))}
-                    onBlur={() => { const v = parseFloat(provEdit); if (v > 0) setWeekRate(curWeekKey, v); setProvEdit(null); }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { const v = parseFloat(provEdit); if (v > 0) setWeekRate(curWeekKey, v); setProvEdit(null); } if (e.key === 'Escape') setProvEdit(null); }}
+                    onBlur={() => { const v = parseFloat(provEdit); if (v > 0) setWeekRate(headKey, v); setProvEdit(null); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { const v = parseFloat(provEdit); if (v > 0) setWeekRate(headKey, v); setProvEdit(null); } if (e.key === 'Escape') setProvEdit(null); }}
                     style={{ ...mono, fontSize: SZ.numSm, width: 76, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
                 ) : provRate != null ? (
                   <button onClick={() => setProvEdit(String(provRate))} title="Edit this week's provisional rate"

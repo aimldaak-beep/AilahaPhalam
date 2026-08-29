@@ -63,14 +63,34 @@ can self-check) and service-key-WRITE only (client JWT writes are RLS-blocked by
 ## 5. Week law
 - Weeks run **MONDAY → SUNDAY**. A week's identity is its **Monday date**; internally the key is
   `getWeekInfo(date).weekKey` = `"YYYY-Www"` (Monday-derived), e.g. `2026-W35` = Mon 24 Aug 2026.
-- **Saturday week-close ritual** (evaluated in **IST**, `Asia/Kolkata`):
-  1. The panel appears ONLY from **Saturday ≥ 18:00 IST through end of Sunday**, and until answered
-     ("Later" dismisses for the session). Never on weekdays, never at initiation.
-  2. It asks the week that is **ENDING** (the current Mon–Sun week) and lists ONLY live trades
-     **initiated before that Saturday**. A trade opened during the week is asked that same Saturday;
-     a trade opened Saturday or Sunday waits for the NEXT Saturday.
-  3. Never asks a week earlier than a trade's initiation week, and never re-asks a week already marked.
-  - Saving stamps `data.fridayClosingPrices[endWeekKey]` (and the USD rate) on the asked trades.
+- **Saturday settlement ritual — "the Saturday voice"** (evaluated in **IST**, `Asia/Kolkata`;
+  amendment of 2026-08-29, additive):
+  1. From **Saturday 17:00 IST** the ENDING week (the current Mon–Sun week) is asked. If it is
+     still unsettled when Sunday ends, it STAYS asked from Monday — as the **previous** week —
+     until settled, marked **overdue** (red). Exactly one week is ever asked: the most recent one
+     whose Saturday 17:00 has passed (`endWeekKey`). Never at initiation.
+  2. The ask is ONE form (settlement panel, Live view, `role=region "Weekly settlement"`):
+     `W-XX USDINR closing rate` (the week's provisional shown beside it as reference — **never
+     pre-filled as the answer**) + one row per live trade initiated before that Saturday:
+     `<symbol> · <instrument> — Saturday close price` (a weekly close-stamp; the position stays
+     open). A trade opened Saturday or Sunday waits for the NEXT Saturday.
+  3. The ask is due when the asked week is unsettled in the rate store AND any trade was active
+     in it — **INR-only weeks included** (rate + stamps are asked regardless). Dismissing
+     ("Later") or leaving the Live view turns it into a loud top banner (`role=alert`, ink; red
+     `#C2402E` + "OVERDUE" from Monday) that returns until settled. Nothing is ever settled or
+     filled silently; only entered numbers count.
+  4. **Partial entry** — "Save progress" stamps whatever closes were typed and saves a typed rate
+     as the week's provisional with `entered:true` (the only case the rate field shows a value
+     back). The week freezes ONLY when the rate + every live stamp exist ("Settle W-XX" refuses
+     otherwise, naming the missing trades).
+  5. **Settle** is one atomic action: stamps every close (`fridayClosingPrices[endWeekKey]`),
+     stamps the rate on every USD trade active/closed that week, marks the week `settled` in the
+     store, writes NEXT week's provisional = the settled rate (`{rate, settled:false}`), and the
+     header + USD/INR control advance to next week (`headKey`) while the settled week is current.
+  - Server-side state (trades jsonb + rate store) ⇒ survives reload/redeploy/device.
+  - Smoke: `scripts/seed_satvoice.py` → `scripts/smoke-satvoice.mjs` (13 steps, injected IST
+    clocks incl. future dates via bumped stored `expires_at`) → `scripts/cleanup_satvoice.py`;
+    expected MTM from `scripts/satvoice-expected.ts` (engine, not hand math).
 
 ## 6. Weekly USD/INR — the FX SETTLEMENT MODEL (supersedes the old per-trade-rate law)
 One USD/INR rate per Mon–Sun week, kept in a server-side **weekly rate store** — the ONE source
@@ -81,14 +101,17 @@ silent default.
 - **Provisional:** through the week ALL USD figures (live MTM, mid-week closes, What-if prefill)
   convert at the current week's provisional rate. It shows small under the ₹ headline
   (dashed → click to edit) and is editable until the week settles.
-- **Settlement:** the Saturday panel (Sat ≥18:00 IST → Sun) asks the week's **closing rate**;
+- **Settlement:** the Saturday panel (Sat ≥17:00 IST, persisting/overdue until settled — §5)
+  asks the week's **closing rate** (rate field never pre-filled; provisional shown as reference);
   Save re-prices the week at it and **FREEZES** it — the rate is stamped into every live USD
   trade's `data.fridayUsdToInrRates[weekKey]` and onto `closedUsdToInrRate` of every USD trade
   closed that week, and the store marks the week `settled`. **Settled weeks never re-price**
   (their `@rate` in the ledger is plain text, not editable). The panel also appears with no
   trades to ask when an unsettled week still owes its rate.
-- **Carry-forward:** the settled rate is the next week's provisional base (resolution walks back
-  to the most recent earlier stored week).
+- **Carry-forward:** the settled rate is the next week's provisional base — written explicitly
+  at settlement as `{rate, settled:false}` for the next week (and resolution still walks back to
+  the most recent earlier stored week for anything unstored). `FxWeek.entered` marks a rate
+  typed into the settlement form and saved as progress (provisional, not frozen).
 - **Store:** `src/lib/fxmodel.ts` (pure model: `rateForWeek`, `isSettled`) +
   `src/lib/fxrates.ts` (persistence). No DDL is reachable, so the store is an RLS-scoped
   **sentinel row in `public.trades`** (`data.kind='fx_weekly_rates'`, `data.id='fx_weekly_rates_v1'`,
