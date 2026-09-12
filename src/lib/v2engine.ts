@@ -113,6 +113,12 @@ export function entryLegBrokerage(t: Trade): number {
   return t.entryBrokerage ?? formula;
 }
 
+/** Exit-leg brokerage in the trade's native currency (closed trades) — manual override or the legacy auto formula. */
+export function exitLegBrokerage(t: Trade): number {
+  const formula = calculateTurnoverAndBrokerage(exitPriceOf(t), t.numberOfLots, t.lotSize, t.instrument).brokerage;
+  return t.exitBrokerage ?? formula;
+}
+
 export interface MtmRow { weekKey: string; monday: string; label: string; close: number; rate: number; val: number; }
 
 /** Live MTM ledger rows — one per week that has a stamped close, brokerage &

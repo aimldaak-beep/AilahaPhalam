@@ -233,12 +233,24 @@ required) · realization · entry-leg brokerage (blank = legacy auto). One Save 
 Esc cancels. **Delete** (PIN-gated) confirms ("Delete SYMBOL — entry X, N lots? Its weekly marks go
 too.") and removes the trade AND its `weekly_marks`.
 
-## 13. Closed trades
-Table: checkbox · Closed · Symbol · Side · Qty(r) · Mult(r) · Entry(r) · Exit(r) · Share(r) · **USD/INR(r)** · P&L(r) · actions.
-Multi-select with a selected-sum bar (shared with Journal). **Edit** (PIN-gated) opens an expanded
-grid row with ALL live fields PLUS exit price · exit-leg brokerage (blank = auto) · closed date; Save
-recomputes realized P&L + held-days and re-files the trade into the correct journal week if the
-closed date moved. **Delete** is PIN-gated per row.
+## 13. Closed trades — GROUPED BY CLOSING WEEK (2026-09-12)
+Display/grouping only (`lib/weekly.ts closedByWeek`; no math of its own): closed trades are grouped by the
+week they CLOSED — the journal's Mon–Sun W-XX weeks and labels — newest week first, trades within a week
+in close-date order (ties by id = creation order). Each week block (`data-closed-week="YYYY-Www"`) has a
+clickable header (`role=button`, `aria-expanded`, name "<label> closed trades"): ▾/▸ · label · N trades
+(" · collapsed" when closed) · **REALIZED** gold total = Σ realized of its rows. **Collapsible**: the
+latest two weeks are expanded by default, older weeks collapsed (`closedOpen` state overrides per week,
+session-only). Inside: a fixed-layout table (`colgroup` widths 32|84|140|64|52|64|104|104|84|64|76|124|100)
+— checkbox · Closed · Symbol (ellipsis) · Side · Qty(r) · Mult(r) · Entry(r) · Exit(r) · **Brok(r)** (both
+legs, native currency: `entryLegBrokerage + exitLegBrokerage`) · Share(r) · USD/INR(r) · P&L(r) · Edit/Delete.
+A trade that lived across weeks gets a second row (`data-history`) with its per-week P&L history
+(`historyLine`, shared with the journal): `W35 +₹… W36 +₹… W37 −₹… = realized +₹…`. Rows carry
+`data-trade="<id>"`. Multi-select + selected-sum bar (shared with Journal), headline = total realized,
+Download-as-Excel unchanged. **Edit** (PIN-gated) opens the full edit grid in place under the row (all live
+fields PLUS exit price · exit-leg brokerage · closed date); Save recomputes realized + held-days and re-files
+the trade into the correct week if the closed date moved. **Delete** is PIN-gated per row.
+Backup + gate for this change: `archive/2026-09-12T1049Z_pre_closed_grouping/` and `scripts/reconcile_backup.ts <live_dump> archive/2026-09-12T1049Z_pre_closed_grouping` → IDENTICAL.
+Proof: `fx-pertrade-proof.ts` §6; smoke `seed_closedwk.py` → `smoke-closedwk.mjs` (8 steps) → `cleanup_pertrade.py`.
 
 **Edit guards (both panels):** a confirm line on instrument/currency change ("Recomputes all P&L for
 this trade — proceed?"); week-identity integrity — weekly marks earlier than the (possibly new)

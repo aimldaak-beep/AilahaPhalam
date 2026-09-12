@@ -135,3 +135,23 @@ function mondayFromKey(trades: Trade[], key: string): string {
 }
 
 export const lastEndedWeekKeyFor = (askDateISO: string) => weekKeyOf(askDateISO);
+
+/**
+ * CLOSED TRADES GROUPED BY CLOSING WEEK (2026-09-12) — display grouping only, no math of its own:
+ * the same Mon–Sun weeks as the journal, newest week first, trades within a week in close-date
+ * order (ties by id, which carries the creation timestamp). `total` = Σ realized(trade) of the week.
+ * Every closed trade lands in exactly one group (its closing week); open trades are excluded.
+ */
+export interface ClosedWeek { weekKey: string; monday: string; label: string; trades: Trade[]; total: number }
+export function closedByWeek(trades: Trade[]): ClosedWeek[] {
+  const m = new Map<string, ClosedWeek>();
+  for (const t of trades) {
+    if (!isClosed(t)) continue;
+    const c = closeDateOf(t); const key = weekKeyOf(c);
+    let w = m.get(key);
+    if (!w) { const monday = getWeekInfo(c).mondayDateStr; w = { weekKey: key, monday, label: weekLabel(monday), trades: [], total: 0 }; m.set(key, w); }
+    w.trades.push(t); w.total += realized(t);
+  }
+  for (const w of m.values()) w.trades.sort((a, b) => closeDateOf(a).localeCompare(closeDateOf(b)) || a.id.localeCompare(b.id));
+  return [...m.values()].sort((a, b) => b.weekKey.localeCompare(a.weekKey));
+}

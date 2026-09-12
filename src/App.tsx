@@ -8,7 +8,7 @@
  * supabase/migrations/20260824000000_v2_schema.sql for the mapping + ideal DDL).
  */
 import { useState, useEffect, useMemo, Fragment } from 'react';
-import type { ReactNode, KeyboardEvent as ReactKeyboardEvent } from 'react';
+import type { ReactNode, KeyboardEvent as ReactKeyboardEvent, CSSProperties } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 import { Trade, TradeDirection, estimateInstantPnL } from './types';
@@ -16,10 +16,11 @@ import {
   INSTR, SpecInstrument, specNameOf, signed, nf,
   weekKeyOf, mondayOf, todayStr, weekLabel, heldDays,
   isOpen, isClosed, liveMtmRows, liveMtm, realized, closeDateOf, latestUsdRate, entryLegBrokerage,
-  dispCcy, sgn, px, signedUsd, nativePnl, tradeRate, hasLegacyRates,
+  dispCcy, sgn, px, signedUsd, nativePnl, tradeRate, hasLegacyRates, exitLegBrokerage,
 } from './lib/v2engine';
 import { isDocRow, shiftISO } from './lib/fxmodel';
-import { journalWeeks } from './lib/weekly';
+import { journalWeeks, closedByWeek, weekPieces, reconcile } from './lib/weekly';
+import type { WeekPiece } from './lib/weekly';
 import {
   fetchWeeklyMarks, syncWeeklyMarksForTrade, deleteWeeklyMarksForTrade, overlayMissingMarks,
 } from './lib/marks';
@@ -103,6 +104,7 @@ export default function App() {
   const [teamNew, setTeamNew] = useState('');
   const [teamMsg, setTeamMsg] = useState('');
   const [dlOpen, setDlOpen] = useState(false);
+  const [closedOpen, setClosedOpen] = useState<Record<string, boolean>>({}); // Closed view: week expanded/collapsed overrides (default: latest 2 open)
   const [dlMode, setDlMode] = useState<'all' | 'selected' | 'range'>('all');
   const [dlFrom, setDlFrom] = useState('');
   const [dlTo, setDlTo] = useState('');
@@ -478,6 +480,18 @@ export default function App() {
   const actDanger = { ...actBtn, color: themeKey === 'white' ? t.loss : t.ink };
   const slotLabel = { ...sans, fontSize: SZ.label, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase' as const, marginBottom: 4 };
   const gridInput = (w: number) => ({ ...mono, fontSize: SZ.num, width: w, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink } as const);
+  const secLabel = { ...sans, fontSize: SZ.label, fontWeight: 500, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase' } as const;
+  // Carried trade: its full per-week P&L history — every piece it earned, summing to the realized total.
+  // Shared by the Journal (realized rows) and the Closed view (grouped by closing week).
+  const historyLine = (tr: Trade, pieces: WeekPiece[], total: number, reconciled: boolean, style: CSSProperties = {}) => (
+    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '4px 14px', fontSize: SZ.meta, color: t.faint, ...style }}>
+      {pieces.map((p) => (
+        <span key={p.weekKey}>{p.label.split(' · ')[0]} <span style={{ ...mono, fontSize: SZ.numSm, color: isNaN(p.val) ? t.loss : pl(p.val) }}>{isNaN(p.val) ? '—' : signed(p.val)}</span>{tr.currency === 'USD' && p.rate !== tradeRate(tr) ? <span style={{ ...mono, fontSize: SZ.label }}> @{p.rate}</span> : null}</span>
+      ))}
+      <span>= realized <span style={{ ...mono, fontSize: SZ.numSm, fontWeight: 600, color: isNaN(total) ? t.loss : pl(total) }}>{isNaN(total) ? '—' : signed(total)}</span></span>
+      {!reconciled && <span style={{ ...sans, fontWeight: 600, color: t.loss }}>does not reconcile</span>}
+    </div>
+  );
 
   const Tab = ({ id, label }: { id: typeof view; label: string }) => (
     <button onClick={() => setView(id)} style={{ ...sans, background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, padding: '6px 2px', color: view === id ? t.ink : t.faint, borderBottom: view === id ? '1px solid ' + t.ink : '1px solid transparent' }}>{label}</button>
@@ -877,7 +891,6 @@ export default function App() {
           const money = (v: number, size = SZ.num, weight = 600) => (
             <span style={{ ...mono, fontSize: size, fontWeight: weight, textAlign: 'right', color: isNaN(v) ? t.loss : pl(v) }}>{isNaN(v) ? fxNa(SZ.label) : signed(v)}</span>
           );
-          const secLabel = { ...sans, fontSize: SZ.label, fontWeight: 500, color: t.faint, letterSpacing: '0.05em', textTransform: 'uppercase' } as const;
           const section = (label: string, v: number) => (
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginTop: 16, paddingBottom: 6, borderBottom: '1px solid ' + t.hair }}>
               <span style={secLabel}>{label}</span>
@@ -930,16 +943,7 @@ export default function App() {
                           <span style={{ fontSize: SZ.meta, color: t.faint }}>{sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · ×{tr.lotSize}{tr.currency === 'USD' ? ` · $ @${tradeRate(tr) ?? '?'}` : ''} · share {realPct(tr)}%{carried ? ` · ${wk(piece.label)} piece` : ''}</span>
                           {money(piece.val)}
                         </div>
-                        {carried && (
-                          // Carried trade: its full per-week history — every piece it earned, summing to the realized total.
-                          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '4px 14px', marginLeft: 230, padding: '0 0 12px', borderBottom: '1px solid ' + t.hair, fontSize: SZ.meta, color: t.faint }}>
-                            {pieces.map((p) => (
-                              <span key={p.weekKey}>{wk(p.label)} <span style={{ ...mono, fontSize: SZ.numSm, color: isNaN(p.val) ? t.loss : pl(p.val) }}>{isNaN(p.val) ? '—' : signed(p.val)}</span>{tr.currency === 'USD' && p.rate !== tradeRate(tr) ? <span style={{ ...mono, fontSize: SZ.label }}> @{p.rate}</span> : null}</span>
-                            ))}
-                            <span>= realized <span style={{ ...mono, fontSize: SZ.numSm, fontWeight: 600, color: isNaN(total) ? t.loss : pl(total) }}>{isNaN(total) ? '—' : signed(total)}</span></span>
-                            {!reconciled && <span style={{ ...sans, fontWeight: 600, color: t.loss }}>does not reconcile</span>}
-                          </div>
-                        )}
+                        {carried && historyLine(tr, pieces, total, reconciled, { marginLeft: 230, padding: '0 0 12px', borderBottom: '1px solid ' + t.hair })}
                       </div>
                     );
                   })}
@@ -970,67 +974,102 @@ export default function App() {
           );
         })()}
 
-        {/* CLOSED */}
-        {view === 'closedv' && (
-          <>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: SZ.meta, color: t.faint }}>Realized · {closed.length} trades · after share</span>
-              <DownloadPanel />
-            </div>
-            <div style={{ ...mono, fontSize: SZ.big, lineHeight: 1, fontWeight: 500, color: isNaN(totalClosed) ? t.loss : pl(totalClosed) }}>{isNaN(totalClosed) ? fxNa(28) : signed(totalClosed)}</div>
-            {sel.length > 0 && (
-              <div style={{ marginTop: 18, padding: '13px 17px', border: '1px solid ' + t.ink, borderRadius: 4, display: 'flex', alignItems: 'baseline', gap: 16 }}>
-                <span style={{ fontSize: 15, fontWeight: 600 }}>{sel.length} selected</span>
-                <span style={{ ...mono, fontSize: 22, fontWeight: 600, color: isNaN(selSum) ? t.loss : pl(selSum) }}>{isNaN(selSum) ? fxNa() : signed(selSum)}</span>
-                <button onClick={() => setSel([])} style={{ ...sans, marginLeft: 'auto', fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>clear</button>
+        {/* CLOSED — grouped by CLOSING WEEK (the journal's W-XX weeks), newest first, collapsible; every row keeps Edit/Delete */}
+        {view === 'closedv' && (() => {
+          const groups = closedByWeek(closed);
+          const isWkOpen = (key: string, idx: number) => closedOpen[key] ?? idx < 2; // latest 2 weeks expanded by default
+          const COLS = [32, 84, 140, 64, 52, 64, 104, 104, 84, 64, 76, 124, 100];
+          return (
+            <>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: SZ.meta, color: t.faint }}>Realized · {closed.length} trades · by closing week · after share</span>
+                <DownloadPanel />
               </div>
-            )}
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16 }}>
-              <thead><tr>
-                <th style={{ borderBottom: '1px solid ' + t.hair, width: 36 }} />
-                {th('Closed')}{th('Symbol')}{th('Side')}{th('Qty', true)}{th('Mult', true)}{th('Entry', true)}{th('Exit', true)}{th('Share', true)}{th('USD/INR', true)}{th('P&L', true)}
-                <th style={{ borderBottom: '1px solid ' + t.hair, width: 110 }} />
-              </tr></thead>
-              <tbody>
-                {closed.map((tr) => {
-                  const p = realized(tr); const on = sel.includes(tr.id); const editing = !!(edit && edit.id === tr.id);
-                  return (
-                    <Fragment key={tr.id}>
-                    <tr style={{ background: on ? (themeKey === 'white' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.045)') : 'transparent' }}>
-                      <td style={{ borderBottom: '1px solid ' + t.hair, cursor: 'pointer' }} onClick={() => setSel((s) => on ? s.filter((i) => i !== tr.id) : [...s, tr.id])}>
-                        <span style={{ display: 'inline-block', width: 15, height: 15, borderRadius: 3, border: '1.5px solid ' + (on ? t.ink : t.hair), background: on ? t.ink : 'none' }} />
-                      </td>
-                      <td style={td({ color: t.faint, fontSize: SZ.numSm })}>{dmy(closeDateOf(tr))}</td>
-                      <td style={{ ...td(), ...sans, fontWeight: 600, fontSize: SZ.num }}>{tr.symbol}</td>
-                      <td style={{ ...td(), ...sans, fontSize: 15, color: tr.direction === 'Long' ? t.ink : t.faint }}>{sideOf(tr)}</td>
-                      <td style={td({ textAlign: 'right' })}>{tr.numberOfLots}</td>
-                      <td style={td({ textAlign: 'right', color: t.faint })}>×{tr.lotSize}</td>
-                      <td style={td({ textAlign: 'right' })}>{px(tr, entryVal(tr))}</td>
-                      <td style={td({ textAlign: 'right' })}>{px(tr, exitVal(tr))}</td>
-                      <td style={td({ textAlign: 'right', fontSize: 15, color: t.faint })}>{realPct(tr)}%</td>
-                      <td style={td({ textAlign: 'right', fontSize: SZ.numSm, color: t.faint })}>{tr.currency === 'USD' ? (tradeRate(tr) ?? fxNa(SZ.label)) : '—'}</td>
-                      <td style={td({ textAlign: 'right', fontWeight: 600, color: isNaN(p) ? t.loss : pl(p) })}>{isNaN(p) ? fxNa(SZ.label) : sgn(tr, p)}</td>
-                      <td style={{ ...td(), textAlign: 'right' }}>
-                        <span style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                          <button onClick={() => editing ? setEdit(null) : act('edit', tr.id)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{editing ? 'Close' : 'Edit'}</button>
-                          <button onClick={() => act('delete', tr.id)} style={{ ...sans, fontSize: 13, color: themeKey === 'white' ? t.loss : t.ink, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Delete</button>
-                        </span>
-                      </td>
-                    </tr>
-                    {editing && (
-                      <tr><td colSpan={12} style={{ borderBottom: '1px solid ' + t.hair, padding: '4px 0 22px' }}>{editForm()}</td></tr>
+              <div style={{ ...mono, fontSize: SZ.big, lineHeight: 1, fontWeight: 500, color: isNaN(totalClosed) ? t.loss : pl(totalClosed) }}>{isNaN(totalClosed) ? fxNa(28) : signed(totalClosed)}</div>
+              {sel.length > 0 && (
+                <div style={{ marginTop: 18, padding: '13px 17px', border: '1px solid ' + t.ink, borderRadius: 4, display: 'flex', alignItems: 'baseline', gap: 16 }}>
+                  <span style={{ fontSize: 15, fontWeight: 600 }}>{sel.length} selected</span>
+                  <span style={{ ...mono, fontSize: 22, fontWeight: 600, color: isNaN(selSum) ? t.loss : pl(selSum) }}>{isNaN(selSum) ? fxNa() : signed(selSum)}</span>
+                  <button onClick={() => setSel([])} style={{ ...sans, marginLeft: 'auto', fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>clear</button>
+                </div>
+              )}
+              {groups.map((g, gi) => {
+                const open = isWkOpen(g.weekKey, gi);
+                return (
+                  <div key={g.weekKey} data-closed-week={g.weekKey} style={{ marginTop: gi === 0 ? 26 : 34 }}>
+                    <div role="button" aria-expanded={open} aria-label={`${g.label} closed trades`} onClick={() => setClosedOpen({ ...closedOpen, [g.weekKey]: !open })}
+                      style={{ display: 'flex', alignItems: 'baseline', gap: 14, paddingBottom: 10, borderBottom: '1px solid ' + t.ink, cursor: 'pointer', userSelect: 'none' }}>
+                      <span style={{ ...sans, fontSize: 13, color: t.faint, width: 12 }}>{open ? '▾' : '▸'}</span>
+                      <span style={{ fontSize: 15, fontWeight: 600 }}>{g.label}</span>
+                      <span style={{ fontSize: SZ.meta, color: t.faint }}>{g.trades.length} trade{g.trades.length > 1 ? 's' : ''}{open ? '' : ' · collapsed'}</span>
+                      <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                        <span style={secLabel}>Realized</span>
+                        <span style={{ ...mono, fontSize: 22, fontWeight: 600, color: isNaN(g.total) ? t.loss : pl(g.total) }}>{isNaN(g.total) ? fxNa() : signed(g.total)}</span>
+                      </span>
+                    </div>
+                    {open && (
+                      <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                        <colgroup>{COLS.map((w, i) => <col key={i} style={{ width: w }} />)}</colgroup>
+                        <thead><tr>
+                          <th style={{ borderBottom: '1px solid ' + t.hair }} />
+                          {th('Closed')}{th('Symbol')}{th('Side')}{th('Qty', true)}{th('Mult', true)}{th('Entry', true)}{th('Exit', true)}{th('Brok', true)}{th('Share', true)}{th('USD/INR', true)}{th('P&L', true)}
+                          <th style={{ borderBottom: '1px solid ' + t.hair }} />
+                        </tr></thead>
+                        <tbody>
+                          {g.trades.map((tr) => {
+                            const p = realized(tr); const on = sel.includes(tr.id); const editing = !!(edit && edit.id === tr.id);
+                            const pieces = weekPieces(tr); const carried = pieces.length > 1;
+                            const brok = entryLegBrokerage(tr) + exitLegBrokerage(tr);
+                            const rowBg = on ? (themeKey === 'white' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.045)') : 'transparent';
+                            return (
+                              <Fragment key={tr.id}>
+                              <tr data-trade={tr.id} style={{ background: rowBg }}>
+                                <td style={{ borderBottom: carried ? 'none' : '1px solid ' + t.hair, cursor: 'pointer' }} onClick={() => setSel((s) => on ? s.filter((i) => i !== tr.id) : [...s, tr.id])}>
+                                  <span style={{ display: 'inline-block', width: 15, height: 15, borderRadius: 3, border: '1.5px solid ' + (on ? t.ink : t.hair), background: on ? t.ink : 'none' }} />
+                                </td>
+                                <td style={td({ color: t.faint, fontSize: SZ.numSm, borderBottom: carried ? 'none' : undefined })}>{dmy(closeDateOf(tr))}</td>
+                                <td title={tr.symbol} style={{ ...td({ borderBottom: carried ? 'none' : undefined }), ...sans, fontWeight: 600, fontSize: SZ.num, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tr.symbol}</td>
+                                <td style={{ ...td({ borderBottom: carried ? 'none' : undefined }), ...sans, fontSize: 15, color: tr.direction === 'Long' ? t.ink : t.faint }}>{sideOf(tr)}</td>
+                                <td style={td({ textAlign: 'right', borderBottom: carried ? 'none' : undefined })}>{tr.numberOfLots}</td>
+                                <td style={td({ textAlign: 'right', color: t.faint, borderBottom: carried ? 'none' : undefined })}>×{tr.lotSize}</td>
+                                <td style={td({ textAlign: 'right', borderBottom: carried ? 'none' : undefined })}>{px(tr, entryVal(tr))}</td>
+                                <td style={td({ textAlign: 'right', borderBottom: carried ? 'none' : undefined })}>{px(tr, exitVal(tr))}</td>
+                                <td title="Brokerage, both legs, in the trade's currency" style={td({ textAlign: 'right', fontSize: SZ.numSm, color: t.faint, borderBottom: carried ? 'none' : undefined })}>{(dispCcy(tr) === 'USD' ? '$' : '₹') + nf(Math.round(brok))}</td>
+                                <td style={td({ textAlign: 'right', fontSize: 15, color: t.faint, borderBottom: carried ? 'none' : undefined })}>{realPct(tr)}%</td>
+                                <td style={td({ textAlign: 'right', fontSize: SZ.numSm, color: t.faint, borderBottom: carried ? 'none' : undefined })}>{tr.currency === 'USD' ? (tradeRate(tr) ?? fxNa(SZ.label)) : '—'}</td>
+                                <td style={td({ textAlign: 'right', fontWeight: 600, color: isNaN(p) ? t.loss : pl(p), borderBottom: carried ? 'none' : undefined })}>{isNaN(p) ? fxNa(SZ.label) : sgn(tr, p)}</td>
+                                <td style={{ ...td({ borderBottom: carried ? 'none' : undefined }), textAlign: 'right' }}>
+                                  <span style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                                    <button onClick={() => editing ? setEdit(null) : act('edit', tr.id)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{editing ? 'Close' : 'Edit'}</button>
+                                    <button onClick={() => act('delete', tr.id)} style={{ ...sans, fontSize: 13, color: themeKey === 'white' ? t.loss : t.ink, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Delete</button>
+                                  </span>
+                                </td>
+                              </tr>
+                              {carried && (
+                                // Lived across weeks: its per-week P&L history inline, as in the journal.
+                                <tr data-history={tr.id} style={{ background: rowBg }}><td colSpan={13} style={{ borderBottom: '1px solid ' + t.hair, padding: '0 0 12px 116px' }}>
+                                  {historyLine(tr, pieces, p, reconcile(tr).ok)}
+                                </td></tr>
+                              )}
+                              {editing && (
+                                <tr><td colSpan={13} style={{ borderBottom: '1px solid ' + t.hair, padding: '4px 0 22px' }}>{editForm()}</td></tr>
+                              )}
+                              </Fragment>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     )}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-            {closed.length === 0 && <div style={{ fontSize: 15, color: t.faint, marginTop: 16 }}>No closed trades yet.</div>}
-            <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 14 }}>
-              Checkbox sums selected trades. Edit and Delete sit behind the PIN{pinOk ? ' — unlocked this session' : (pinHash ? '' : ' — first use sets it')}.
-            </div>
-          </>
-        )}
+                  </div>
+                );
+              })}
+              {closed.length === 0 && <div style={{ fontSize: 15, color: t.faint, marginTop: 16 }}>No closed trades yet.</div>}
+              <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 14 }}>
+                Weeks are the journal's closing weeks — click a week to collapse or expand it (latest two open by default). Checkbox sums selected trades. Edit and Delete sit behind the PIN{pinOk ? ' — unlocked this session' : (pinHash ? '' : ' — first use sets it')}.
+              </div>
+            </>
+          );
+        })()}
 
         {/* ADD */}
         {view === 'add' && (

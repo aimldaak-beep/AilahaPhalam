@@ -6,7 +6,7 @@
  */
 import { Trade, calculateTradeForWeek } from '../src/types';
 import { realized, liveMtm, liveMtmRows, latestUsdRate, tradeRate } from '../src/lib/v2engine';
-import { weekPieces, reconcile, journalWeeks } from '../src/lib/weekly';
+import { weekPieces, reconcile, journalWeeks, closedByWeek } from '../src/lib/weekly';
 
 let fails = 0;
 const check = (label: string, ok: boolean, detail = '') => { console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${label}${detail ? ' — ' + detail : ''}`); if (!ok) fails++; };
@@ -130,6 +130,23 @@ console.log('5. Journal: in-progress week + unstamped open week');
   const w38 = jw.find((w) => w.weekKey === '2026-W38')!, w37 = jw.find((w) => w.weekKey === '2026-W37')!;
   check('W38 (in progress) listed for the realized trade only, no open rows', !!w38 && !w38.ended && w38.realizedRows.length === 1 && w38.openRows.length === 0);
   check('W37 open row unstamped → stamped=false, change = −entry brokerage only (−360)', w37.openRows[0].piece.stamped === false && w37.openRows[0].piece.val === -360, JSON.stringify(w37.openRows[0].piece));
+}
+
+console.log('6. Closed trades grouped by closing week (display grouping; totals = Σ realized)');
+{
+  const dow = T({ id: 'dow', symbol: 'DOW-PT', status: 'Closed', sellPrice: 40250, sellDate: '2026-09-09', fridayClosingPrices: { '2026-W35': 40100, '2026-W36': 40300 } });
+  const nas = T({ id: 'nas', symbol: 'NAS-W37', instrument: 'Nasdaq', lotSize: 20, buyPrice: 20000, sellPrice: 20100, status: 'Closed', dateInitiated: '2026-09-10', buyDate: '2026-09-10', sellDate: '2026-09-11', usdToInrRate: 89 });
+  const nif = T({ id: 'nif', symbol: 'NIF-W36', instrument: 'Futures', currency: 'INR', usdToInrRate: 1, lotSize: 75, buyPrice: 24400, sellPrice: 24500, realizationRate: 1, status: 'Closed', dateInitiated: '2026-09-01', buyDate: '2026-09-01', sellDate: '2026-09-02' });
+  const old = T({ id: 'old', symbol: 'OLD-W34', instrument: 'Futures', currency: 'INR', usdToInrRate: 1, lotSize: 75, buyPrice: 24000, sellPrice: 23900, realizationRate: 1, status: 'Closed', dateInitiated: '2026-08-19', buyDate: '2026-08-19', sellDate: '2026-08-20' });
+  const open = T({ id: 'open', symbol: 'OPEN-PT', dateInitiated: '2026-09-07', buyDate: '2026-09-07' });
+  const g = closedByWeek([open, nas, old, dow, nif]);
+  check('weeks newest first: W37, W36, W34 (open trade excluded)', g.map((w) => w.weekKey).join(',') === '2026-W37,2026-W36,2026-W34', g.map((w) => w.weekKey).join(','));
+  check('W37 holds DOW-PT (closed 9 Sep) then NAS-W37 (11 Sep) — close-date order', g[0].trades.map((t) => t.id).join(',') === 'dow,nas');
+  check('every closed trade appears exactly once', g.flatMap((w) => w.trades.map((t) => t.id)).sort().join(',') === 'dow,nas,nif,old');
+  check('W37 total = 89280 + 141688', g[0].total === 89280 + 141688 && g[0].total === g[0].trades.reduce((s, t) => s + realized(t), 0), String(g[0].total));
+  check('W36 total = 6400, W34 total = −8578', g[1].total === 6400 && g[2].total === -8578, `${g[1].total}/${g[2].total}`);
+  check('labels are the journal\'s week labels', g[0].label === 'W37 · 7–13 Sep' && g[2].label === 'W34 · 17–23 Aug', g.map((w) => w.label).join(' | '));
+  check('Σ week totals = Σ realized of all closed trades', g.reduce((s, w) => s + w.total, 0) === [dow, nas, nif, old].reduce((s, t) => s + realized(t), 0));
 }
 
 console.log(fails ? `\n${fails} FAILURE(S)` : '\nALL PASS');
