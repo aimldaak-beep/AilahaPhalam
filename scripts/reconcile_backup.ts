@@ -7,7 +7,7 @@
 import fs from 'fs';
 import { Trade } from '../src/types';
 import { realized, liveMtm, isOpen, weekKeyOf, closeDateOf } from '../src/lib/v2engine';
-import { reconcile, journalWeeks, weekPieces } from '../src/lib/weekly';
+import { reconcile, journalWeeks, weekPieces, closedByWeek } from '../src/lib/weekly';
 
 const liveFile = process.argv[2];
 const dir = process.argv[3] ?? 'archive/2026-09-12T0955Z_pre_pertrade_fx';
@@ -18,7 +18,9 @@ for (const line of fs.readFileSync(`${dir}/realized_before_old_engine.txt`, 'utf
   const m = line.match(/^(OPEN|CLOSED)\s+.*?\s+(INR|USD)\s+(-?\d+)\s+(trade_\S+)/); if (m) before[m[4]] = +m[3];
 }
 let diffs = 0; const note = (ok: boolean, msg: string) => { console.log(`  ${ok ? 'OK  ' : 'DIFF'} ${msg}`); if (!ok) diffs++; };
-const ALLOWED = new Set(['usdToInrRate']); // the one declared migration field (per-trade FX)
+// Declared-allowed field changes: the per-trade-FX migration field by default; pass "strict" as the 4th
+// argument for a display-only change (2026-09-12 closed-by-week law: DELETE NOTHING, modify nothing).
+const ALLOWED = new Set(process.argv[4] === 'strict' ? [] : ['usdToInrRate']);
 
 console.log(`backup ${backup.length} trades · live ${live.length} trades (same owner rows)`);
 note(backup.length === live.length, `trade count ${backup.length} vs ${live.length}`);
@@ -59,6 +61,12 @@ const byWeek = (rows: any[]) => { const m: Record<string, number> = {}; for (con
 const byWeekLive = () => { const m: Record<string, number> = {}; for (const r of live) { const t = r.data as Trade; if (isOpen(t)) continue; const w = weekKeyOf(closeDateOf(t)); m[w] = (m[w] ?? 0) + realized(t); } return m; };
 const wb = byWeek(backup), wl = byWeekLive();
 for (const w of Object.keys(wb).sort()) note(wb[w] === wl[w], `${w} realized-by-close-week ${wl[w]} vs before ${wb[w]}`);
+console.log('\n4b. Closed trades grouped by closing week (Closed view) — counts + totals vs backup');
+const groups = closedByWeek(live.map((r) => r.data as Trade));
+const closedBackup = backup.filter((r) => !isOpen(r.data as Trade));
+note(groups.reduce((s, g) => s + g.trades.length, 0) === closedBackup.length, `closed trades in groups ${groups.reduce((s, g) => s + g.trades.length, 0)} = backup closed ${closedBackup.length}`);
+note(new Set(groups.flatMap((g) => g.trades.map((t) => t.id))).size === closedBackup.length, 'every closed trade appears exactly once');
+for (const g of groups) note(g.total === wb[g.weekKey] && g.trades.every((t) => weekKeyOf(closeDateOf(t)) === g.weekKey), `${g.weekKey} ${g.label}: ${g.trades.length} trades, realized ${g.total} vs backup ${wb[g.weekKey]}`);
 console.log('\n5. New weekly journal (pieces) on live rows — self-consistency: every piece counted once');
 const LAST = '2026-W37';
 const jw = journalWeeks(live.map((r) => r.data as Trade), LAST);
