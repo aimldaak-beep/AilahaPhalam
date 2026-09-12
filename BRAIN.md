@@ -97,18 +97,31 @@ DEAD as of 2026-09-12 (removed from code): the universal weekly rate, the rate s
 (`fxrates.ts`, sentinel row), provisional/settle cycle, the Saturday rate step, the header
 USD/INR control, per-week `@rate` editing, and the "FX rate not set" state. `fxmodel.ts` keeps
 only `isDocRow` (the retired store row still exists in `trades` as history and must never load
-as a trade) and `shiftISO`. The engine (`types.ts calculateTradeForWeek`) reads
-`trade.usdToInrRate` for every week; `fridayUsdToInrRates` / `closedUsdToInrRate` are legacy
-fields the engine no longer reads. A USD trade with no rate (only possible on a legacy row)
-computes NaN and renders **"USD/INR missing — Edit trade"** — never a default.
+as a trade) and `shiftISO`. A USD trade with no rate (only possible on a legacy row) computes NaN
+and renders **"USD/INR missing — Edit trade"** — never a default.
+
+**Rate precedence in the engine** (`types.ts calculateTradeForWeek`, mirrored by
+`v2engine.weekRateOf`): for each week, a LEGACY per-week stamp — `fridayUsdToInrRates[week]`, or
+`closedUsdToInrRate` in the closing week, written by the retired weekly model before 2026-09-12 —
+wins if present; otherwise the trade's own `usdToInrRate`. New trades never get stamps, so they
+convert at their one rate for life. Legacy trades keep their frozen history **byte-identical**
+(AKS's ship gate: pre-existing trades, P&Ls, stamps and weekly totals identical to the backup).
+An explicit rate change (or currency change) in Edit trade CLEARS the legacy stamps
+(`buildEdited`), after which the trade's own rate rules its whole life. The live card meta says
+"(weekly history kept)" while legacy stamps exist; the journal history line shows `@rate` on a
+piece whose legacy rate differs from the trade's rate.
 
 Migration 2026-09-12 (`scripts/migrate_per_trade_fx.py`, idempotent): every existing USD trade
-received the rate the engine was converting it at — its frozen closing-week rate (all 9 closed
-USD trades → 89.9; no open USD trades existed). The 3 trades that spanned W35→W36 had a W35 leg
-priced at 90.1 under the weekly model and now use one rate (NASDAQ −₹126, DOW +₹302, COPPER
-−₹36; total realized ₹24,20,876 → ₹24,21,016). Proofs: `scripts/fx-pertrade-proof.ts` (30
-checks: per-trade rate on every week, legacy stamps ignored, INR untouched, journal
-carry-forward + reconciliation), `scripts/fx-baseline.ts` (INR byte-identical).
+received its frozen closing-week rate (all 9 closed USD trades → 89.9; no open USD trades
+existed); their legacy stamps stay, so nothing re-priced. Backup + gate: the live DB was archived
+BEFORE the change to `archive/2026-09-12T0955Z_pre_pertrade_fx/` (trades / weekly_marks /
+user_settings + the pre-change engine's realized figures) and `scripts/reconcile_backup.ts
+<live_dump.json>` proves every pre-existing trade field (except the declared `usdToInrRate`),
+close stamp, weekly_marks row, closed P&L (₹24,20,876) and realized-by-week total IDENTICAL.
+Proofs: `scripts/fx-pertrade-proof.ts` (39 checks: per-trade rate on new trades, legacy stamps
+win per week, edit clears them, rounding residual, INR untouched, journal carry-forward +
+reconciliation), `scripts/fx-baseline.ts` (INR byte-identical), `scripts/weekly-mtm-proof.ts`
+(original pre-change goldens still pass).
 
 ## 7. MTM math (the engine — `types.ts`, unchanged)
 For a live trade, each stamped week produces one ledger row:
@@ -118,11 +131,13 @@ week N piece = (closeN − prevMark) × direction × multiplier × lots × (the 
                − (brokerage charged that week)
 ```
 where `prevMark` = the previous week's close, or the entry price for the first (initiation) week;
-`direction` = +1 Long / −1 Short; the closing week's `closeN` is the exit price. **Every piece is
-rounded to the rupee.** Live total = Σ visible weekly rows. **Realized** P&L (closed trades) = Σ of
-every active week's rounded piece (initiation week carries the entry-leg brokerage, the closing week
-the exit-leg) — so a trade's journal pieces reconcile EXACTLY to its realized figure (`lib/weekly.ts
-reconcile`). **Realization scales BOTH MTM and realized** (it multiplies gross − brokerage).
+`direction` = +1 Long / −1 Short; the closing week's `closeN` is the exit price (legacy trades: that
+week's stamped rate, §6). Live total = Σ visible weekly rows (each rounded). **Realized** P&L
+(closed trades) = Σ of every active week's net, **rounded once** — unchanged since v1 (initiation
+week carries the entry-leg brokerage, the closing week the exit-leg). The journal's per-week
+pieces are each rounded; on a closed trade the CLOSING piece absorbs the ≤₹1 rounding residual so
+Σ pieces === realized exactly (`lib/weekly.ts weekPieces/reconcile`). **Realization scales BOTH
+MTM and realized** (it multiplies gross − brokerage).
 `estimateInstantPnL` is the What-if variant. All money renders through `inr()/signed()/nf()` (en-IN
 lakh/crore) with `font-variant-numeric: tabular-nums`.
 
@@ -197,7 +212,10 @@ Every trade is cut into one **piece per Mon–Sun week it was alive in** (§7). 
   (initiated ≤ week, closed later or never), with THAT WEEK's piece = this week's stamp minus last
   week's stamp (or minus entry if opened this week), NOT cumulative since entry. Row: symbol ·
   opened · `mark <this week's stamp>` (red "no close stamp" if none) · `from`/`entry <prev mark>` ·
-  meta · piece. A week is listed for open positions only once it has ENDED (Saturday 17:00 IST
+  meta · piece. An unstamped ended week still carries the engine's piece (the entry-leg brokerage
+  in an initiation week; 0 otherwise) so pieces always reconcile — the live headline omits
+  unstamped weeks, so the two agree once the Saturday stamp is in. A week is listed for open
+  positions only once it has ENDED (Saturday 17:00 IST
   passed, i.e. `weekKey ≤ endWeekKey`); the in-progress week appears only if a trade closed in it
   ("Week in progress — open positions mark at Saturday's close").
 - **WEEK TOTAL = realized + unrealized** ("what I actually made this week"); the footer repeats

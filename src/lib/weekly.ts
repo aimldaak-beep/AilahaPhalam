@@ -13,8 +13,10 @@
  *                 × the trade's OWN USD/INR rate (USD) × realization
  *                 − the brokerage leg charged that week (entry leg in the initiation week,
  *                   exit leg in the closing week).
- * Each piece is rounded to the rupee. A trade's pieces SUM EXACTLY to its realized P&L
- * (v2engine.realized rounds per week the same way) — the carry-forward reconciliation.
+ * Each piece is rounded to the rupee; on a CLOSED trade the closing piece carries the
+ * rounding residual so that Σ pieces === realized(t) EXACTLY while realized() itself stays
+ * the unchanged round-once figure — the carry-forward reconciliation. Legacy per-week FX
+ * stamps (pre-2026-09-12) are honoured per week (`rate` on each piece shows what applied).
  *
  * A weekly journal W shows:
  *   REALIZED   — trades CLOSED in W, each with its closing-week piece (what was booked in
@@ -25,7 +27,7 @@
  * Summing WEEK TOTAL over all weeks therefore counts every piece exactly once.
  */
 import { Trade, calculateTradeForWeek, getWeeksBetween, getWeekKeyForClose, getWeekInfo } from '../types';
-import { realized, isOpen, isClosed, closeDateOf, todayStr, weekKeyOf, weekLabel } from './v2engine';
+import { realized, isOpen, isClosed, closeDateOf, todayStr, weekKeyOf, weekLabel, weekRateOf } from './v2engine';
 
 export interface WeekPiece {
   weekKey: string; monday: string; label: string;
@@ -33,6 +35,7 @@ export interface WeekPiece {
   open: number;      // the mark this week's change is measured FROM (last stamp / entry)
   close: number;     // the mark it is measured TO (this week's stamp / exit)
   stamped: boolean;  // false = no close stamp for this week yet (engine carries last mark → 0 change)
+  rate: number;      // USD/INR this week converted at (legacy stamp or the trade's own rate); 1 for INR
   val: number;       // rounded rupee net change for this week (NaN if a USD trade has no rate)
 }
 
@@ -48,8 +51,16 @@ export function weekPieces(t: Trade): WeekPiece[] {
       weekKey: w.weekKey, monday: w.mondayDateStr, label: weekLabel(w.mondayDateStr), role: c.role,
       open: c.openingPrice, close: c.closingPrice,
       stamped: closing || t.fridayClosingPrices?.[w.weekKey] != null,
+      rate: weekRateOf(t, w.weekKey),
       val: Math.round(c.netProfit),
     });
+  }
+  // Closed trade: the closing piece absorbs the rounding residual so Σ pieces === realized(t).
+  if (isClosed(t) && out.length) {
+    const last = out[out.length - 1];
+    const others = out.slice(0, -1).reduce((s, p) => s + p.val, 0);
+    const r = realized(t);
+    if (!isNaN(r) && !isNaN(others)) last.val = r - others;
   }
   return out;
 }

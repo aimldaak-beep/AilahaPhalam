@@ -45,8 +45,9 @@ export interface Trade {
   // whole life. INR trades store 1 (unused). null on a USD trade = rate missing (NaN
   // path, rendered loudly). There is NO hardcoded fallback rate.
   usdToInrRate: number | null;
-  // LEGACY (pre-2026-09-12 weekly-rate model). Kept on old rows for history only; the
-  // engine no longer reads either field.
+  // LEGACY per-week stamps (pre-2026-09-12 weekly-rate model). Where present they win for
+  // that week (frozen history stays byte-identical); new trades never get them, and an
+  // explicit per-trade rate edit clears them. See calculateTradeForWeek.
   fridayUsdToInrRates: Record<string, number>;
   closedUsdToInrRate?: number;
   realizationRate: number; // 0.8 or 1.0
@@ -235,10 +236,19 @@ export function calculateTradeForWeek(trade: Trade, targetWeekKey: string): Week
   const initiatorPrice = trade.direction === 'Long' ? trade.buyPrice : trade.sellPrice;
   const exitPrice = trade.direction === 'Long' ? trade.sellPrice : trade.buyPrice;
 
-  // Exchange rate: the trade's OWN per-trade USD/INR rate, the same for every week of
-  // its life (so the weekly pieces telescope exactly to the realized total). No numeric
-  // fallback: a USD trade with no rate computes NaN and the UI renders it loudly.
-  const weeklyExchangeRate = trade.currency === 'USD' ? (trade.usdToInrRate ?? NaN) : 1.0;
+  // Exchange rate: the trade's OWN per-trade USD/INR rate (usdToInrRate) governs every
+  // week of its life. A LEGACY per-week stamp (fridayUsdToInrRates[week] / closedUsdToInrRate,
+  // written by the retired weekly model before 2026-09-12) wins for that week where it
+  // exists, so pre-existing trades stay byte-identical to their frozen history; an explicit
+  // rate edit clears those stamps (App.tsx buildEdited) and the per-trade rate then rules
+  // the whole life. No numeric fallback: no rate anywhere ⇒ NaN, rendered loudly.
+  let weeklyExchangeRate = 1.0;
+  if (trade.currency === 'USD') {
+    const legacy = isClosingWeek
+      ? (trade.closedUsdToInrRate ?? trade.fridayUsdToInrRates?.[targetWeekKey])
+      : trade.fridayUsdToInrRates?.[targetWeekKey];
+    weeklyExchangeRate = legacy ?? trade.usdToInrRate ?? NaN;
+  }
 
   const buyTurnCalc = calculateTurnoverAndBrokerage(trade.buyPrice, trade.numberOfLots, trade.lotSize, trade.instrument);
   const sellTurnCalc = calculateTurnoverAndBrokerage(trade.sellPrice, trade.numberOfLots, trade.lotSize, trade.instrument);

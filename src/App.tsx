@@ -16,7 +16,7 @@ import {
   INSTR, SpecInstrument, specNameOf, signed, nf,
   weekKeyOf, mondayOf, todayStr, weekLabel, heldDays,
   isOpen, isClosed, liveMtmRows, liveMtm, realized, closeDateOf, latestUsdRate, entryLegBrokerage,
-  dispCcy, sgn, px, signedUsd, nativePnl, tradeRate,
+  dispCcy, sgn, px, signedUsd, nativePnl, tradeRate, hasLegacyRates,
 } from './lib/v2engine';
 import { isDocRow, shiftISO } from './lib/fxmodel';
 import { journalWeeks } from './lib/weekly';
@@ -379,6 +379,10 @@ export default function App() {
       entryBrokerage: e.entryBrok.trim() === '' ? null : +e.entryBrok,
       fridayClosingPrices: cleanFcp,
     };
+    // An explicit rate change (or currency change) retires any legacy per-week FX stamps:
+    // from now on the trade converts at its own rate for its whole life.
+    const rateChanged = e.ccy !== e.origCcy || (e.ccy === 'USD' && +e.rate > 0 && +e.rate !== orig.usdToInrRate);
+    if (rateChanged) { base.fridayUsdToInrRates = {}; delete base.closedUsdToInrRate; }
     let updated: Trade;
     if (e.kind === 'live') {
       updated = {
@@ -776,7 +780,7 @@ export default function App() {
                   <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr 380px', alignItems: 'baseline', gap: 14 }}>
                     <span title={tr.symbol} style={{ fontSize: SZ.symbol, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tr.symbol}</span>
                     <span style={{ fontSize: SZ.meta, color: t.faint, lineHeight: 1.5 }}>
-                      {specName} ×{tr.lotSize} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · {dispCcy(tr)}{tr.currency === 'USD' ? (tradeRate(tr) != null ? ` @${tradeRate(tr)}` : ' @?') : ''} · share {realPct(tr)}% · opened {dmy(tr.dateInitiated)}
+                      {specName} ×{tr.lotSize} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · {dispCcy(tr)}{tr.currency === 'USD' ? (tradeRate(tr) != null ? ` @${tradeRate(tr)}` : ' @?') : ''}{hasLegacyRates(tr) ? ' (weekly history kept)' : ''} · share {realPct(tr)}% · opened {dmy(tr.dateInitiated)}
                     </span>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
                       <button onClick={() => { setClosing(null); setWhatIf(whatIf && whatIf.id === tr.id ? null : { id: tr.id, exit: '', rate: String(latestUsdRate(tr) ?? '') }); }} style={actBtn}>What-if</button>
@@ -930,7 +934,7 @@ export default function App() {
                           // Carried trade: its full per-week history — every piece it earned, summing to the realized total.
                           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '4px 14px', marginLeft: 230, padding: '0 0 12px', borderBottom: '1px solid ' + t.hair, fontSize: SZ.meta, color: t.faint }}>
                             {pieces.map((p) => (
-                              <span key={p.weekKey}>{wk(p.label)} <span style={{ ...mono, fontSize: SZ.numSm, color: isNaN(p.val) ? t.loss : pl(p.val) }}>{isNaN(p.val) ? '—' : signed(p.val)}</span></span>
+                              <span key={p.weekKey}>{wk(p.label)} <span style={{ ...mono, fontSize: SZ.numSm, color: isNaN(p.val) ? t.loss : pl(p.val) }}>{isNaN(p.val) ? '—' : signed(p.val)}</span>{tr.currency === 'USD' && p.rate !== tradeRate(tr) ? <span style={{ ...mono, fontSize: SZ.label }}> @{p.rate}</span> : null}</span>
                             ))}
                             <span>= realized <span style={{ ...mono, fontSize: SZ.numSm, fontWeight: 600, color: isNaN(total) ? t.loss : pl(total) }}>{isNaN(total) ? '—' : signed(total)}</span></span>
                             {!reconciled && <span style={{ ...sans, fontWeight: 600, color: t.loss }}>does not reconcile</span>}

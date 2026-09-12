@@ -20,6 +20,17 @@ import {
 // the engine reads it directly. There is no weekly rate store and no fallback constant.
 /** The trade's own USD/INR rate; 1 for INR trades; null = missing on a USD trade. */
 export const tradeRate = (t: Trade): number | null => (t.currency === 'USD' ? (t.usdToInrRate ?? null) : 1);
+/** The rate a given week of a trade actually converts at: a legacy per-week stamp if one
+ *  exists (frozen history), else the trade's own rate. Mirrors calculateTradeForWeek. */
+export function weekRateOf(t: Trade, weekKey: string): number {
+  if (t.currency !== 'USD') return 1;
+  const closing = getWeekKeyForClose(t) === weekKey;
+  const legacy = closing ? (t.closedUsdToInrRate ?? t.fridayUsdToInrRates?.[weekKey]) : t.fridayUsdToInrRates?.[weekKey];
+  return legacy ?? t.usdToInrRate ?? NaN;
+}
+/** True when a USD trade still carries legacy per-week stamps (pre-2026-09-12 history). */
+export const hasLegacyRates = (t: Trade): boolean =>
+  t.currency === 'USD' && (t.closedUsdToInrRate != null || Object.keys(t.fridayUsdToInrRates ?? {}).length > 0);
 
 // Spec instrument -> { multiplier (lotSize), default currency, v1 enum for brokerage }.
 // The v1 enum decides the brokerage branch in calculateTurnoverAndBrokerage:
@@ -115,8 +126,8 @@ export function liveMtmRows(t: Trade): MtmRow[] {
     const calc = calculateTradeForWeek(t, w.weekKey);
     rows.push({
       weekKey: w.weekKey, monday: w.mondayDateStr, label: weekLabel(w.mondayDateStr),
-      // The trade's own rate on every row; NaN only if a USD trade has none (rendered loudly).
-      close, rate: tradeRate(t) ?? NaN,
+      // The rate this week converts at (legacy stamp if any, else the trade's own rate).
+      close, rate: weekRateOf(t, w.weekKey),
       val: Math.round(calc.netProfit),
     });
   }
@@ -127,18 +138,19 @@ export const liveMtm = (t: Trade) => liveMtmRows(t).reduce((s, r) => s + r.val, 
 /** The rate a USD trade converts at — its own per-trade rate (What-if prefill). */
 export function latestUsdRate(t: Trade): number | null { return tradeRate(t); }
 
-/** Realized P&L for a closed trade = sum of every active week's net piece, each piece
- *  rounded to the rupee (entry-leg brokerage in the init week, exit-leg at close,
- *  realization scaled). Per-week rounding makes the journal's carry-forward pieces
- *  reconcile EXACTLY to this figure (see lib/weekly.ts) and matches liveMtm's rounding. */
+/** Realized P&L for a closed trade = sum of every active week's net (entry-leg
+ *  brokerage in the init week, exit-leg at close, realization scaled), rounded once —
+ *  UNCHANGED from v1/v2 so every booked figure stays byte-identical. The journal's
+ *  per-week pieces reconcile to it exactly by carrying the rounding residual on the
+ *  closing piece (lib/weekly.ts). */
 export function realized(t: Trade): number {
   const endStr = getGloballyCloseDate(t) ?? todayStr();
   let sum = 0;
   for (const w of getWeeksBetween(t.dateInitiated, endStr)) {
     const calc = calculateTradeForWeek(t, w.weekKey);
-    if (calc.isActive) sum += Math.round(calc.netProfit);
+    if (calc.isActive) sum += calc.netProfit;
   }
-  return sum;
+  return Math.round(sum);
 }
 function getGloballyCloseDate(t: Trade): string | null {
   return t.direction === 'Long' ? t.sellDate : t.buyDate;

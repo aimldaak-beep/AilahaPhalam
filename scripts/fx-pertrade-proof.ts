@@ -16,12 +16,10 @@ const T = (o: Partial<Trade>): Trade => ({
   usdToInrRate: 90, fridayUsdToInrRates: {}, realizationRate: 0.8, fridayClosingPrices: {}, entryBrokerage: null, exitBrokerage: null, ...o,
 } as Trade);
 
-console.log('1. Per-trade rate drives every week; legacy weekly stamps are ignored');
+console.log('1. Per-trade rate drives every week of a NEW trade; a LEGACY per-week stamp wins for its week');
 {
-  // W35 (24–30 Aug) stamp 40100, W36 stamp 40300, closed W37 (Wed 9 Sep) at 40250. Rate 90 on the trade;
-  // legacy stamps 95 / 96 / closedUsdToInrRate 97 must NOT be read.
-  const t = T({ status: 'Closed', sellPrice: 40250, sellDate: '2026-09-09', fridayClosingPrices: { '2026-W35': 40100, '2026-W36': 40300 },
-    fridayUsdToInrRates: { '2026-W35': 95, '2026-W36': 96 }, closedUsdToInrRate: 97 });
+  // W35 (24–30 Aug) stamp 40100, W36 stamp 40300, closed W37 (Wed 9 Sep) at 40250. Rate 90 on the trade, no legacy stamps.
+  const t = T({ status: 'Closed', sellPrice: 40250, sellDate: '2026-09-09', fridayClosingPrices: { '2026-W35': 40100, '2026-W36': 40300 } });
   const w35 = calculateTradeForWeek(t, '2026-W35'), w36 = calculateTradeForWeek(t, '2026-W36'), w37 = calculateTradeForWeek(t, '2026-W37');
   // W35: (40100-40000)*5*1*90 = 45000 gross − entry leg $5*90=450 → 44550 × 0.8 = 35640
   check('W35 piece = (100×5×90 − 450)×0.8 = 35640', Math.round(w35.netProfit) === 35640, String(w35.netProfit));
@@ -33,10 +31,40 @@ console.log('1. Per-trade rate drives every week; legacy weekly stamps are ignor
   const pcs = weekPieces(t);
   check('weekPieces: 3 pieces W35/W36/W37', pcs.map((p) => p.weekKey).join(',') === '2026-W35,2026-W36,2026-W37', pcs.map((p) => p.weekKey).join(','));
   check('pieces open→close: 40000→40100, 40100→40300, 40300→40250', pcs.map((p) => `${p.open}→${p.close}`).join(' ') === '40000→40100 40100→40300 40300→40250');
+  check('every piece rate = the trade\'s own 90', pcs.every((p) => p.rate === 90));
   const rc = reconcile(t);
   check('RECONCILE: Σ pieces === realized', rc.ok && rc.sum === 89280, JSON.stringify(rc));
   const lifetime = (40250 - 40000) * 5 * 90 * 0.8 - (450 + 450) * 0.8;
   check('telescopes to lifetime (exit−entry)×mult×rate×real − both legs', rc.sum === Math.round(lifetime), `${rc.sum} vs ${lifetime}`);
+
+  // LEGACY trade (pre-2026-09-12 history): W35 stamped 95, W36 96, closing 97 — those weeks keep converting
+  // at their frozen stamps (byte-identical to the old weekly model); the per-trade rate fills only unstamped weeks.
+  const legacy = T({ ...t, fridayUsdToInrRates: { '2026-W35': 95, '2026-W36': 96 }, closedUsdToInrRate: 97 });
+  const l35 = calculateTradeForWeek(legacy, '2026-W35'), l36 = calculateTradeForWeek(legacy, '2026-W36'), l37 = calculateTradeForWeek(legacy, '2026-W37');
+  check('legacy W35 @95 = (100×5×95 − 475)×0.8 = 37620', Math.round(l35.netProfit) === 37620, String(l35.netProfit));
+  check('legacy W36 @96 = 200×5×96×0.8 = 76800', Math.round(l36.netProfit) === 76800, String(l36.netProfit));
+  check('legacy W37 closing @97 = (−250×97 − 485)×0.8 = −19788', Math.round(l37.netProfit) === -19788, String(l37.netProfit));
+  const lp = weekPieces(legacy);
+  check('legacy pieces carry their own week rates 95/96/97', lp.map((p) => p.rate).join(',') === '95,96,97', lp.map((p) => p.rate).join(','));
+  check('legacy RECONCILE: Σ pieces === realized (94632)', reconcile(legacy).ok && realized(legacy) === 94632, JSON.stringify(reconcile(legacy)));
+  const partial = T({ ...t, fridayUsdToInrRates: { '2026-W35': 95 } }); // only W35 stamped; W36/W37 fall to the trade's 90
+  check('partial legacy: W35 @95, W36/W37 @ trade rate 90', weekPieces(partial).map((p) => p.rate).join(',') === '95,90,90');
+  // Explicit rate edit clears the legacy stamps (App.tsx buildEdited) → the trade's own rate rules its whole life.
+  const edited = { ...legacy, usdToInrRate: 90, fridayUsdToInrRates: {}, closedUsdToInrRate: undefined };
+  check('after a rate edit (stamps cleared) the trade prices like a new trade: 89280', realized(edited) === 89280, String(realized(edited)));
+}
+
+console.log('1b. Rounding: realized() is round-once (unchanged); the closing piece absorbs the residual');
+{
+  // Pieces with .5 fractions: W35 open→ 24400→24433.3 etc. Use INR ×75 with odd prices to force fractions.
+  const t = T({ instrument: 'Futures', currency: 'INR', usdToInrRate: 1, lotSize: 75, realizationRate: 0.8, buyPrice: 24400.7,
+    status: 'Closed', sellPrice: 24450.1, sellDate: '2026-09-09', fridayClosingPrices: { '2026-W35': 24410.3, '2026-W36': 24420.9 } });
+  const pcs = weekPieces(t); const r = realized(t);
+  const rawSum = ['2026-W35', '2026-W36', '2026-W37'].reduce((s, k) => s + calculateTradeForWeek(t, k).netProfit, 0);
+  check('realized = Math.round(Σ raw netProfit) (round-once, as before)', r === Math.round(rawSum), `${r} vs ${rawSum}`);
+  check('Σ pieces === realized exactly', pcs.reduce((s, p) => s + p.val, 0) === r);
+  check('non-closing pieces are plain rounded values', pcs[0].val === Math.round(calculateTradeForWeek(t, '2026-W35').netProfit) && pcs[1].val === Math.round(calculateTradeForWeek(t, '2026-W36').netProfit));
+  check('closing piece within ₹1 of its own rounded value (residual only)', Math.abs(pcs[2].val - Math.round(calculateTradeForWeek(t, '2026-W37').netProfit)) <= 1);
 }
 
 console.log('2. Rate lives on the trade: live MTM, rows, What-if prefill');
