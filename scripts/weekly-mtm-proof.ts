@@ -133,8 +133,10 @@ console.log("\n(d) edit middle week's mark — only that week and later re-deriv
 
 // ---------------------------------------------------------------------------
 // (e) Legacy carry-forward trades (no split fields) — byte-identical old behavior + tag.
-// Goldens captured from the engine BEFORE this change (varying FX, formula brokerage,
-// entry leg in entry week / exit leg in close week — the engine's existing treatment).
+// Goldens re-captured 2026-09-12 under the PER-TRADE FX law: every week of a USD trade
+// converts at the trade's own usdToInrRate (80 here); the legacy per-week stamps
+// (fridayUsdToInrRates 80/82, closedUsdToInrRate 85) are history the engine no longer
+// reads. Formula brokerage, entry leg in entry week / exit leg in close week unchanged.
 // ---------------------------------------------------------------------------
 console.log('\n(e) legacy CF trades — old behavior byte-identical, "legacy" tag condition');
 const legacyCF: Trade = {
@@ -147,8 +149,8 @@ const legacyCF: Trade = {
 };
 const GOLDEN_CF: Record<string, string> = {
   '2026-W02': '{"isActive":true,"role":"initiation","openingPrice":100,"closingPrice":110,"points":10,"grossProfit":800,"brokerageDeducted":2.4,"netProfit":797.6,"buyTurnover":100,"sellTurnover":130,"buyBrokerage":2.4,"sellBrokerage":3.12}',
-  '2026-W03': '{"isActive":true,"role":"intermediate","openingPrice":110,"closingPrice":120,"points":10,"grossProfit":820,"brokerageDeducted":0,"netProfit":820,"buyTurnover":100,"sellTurnover":130,"buyBrokerage":2.46,"sellBrokerage":3.198}',
-  '2026-W04': '{"isActive":true,"role":"closing","openingPrice":120,"closingPrice":130,"points":10,"grossProfit":850,"brokerageDeducted":3.315,"netProfit":846.685,"buyTurnover":100,"sellTurnover":130,"buyBrokerage":2.55,"sellBrokerage":3.315}',
+  '2026-W03': '{"isActive":true,"role":"intermediate","openingPrice":110,"closingPrice":120,"points":10,"grossProfit":800,"brokerageDeducted":0,"netProfit":800,"buyTurnover":100,"sellTurnover":130,"buyBrokerage":2.4,"sellBrokerage":3.12}',
+  '2026-W04': '{"isActive":true,"role":"closing","openingPrice":120,"closingPrice":130,"points":10,"grossProfit":800,"brokerageDeducted":3.12,"netProfit":796.88,"buyTurnover":100,"sellTurnover":130,"buyBrokerage":2.4,"sellBrokerage":3.12}',
 };
 Object.entries(GOLDEN_CF).forEach(([wk, golden]) => {
   check(`legacy LONG ${wk} byte-identical`, JSON.stringify(calculateTradeForWeek(legacyCF, wk)) === golden);
@@ -159,8 +161,8 @@ const legacyShort: Trade = {
 };
 const GOLDEN_SHORT: Record<string, string> = {
   '2026-W02': '{"isActive":true,"role":"initiation","openingPrice":100,"closingPrice":110,"points":-10,"grossProfit":-800,"brokerageDeducted":2.4,"netProfit":-802.4,"buyTurnover":130,"sellTurnover":100,"buyBrokerage":3.12,"sellBrokerage":2.4}',
-  '2026-W03': '{"isActive":true,"role":"intermediate","openingPrice":110,"closingPrice":120,"points":-10,"grossProfit":-820,"brokerageDeducted":0,"netProfit":-820,"buyTurnover":130,"sellTurnover":100,"buyBrokerage":3.198,"sellBrokerage":2.46}',
-  '2026-W04': '{"isActive":true,"role":"closing","openingPrice":120,"closingPrice":130,"points":-10,"grossProfit":-850,"brokerageDeducted":3.315,"netProfit":-853.315,"buyTurnover":130,"sellTurnover":100,"buyBrokerage":3.315,"sellBrokerage":2.55}',
+  '2026-W03': '{"isActive":true,"role":"intermediate","openingPrice":110,"closingPrice":120,"points":-10,"grossProfit":-800,"brokerageDeducted":0,"netProfit":-800,"buyTurnover":130,"sellTurnover":100,"buyBrokerage":3.12,"sellBrokerage":2.4}',
+  '2026-W04': '{"isActive":true,"role":"closing","openingPrice":120,"closingPrice":130,"points":-10,"grossProfit":-800,"brokerageDeducted":3.12,"netProfit":-803.12,"buyTurnover":130,"sellTurnover":100,"buyBrokerage":3.12,"sellBrokerage":2.4}',
 };
 Object.entries(GOLDEN_SHORT).forEach(([wk, golden]) => {
   check(`legacy SHORT ${wk} byte-identical`, JSON.stringify(calculateTradeForWeek(legacyShort, wk)) === golden);

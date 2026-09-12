@@ -4,40 +4,21 @@
  */
 
 /**
- * Weekly USD/INR rate model — PURE half (no supabase import, so the engine and node
- * proof scripts can use it). Persistence lives in fxrates.ts. See fxrates.ts for the
- * full settlement law: one rate per Mon–Sun week, provisional through the week,
- * settled+frozen at the Saturday close, settled rate = next week's provisional base,
- * and NO hardcoded fallback anywhere — a missing rate is null / "FX rate not set".
+ * Residue of the retired weekly USD/INR rate store (2026-08-28 → 2026-09-12). FX is now
+ * PER TRADE (Trade.usdToInrRate, see types.ts / v2engine.tradeRate); nothing reads a
+ * weekly rate any more. What survives here:
+ *   - the sentinel-row filter: the old store still exists as an RLS-scoped doc row in
+ *     `public.trades` (data.kind = 'fx_weekly_rates'), kept as history and NEVER loaded
+ *     as a trade;
+ *   - shiftISO, a date helper the Saturday-voice timing law uses.
  */
-
-/** `entered`: the rate was typed into the settlement form and saved as progress (still
- *  provisional, not frozen) — the only case the form may show it back pre-filled. */
-export interface FxWeek { rate: number; settled: boolean; settledAt?: string; entered?: boolean }
-export type FxWeeks = Record<string, FxWeek>; // weekKey "YYYY-Www" -> rate
 
 export const FX_DOC_ID = 'fx_weekly_rates_v1';
 export const FX_DOC_KIND = 'fx_weekly_rates';
 
-/** Rows in `trades` that are the FX store (or any future non-trade doc), not trades. */
+/** Rows in `trades` that are a doc (the retired FX store, or any future non-trade doc), not trades. */
 export const isDocRow = (data: unknown): boolean =>
   typeof data === 'object' && data !== null && 'kind' in (data as Record<string, unknown>);
-
-/**
- * Resolve the rate that governs a week: the week's own stored rate, else the most
- * recent EARLIER week's rate carried forward (a settled Saturday rate is the next
- * week's provisional base). Returns null when nothing is stored — the caller must
- * show "FX rate not set", never substitute a number.
- */
-export function rateForWeek(weeks: FxWeeks, weekKey: string): number | null {
-  const exact = weeks[weekKey];
-  if (exact) return exact.rate;
-  const earlier = Object.keys(weeks).filter((w) => w < weekKey).sort();
-  return earlier.length ? weeks[earlier[earlier.length - 1]].rate : null;
-}
-
-export const isSettled = (weeks: FxWeeks, weekKey: string): boolean =>
-  weeks[weekKey]?.settled === true;
 
 /** ISO date shifted by whole days (UTC-safe for date-only strings). */
 export const shiftISO = (iso: string, days: number): string => {

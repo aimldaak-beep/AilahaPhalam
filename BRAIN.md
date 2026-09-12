@@ -36,7 +36,7 @@ or DB password to formalize). The five logical tables + settings and their RUNTI
 |---|---|
 | `live_trades` + `closed_trades` | `public.trades` — columns `id uuid, user_id uuid, data jsonb, created_at`; the whole Trade object lives in `data`; `data.status` open vs closed splits the two |
 | `weekly_marks` | `public.weekly_marks` — mirror of each trade's `data.fridayClosingPrices` (one row per user+trade+week_key) |
-| `weekly_rates` | stamped into each USD trade's `data.fridayUsdToInrRates[weekKey]` (no separate table) |
+| (USD/INR) | **per trade**: `data.usdToInrRate` on every USD trade (§6). Legacy `fridayUsdToInrRates` / `closedUsdToInrRate` and the retired `data.kind='fx_weekly_rates'` sentinel row remain on disk as history only |
 | `settings.pin_hash` | `public.user_settings.pin_hash` |
 | `settings.theme` | client `localStorage` (`ap_theme`) |
 | (email allowlist) | **public Storage object** `config/allowlist.json` (bucket `config`, public read) |
@@ -63,79 +63,66 @@ can self-check) and service-key-WRITE only (client JWT writes are RLS-blocked by
 ## 5. Week law
 - Weeks run **MONDAY → SUNDAY**. A week's identity is its **Monday date**; internally the key is
   `getWeekInfo(date).weekKey` = `"YYYY-Www"` (Monday-derived), e.g. `2026-W35` = Mon 24 Aug 2026.
-- **Saturday settlement ritual — "the Saturday voice"** (evaluated in **IST**, `Asia/Kolkata`;
-  amendment of 2026-08-29, additive):
-  1. From **Saturday 17:00 IST** the ENDING week (the current Mon–Sun week) is asked. If it is
-     still unsettled when Sunday ends, it STAYS asked from Monday — as the **previous** week —
-     until settled, marked **overdue** (red). Exactly one week is ever asked: the most recent one
-     whose Saturday 17:00 has passed (`endWeekKey`). Never at initiation.
-  2. The ask is ONE form (settlement panel, Live view, `role=region "Weekly settlement"`):
-     `W-XX USDINR closing rate` (the week's provisional shown beside it as reference — **never
-     pre-filled as the answer**) + one row per live trade initiated before that Saturday:
-     `<symbol> · <instrument> — Saturday close price` (a weekly close-stamp; the position stays
-     open). A trade opened Saturday or Sunday waits for the NEXT Saturday.
-  3. The ask is due when the asked week is unsettled in the rate store AND any trade was active
-     in it — **INR-only weeks included** (rate + stamps are asked regardless). Dismissing
-     ("Later") or leaving the Live view turns it into a loud top banner (`role=alert`, ink; red
-     `#C2402E` + "OVERDUE" from Monday) that returns until settled. Nothing is ever settled or
-     filled silently; only entered numbers count.
-  4. **Partial entry** — "Save progress" stamps whatever closes were typed and saves a typed rate
-     as the week's provisional with `entered:true` (the only case the rate field shows a value
-     back). The week freezes ONLY when the rate + every live stamp exist ("Settle W-XX" refuses
-     otherwise, naming the missing trades).
-  5. **Settle** is one atomic action: stamps every close (`fridayClosingPrices[endWeekKey]`),
-     stamps the rate on every USD trade active/closed that week, marks the week `settled` in the
-     store, writes NEXT week's provisional = the settled rate (`{rate, settled:false}`), and the
-     header + USD/INR control advance to next week (`headKey`) while the settled week is current.
-  - Server-side state (trades jsonb + rate store) ⇒ survives reload/redeploy/device.
-  - Smoke: `scripts/seed_satvoice.py` → `scripts/smoke-satvoice.mjs` (13 steps, injected IST
-    clocks incl. future dates via bumped stored `expires_at`) → `scripts/cleanup_satvoice.py`;
-    expected MTM from `scripts/satvoice-expected.ts` (engine, not hand math).
+- **Saturday ritual — "the Saturday voice"** (evaluated in **IST**, `Asia/Kolkata`; amended
+  2026-09-12: **close stamps only, no FX rate is ever asked**):
+  1. From **Saturday 17:00 IST** the ENDING week (the current Mon–Sun week) is asked. If any stamp
+     is still missing when Sunday ends, it STAYS asked from Monday — as the **previous** week —
+     until every stamp is in, marked **overdue** (red). Exactly one week is ever asked: the most
+     recent one whose Saturday 17:00 has passed (`endWeekKey`). Never at initiation.
+  2. The ask is ONE form (panel on the Live view, `role=region "Weekly settlement"`): one row per
+     live trade initiated before that Saturday — `<symbol> · <instrument> — Saturday close price`
+     (a weekly close-stamp into `fridayClosingPrices[endWeekKey]`; the position stays open). A trade
+     opened Saturday or Sunday waits for the NEXT Saturday.
+  3. The week is owed (`settleDue`) while any asked trade has no stamp for it — derived purely from
+     the trades, no store. Nothing to stamp ⇒ nothing is asked. Dismissing ("Later") or leaving the
+     Live view turns it into a loud top banner (`role=alert`, ink; red `#C2402E` + "OVERDUE" from
+     Monday) that returns until every stamp is in. Only entered numbers count; nothing is pre-filled.
+  4. **Save progress** stamps whatever closes were typed; **Settle W-XX** refuses until every asked
+     trade has a stamp (naming the missing ones), then stamps them all. Once all stamps are in on
+     Sat/Sun the header advances to next week.
+  - State is the trades jsonb (+ `weekly_marks` mirror) ⇒ survives reload/redeploy/device.
+  - Smoke: `scripts/seed_pertrade.py` → `scripts/smoke-pertrade.mjs` (injected Sunday clock; bumped
+    stored `expires_at`) → `scripts/cleanup_pertrade.py`.
 
-## 6. Weekly USD/INR — the FX SETTLEMENT MODEL (supersedes the old per-trade-rate law)
-One USD/INR rate per Mon–Sun week, kept in a server-side **weekly rate store** — the ONE source
-of FX truth. **There is NO hardcoded fallback rate anywhere** (the old `83.24` ghost is dead, in
-code AND in the stored trades); a missing rate renders loudly as **"FX rate not set"**, never a
-silent default.
+## 6. USD/INR — the PER-TRADE FX LAW (2026-09-12; supersedes the weekly settlement model)
+**Every USD-denominated trade carries its OWN USD/INR rate** — `Trade.usdToInrRate` — entered by
+AKS when the trade is opened (Add trade: required for USD, refused without it) and editable any
+time via Edit trade (live and closed). That trade's rupee P&L — live MTM, every weekly piece, and
+realized — converts at ITS OWN rate for the trade's whole life, including in the journal. The
+rate shows on the live card meta (`USD @89.9`), on every weekly ledger row (`@89.9`, plain text),
+in the Closed table (`USD/INR` column), in the CSV (`USD/INR` column), and pre-fills What-if.
+Editing the rate re-prices the whole trade. **INR trades have no FX field** (store 1, untouched).
 
-- **Provisional:** through the week ALL USD figures (live MTM, mid-week closes, What-if prefill)
-  convert at the current week's provisional rate. It shows small under the ₹ headline
-  (dashed → click to edit) and is editable until the week settles.
-- **Settlement:** the Saturday panel (Sat ≥17:00 IST, persisting/overdue until settled — §5)
-  asks the week's **closing rate** (rate field never pre-filled; provisional shown as reference);
-  Save re-prices the week at it and **FREEZES** it — the rate is stamped into every live USD
-  trade's `data.fridayUsdToInrRates[weekKey]` and onto `closedUsdToInrRate` of every USD trade
-  closed that week, and the store marks the week `settled`. **Settled weeks never re-price**
-  (their `@rate` in the ledger is plain text, not editable). The panel also appears with no
-  trades to ask when an unsettled week still owes its rate.
-- **Carry-forward:** the settled rate is the next week's provisional base — written explicitly
-  at settlement as `{rate, settled:false}` for the next week (and resolution still walks back to
-  the most recent earlier stored week for anything unstored). `FxWeek.entered` marks a rate
-  typed into the settlement form and saved as progress (provisional, not frozen).
-- **Store:** `src/lib/fxmodel.ts` (pure model: `rateForWeek`, `isSettled`) +
-  `src/lib/fxrates.ts` (persistence). No DDL is reachable, so the store is an RLS-scoped
-  **sentinel row in `public.trades`** (`data.kind='fx_weekly_rates'`, `data.id='fx_weekly_rates_v1'`,
-  one per user) — filtered out of the trade list on load (`isDocRow`), never touched by the trade
-  persist diff. Server-side ⇒ survives reload/redeploy/device.
-- **Engine:** `types.ts` has NO fallback (missing rate ⇒ NaN); `v2engine.withFx` overlays store
-  rates onto unstamped weeks (per-trade stamps — i.e. settled weeks — always win), via a module
-  FX context set by the app (`setFxContext`). `Trade.usdToInrRate` is null on new USD trades and
-  is only the What-if instant-rate carrier. Regression proofs: `scripts/fx-weekly-proof.ts`
-  (12 checks: NaN loudness, ₹@rate math, freeze, carry-forward), `scripts/fx-baseline.ts`
-  (INR trades byte-identical). Migration/seed: `scripts/migrate_fx_weekly.py`
-  (2026-08-28: killed stored 83.24 on NASDAQ/DOW, COPPER→USD, seeded 2026-W35 = 95.55).
+DEAD as of 2026-09-12 (removed from code): the universal weekly rate, the rate store
+(`fxrates.ts`, sentinel row), provisional/settle cycle, the Saturday rate step, the header
+USD/INR control, per-week `@rate` editing, and the "FX rate not set" state. `fxmodel.ts` keeps
+only `isDocRow` (the retired store row still exists in `trades` as history and must never load
+as a trade) and `shiftISO`. The engine (`types.ts calculateTradeForWeek`) reads
+`trade.usdToInrRate` for every week; `fridayUsdToInrRates` / `closedUsdToInrRate` are legacy
+fields the engine no longer reads. A USD trade with no rate (only possible on a legacy row)
+computes NaN and renders **"USD/INR missing — Edit trade"** — never a default.
+
+Migration 2026-09-12 (`scripts/migrate_per_trade_fx.py`, idempotent): every existing USD trade
+received the rate the engine was converting it at — its frozen closing-week rate (all 9 closed
+USD trades → 89.9; no open USD trades existed). The 3 trades that spanned W35→W36 had a W35 leg
+priced at 90.1 under the weekly model and now use one rate (NASDAQ −₹126, DOW +₹302, COPPER
+−₹36; total realized ₹24,20,876 → ₹24,21,016). Proofs: `scripts/fx-pertrade-proof.ts` (30
+checks: per-trade rate on every week, legacy stamps ignored, INR untouched, journal
+carry-forward + reconciliation), `scripts/fx-baseline.ts` (INR byte-identical).
 
 ## 7. MTM math (the engine — `types.ts`, unchanged)
 For a live trade, each stamped week produces one ledger row:
 
 ```
-week N MTM = (closeN − prevMark) × direction × multiplier × lots × (weekN USD rate if USD) × realization
-             − (brokerage charged that week)
+week N piece = (closeN − prevMark) × direction × multiplier × lots × (the trade's OWN USD/INR rate if USD) × realization
+               − (brokerage charged that week)
 ```
 where `prevMark` = the previous week's close, or the entry price for the first (initiation) week;
-`direction` = +1 Long / −1 Short. Live total = Σ visible weekly rows. **Realized** P&L (closed
-trades) = Σ of every active week's net (initiation week carries the entry-leg brokerage, the closing
-week the exit-leg). **Realization scales BOTH MTM and realized** (it multiplies gross − brokerage).
+`direction` = +1 Long / −1 Short; the closing week's `closeN` is the exit price. **Every piece is
+rounded to the rupee.** Live total = Σ visible weekly rows. **Realized** P&L (closed trades) = Σ of
+every active week's rounded piece (initiation week carries the entry-leg brokerage, the closing week
+the exit-leg) — so a trade's journal pieces reconcile EXACTLY to its realized figure (`lib/weekly.ts
+reconcile`). **Realization scales BOTH MTM and realized** (it multiplies gross − brokerage).
 `estimateInstantPnL` is the What-if variant. All money renders through `inr()/signed()/nf()` (en-IN
 lakh/crore) with `font-variant-numeric: tabular-nums`.
 
@@ -192,28 +179,44 @@ week** (Long → buy side, Short → sell side); the **exit leg** at **close**. 
 
 ## 10. What-if calculator (live rows, read-only)
 Ghost button beside Close/Edit/Delete → inline calculator: hypothetical exit + hypothetical USD
-rate (pre-filled with the latest known rate). Live would-be P&L via the unchanged
+rate (pre-filled with the trade's own rate). Live would-be P&L via the unchanged
 `estimateInstantPnL({...trade, usdToInrRate: hypoRate}, exit)`:
 `(price − entry) × dir × multiplier × lots × rate × realization`, **net of BOTH brokerage legs**
 (exit leg by the legacy auto formula). Writes NOTHING, no PIN, dismiss on Esc or ✕.
 
-## 11. Journal law
-Closed trades are clubbed into **Mon–Sun weeks BY CLOSING DATE** (a trade lives in the week it
-CLOSED), newest week first. Each week header shows the range + trade count + week total. Each row:
-symbol, initiated date, closed date, **held-days** (calendar days between), side/lots/share, P&L.
-Rows have checkboxes with a selected-sum bar; the selection is **shared with the Closed view**.
+## 11. Journal law — WEEKLY MTM, realized + unrealized, carry-forward (2026-09-12)
+Pure model `src/lib/weekly.ts` (`weekPieces`, `reconcile`, `journalWeeks`); the engine is unchanged.
+Every trade is cut into one **piece per Mon–Sun week it was alive in** (§7). Each weekly journal
+(newest first, `data-week="YYYY-Www"`) shows:
+- **REALIZED · closed this week** — trades whose closing date falls in the week, each with its
+  **closing-week piece** (what was booked that week). A **carried** trade (alive in >1 week) also
+  shows its full per-week history under the row: `W35 +₹… W36 +₹… W37 −₹… = realized +₹total`; a
+  loud "does not reconcile" tag appears if Σ pieces ≠ realized (asserted; never expected).
+  Rows keep the checkbox (selection shared with Closed view), initiated/closed/held/meta (+`$ @rate`).
+- **UNREALIZED · open at week end · change this week** — every trade still open at the week's close
+  (initiated ≤ week, closed later or never), with THAT WEEK's piece = this week's stamp minus last
+  week's stamp (or minus entry if opened this week), NOT cumulative since entry. Row: symbol ·
+  opened · `mark <this week's stamp>` (red "no close stamp" if none) · `from`/`entry <prev mark>` ·
+  meta · piece. A week is listed for open positions only once it has ENDED (Saturday 17:00 IST
+  passed, i.e. `weekKey ≤ endWeekKey`); the in-progress week appears only if a trade closed in it
+  ("Week in progress — open positions mark at Saturday's close").
+- **WEEK TOTAL = realized + unrealized** ("what I actually made this week"); the footer repeats
+  REALIZED · UNREALIZED · WEEK TOTAL. The journal headline (44px) = Σ WEEK TOTAL over all weeks,
+  which counts every piece exactly once (= total realized + open MTM of ended weeks).
+Layout: same 7-column row grid as before (`30 | 200 | 130 | 130 | 90 | 1fr | 150`), gold/green money,
+hairline rows, grey uppercase section labels. Download-as-Excel is unchanged (closed trades).
 
 ## 12. Live trades
 Open positions only. Per-trade weekly MTM ledger (§7). Row buttons: **What-if · Edit · Close ·
 Delete** (uniform 84px ghost; Delete inked on Forest / loss-color on White). **Edit** (PIN-gated)
 opens EVERY initiation field inline in the grid cells: symbol · instrument (dropdown, re-auto-fills
-multiplier) · side · lots · entry · init date · currency · realization · entry-leg brokerage (blank
-= legacy auto). One Save commits all fields atomically and recomputes the whole weekly MTM chain;
+multiplier) · side · lots · entry · init date · currency · **USD/INR rate · this trade** (USD only,
+required) · realization · entry-leg brokerage (blank = legacy auto). One Save commits all fields atomically and recomputes the whole weekly MTM chain;
 Esc cancels. **Delete** (PIN-gated) confirms ("Delete SYMBOL — entry X, N lots? Its weekly marks go
 too.") and removes the trade AND its `weekly_marks`.
 
 ## 13. Closed trades
-Table: checkbox · Closed · Symbol · Side · Qty(r) · Entry(r) · Exit(r) · Share(r) · P&L(r) · actions.
+Table: checkbox · Closed · Symbol · Side · Qty(r) · Mult(r) · Entry(r) · Exit(r) · Share(r) · **USD/INR(r)** · P&L(r) · actions.
 Multi-select with a selected-sum bar (shared with Journal). **Edit** (PIN-gated) opens an expanded
 grid row with ALL live fields PLUS exit price · exit-leg brokerage (blank = auto) · closed date; Save
 recomputes realized P&L + held-days and re-files the trade into the correct journal week if the
@@ -226,7 +229,7 @@ initiation week are removed on save, noted in the confirm.
 ## 14. Download as Excel (Journal + Closed)
 Three modes: **complete history · selected trades · date range** (by closing date). CSV columns:
 `Symbol, Instrument, Multiplier, Side, Lots, Entry, Exit, Initiated, Closed, Held (days), Week,
-Currency, Share, P&L (INR)`. The Journal meta and the Closed table's **Mult** column also show the
+Currency, USD/INR, Share, P&L (INR)`. The Journal meta and the Closed table's **Mult** column also show the
 trade's stored multiplier.
 
 ## 15. Themes (exact hex)
@@ -271,6 +274,9 @@ row-for-row before the wipe): the original `trades`, `weekly_marks`, `signals` (
 - **Rollback:** `git revert <bad-commit> && git push origin main` (safe, forward-moving), or promote
   a previous deployment in the Vercel dashboard. There is no Vercel CLI/token in this environment.
 - **Local dev:** `npm run dev` (port 3000). **Typecheck:** `npx tsc --noEmit`. **Build:** `npx vite build`.
+- **Proofs:** `npm run test:proofs` (edit-pnl · whatif · weekly-mtm · fx-pertrade). NOTE: `brokerage-proof.ts`
+  and `comex-proof.ts` are STALE (they still encode the pre-2026-08 COMEX laws) and fail on purpose-less
+  expectations — not regressions; `fx-baseline.ts` must stay byte-identical for INR trades.
 - `.env` holds `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and (server-side only)
   `SUPABASE_SERVICE_KEY`. `.env` is gitignored — NEVER commit it, and NEVER put the service key in a
   `VITE_`-prefixed var (it would ship to the browser bundle).

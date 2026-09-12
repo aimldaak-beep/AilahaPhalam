@@ -39,10 +39,14 @@ export interface Trade {
   numberOfLots: number;
   status: TradeStatus;
   currency: 'INR' | 'USD';
-  // Instant/what-if conversion rate only. null = not set. The weekly ledger NEVER reads
-  // this — per-week rates come exclusively from fridayUsdToInrRates (stamped from the
-  // weekly rate store; see lib/fxrates.ts). There is NO hardcoded fallback rate.
+  // PER-TRADE USD/INR RATE (2026-09-12 law). Every USD trade carries ITS OWN rate, entered
+  // when the trade is opened and editable any time; every rupee figure of the trade —
+  // live MTM, each weekly piece, realized — converts at this one rate for the trade's
+  // whole life. INR trades store 1 (unused). null on a USD trade = rate missing (NaN
+  // path, rendered loudly). There is NO hardcoded fallback rate.
   usdToInrRate: number | null;
+  // LEGACY (pre-2026-09-12 weekly-rate model). Kept on old rows for history only; the
+  // engine no longer reads either field.
   fridayUsdToInrRates: Record<string, number>;
   closedUsdToInrRate?: number;
   realizationRate: number; // 0.8 or 1.0
@@ -231,18 +235,10 @@ export function calculateTradeForWeek(trade: Trade, targetWeekKey: string): Week
   const initiatorPrice = trade.direction === 'Long' ? trade.buyPrice : trade.sellPrice;
   const exitPrice = trade.direction === 'Long' ? trade.sellPrice : trade.buyPrice;
 
-  // Determine exchange rate for this week
-  // The week's rate comes ONLY from what is stamped on the trade (the weekly rate
-  // store overlays unstamped weeks via withFx in v2engine). No numeric fallback:
-  // a missing rate is NaN so the UI must show "FX rate not set", never a default.
-  let weeklyExchangeRate = 1.0;
-  if (trade.currency === 'USD') {
-    if (isClosingWeek) {
-      weeklyExchangeRate = trade.closedUsdToInrRate ?? trade.fridayUsdToInrRates?.[targetWeekKey] ?? NaN;
-    } else {
-      weeklyExchangeRate = trade.fridayUsdToInrRates?.[targetWeekKey] ?? NaN;
-    }
-  }
+  // Exchange rate: the trade's OWN per-trade USD/INR rate, the same for every week of
+  // its life (so the weekly pieces telescope exactly to the realized total). No numeric
+  // fallback: a USD trade with no rate computes NaN and the UI renders it loudly.
+  const weeklyExchangeRate = trade.currency === 'USD' ? (trade.usdToInrRate ?? NaN) : 1.0;
 
   const buyTurnCalc = calculateTurnoverAndBrokerage(trade.buyPrice, trade.numberOfLots, trade.lotSize, trade.instrument);
   const sellTurnCalc = calculateTurnoverAndBrokerage(trade.sellPrice, trade.numberOfLots, trade.lotSize, trade.instrument);
