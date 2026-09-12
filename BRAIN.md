@@ -63,26 +63,30 @@ can self-check) and service-key-WRITE only (client JWT writes are RLS-blocked by
 ## 5. Week law
 - Weeks run **MONDAY → SUNDAY**. A week's identity is its **Monday date**; internally the key is
   `getWeekInfo(date).weekKey` = `"YYYY-Www"` (Monday-derived), e.g. `2026-W35` = Mon 24 Aug 2026.
-- **Saturday ritual — "the Saturday voice"** (evaluated in **IST**, `Asia/Kolkata`; amended
-  2026-09-12: **close stamps only, no FX rate is ever asked**):
-  1. From **Saturday 17:00 IST** the ENDING week (the current Mon–Sun week) is asked. If any stamp
-     is still missing when Sunday ends, it STAYS asked from Monday — as the **previous** week —
-     until every stamp is in, marked **overdue** (red). Exactly one week is ever asked: the most
-     recent one whose Saturday 17:00 has passed (`endWeekKey`). Never at initiation.
-  2. The ask is ONE form (panel on the Live view, `role=region "Weekly settlement"`): one row per
-     live trade initiated before that Saturday — `<symbol> · <instrument> — Saturday close price`
-     (a weekly close-stamp into `fridayClosingPrices[endWeekKey]`; the position stays open). A trade
-     opened Saturday or Sunday waits for the NEXT Saturday.
-  3. The week is owed (`settleDue`) while any asked trade has no stamp for it — derived purely from
-     the trades, no store. Nothing to stamp ⇒ nothing is asked. Dismissing ("Later") or leaving the
-     Live view turns it into a loud top banner (`role=alert`, ink; red `#C2402E` + "OVERDUE" from
-     Monday) that returns until every stamp is in. Only entered numbers count; nothing is pre-filled.
-  4. **Save progress** stamps whatever closes were typed; **Settle W-XX** refuses until every asked
-     trade has a stamp (naming the missing ones), then stamps them all. Once all stamps are in on
-     Sat/Sun the header advances to next week.
-  - State is the trades jsonb (+ `weekly_marks` mirror) ⇒ survives reload/redeploy/device.
-  - Smoke: `scripts/seed_pertrade.py` → `scripts/smoke-pertrade.mjs` (injected Sunday clock; bumped
-    stored `expires_at`) → `scripts/cleanup_pertrade.py`.
+- **Weekly close stamps — the stamp law (2026-09-12 evening; retires the auto-popup Saturday panel):**
+  1. **Every live trade carries a WEEKLY CLOSE stamp field from the moment it is live.** On the live
+     card's ledger (zone 3) every week the trade is alive has a row: a stamped week = its MTM row
+     (close inline-editable), an unstamped week = `<label> · [weekly close input] · Stamp W-XX · UNSTAMPED`
+     (`data-stamp-row="YYYY-Www"`, input `aria-label "<symbol> W-XX weekly close"`). AKS enters the
+     closing price whenever he has it (Friday's close on Friday) — no waiting for Saturday; editable any
+     time. The stamp is `fridayClosingPrices[weekKey]` (mirrored to `weekly_marks`) and feeds that
+     week's unrealized mark in the journal and the live MTM row.
+  2. **"Stamp all"** — a journal week block whose open rows include unstamped trades shows a
+     `Stamp all · N` button; it opens ONE form (`role=region "Stamp all W-XX"`) with a row per live
+     trade still unstamped for that week (`aria-label "<symbol> W-XX close"`); `Stamp W-XX` applies the
+     typed prices (partial entry allowed, names what is still missing), Cancel closes. Nothing is ever
+     pre-filled or invented.
+  3. **Main-page alert** (`role=alert`, `data-alert="pending-stamps"`, on EVERY view): from **Saturday
+     17:00 IST**, while ANY live trade initiated before that Saturday has no stamp for the asked week
+     (`endWeekKey`: this week from Sat 17:00; before that the previous week — still owed), shows
+     `W-XX closing values pending — N trades unstamped (symbols)` with `Stamp all →` (→ Journal, form
+     open for that week) and ✕. Ink on Saturday; **URGENT · red `#C2402E` from Sunday** (and Monday
+     onward for the previous week). Dismiss is per-view: it returns on any navigation while unstamped.
+  4. The old auto-popup settlement panel (`role=region "Weekly settlement"`) is GONE; its data
+     (stamps) is unchanged and its timing helpers (IST clock, `satPassed`, `endWeekKey`,
+     `saturdayISO`) now drive the alert. Header advances to next week on Sat/Sun once nothing is owed.
+  - Smoke: `scripts/seed_journalfix.py` → `scripts/smoke-journalfix.mjs` (Sat 15:00 · Sat 17:30 · Sun
+    12:00 IST clocks, 8 steps) → `scripts/cleanup_pertrade.py`.
 
 ## 6. USD/INR — the PER-TRADE FX LAW (2026-09-12; supersedes the weekly settlement model)
 **Every USD-denominated trade carries its OWN USD/INR rate** — `Trade.usdToInrRate` — entered by
@@ -199,33 +203,38 @@ rate (pre-filled with the trade's own rate). Live would-be P&L via the unchanged
 `(price − entry) × dir × multiplier × lots × rate × realization`, **net of BOTH brokerage legs**
 (exit leg by the legacy auto formula). Writes NOTHING, no PIN, dismiss on Esc or ✕.
 
-## 11. Journal law — WEEKLY MTM, realized + unrealized, carry-forward (2026-09-12)
+## 11. Journal law — WEEKLY MTM over the FULL trade list (2026-09-12, fixed the same evening)
 Pure model `src/lib/weekly.ts` (`weekPieces`, `reconcile`, `journalWeeks`); the engine is unchanged.
-Every trade is cut into one **piece per Mon–Sun week it was alive in** (§7). Each weekly journal
-(newest first, `data-week="YYYY-Www"`) shows:
-- **REALIZED · closed this week** — trades whose closing date falls in the week, each with its
-  **closing-week piece** (what was booked that week). A **carried** trade (alive in >1 week) also
-  shows its full per-week history under the row: `W35 +₹… W36 +₹… W37 −₹… = realized +₹total`; a
-  loud "does not reconcile" tag appears if Σ pieces ≠ realized (asserted; never expected).
-  Rows keep the checkbox (selection shared with Closed view), initiated/closed/held/meta (+`$ @rate`).
-- **UNREALIZED · open at week end · change this week** — every trade still open at the week's close
-  (initiated ≤ week, closed later or never), with THAT WEEK's piece = this week's stamp minus last
-  week's stamp (or minus entry if opened this week), NOT cumulative since entry. Row: symbol ·
-  opened · `mark <this week's stamp>` (red "no close stamp" if none) · `from`/`entry <prev mark>` ·
-  meta · piece. An unstamped ended week still carries the engine's piece (the entry-leg brokerage
-  in an initiation week; 0 otherwise) so pieces always reconcile — the live headline omits
-  unstamped weeks, so the two agree once the Saturday stamp is in. A week is listed for open
-  positions only once it has ENDED (Saturday 17:00 IST
-  passed, i.e. `weekKey ≤ endWeekKey`); the in-progress week appears only if a trade closed in it
-  ("Week in progress — open positions mark at Saturday's close").
-- **WEEK TOTAL = realized + unrealized** ("what I actually made this week"); the footer repeats
-  REALIZED · UNREALIZED · WEEK TOTAL. The journal headline (44px) = Σ WEEK TOTAL over all weeks,
-  which counts every piece exactly once (= total realized + open MTM of ended weeks).
-Layout: same 7-column row grid as before (`30 | 200 | 130 | 130 | 90 | 1fr | 150`), gold/green money,
-hairline rows, grey uppercase section labels. Download-as-Excel is unchanged (closed trades).
+**The journal reads every trade; the only classification per trade is OPEN or CLOSED. No week gate may
+drop a trade.** Every trade is cut into one **piece per Mon–Sun week it was alive in** (§7). Each weekly
+journal (newest first, `data-week="YYYY-Www"`) shows:
+- **REALIZED · closed this week** — CLOSED trades in the week they closed, each with its **closing-week
+  piece**; a **carried** trade (alive in >1 week) also shows its full per-week history under the row
+  (`historyLine`): `W35 +₹… W36 +₹… W37 −₹… = realized +₹total` ("does not reconcile" if Σ pieces ≠
+  realized — asserted, never expected). Its pre-close weeks list it under UNREALIZED ("· closed later").
+- **UNREALIZED · open this week · change during the week** — OPEN trades in **EVERY week they are alive
+  (initiation → today, the in-progress week included)**, with THAT WEEK's piece = this week's stamp minus
+  last week's (or minus entry if opened this week), NOT cumulative. Row (`data-open-row="<id>"`): symbol ·
+  opened · `mark <stamp>` · `from|entry <prev mark>` · meta · piece. **A week with no stamp yet shows the
+  trade as red "unstamped" — never omitted, never given an invented value — and is NOT counted** in the
+  week's unrealized / total (`JournalWeek.unstamped` counts them; header says "· N unstamped"; a
+  `Stamp all · N` button opens the form, §5).
+- **WEEK TOTAL = realized + unrealized**; footer repeats REALIZED · UNREALIZED · WEEK TOTAL; the journal
+  headline (44px) = Σ WEEK TOTAL = Σ closed realized + Σ stamped open pieces (= the live headline's
+  MTM, since `liveMtmRows` also skips unstamped weeks). `ended` (Saturday 17:00 IST passed) is only the
+  header's "· in progress" annotation.
+**ROOT CAUSE of the 12-Sep bug ("W37 · 6 closed · 0 open" while 2 trades were live):** `journalWeeks`
+listed an open trade's piece only when `weekKey <= lastEndedWeekKey`, and that key (`endWeekKey`) stays
+at the PREVIOUS week until Saturday 17:00 IST — so trades opened this week (TATAELXSI 9-Sep, GIFTNIFTY
+7-Sep) had their W37 pieces dropped; W37 still appeared only because 6 closed trades landed in it. The
+gate is removed. Backup + gate for the fix: `archive/2026-09-12T1154Z_pre_journal_fix/` and
+`scripts/reconcile_backup.ts <live_dump> archive/2026-09-12T1154Z_pre_journal_fix strict` → IDENTICAL.
+Layout: 7-column row grid (`30 | 200 | 130 | 130 | 90 | 1fr | 150`), gold/green money, hairline rows,
+grey uppercase section labels. Download-as-Excel is unchanged (closed trades).
 
 ## 12. Live trades
-Open positions only. Per-trade weekly MTM ledger (§7). Row buttons: **What-if · Edit · Close ·
+Open positions only. Per-trade weekly MTM ledger (§7) — every week the trade is alive has a row; an
+unstamped week is the WEEKLY CLOSE stamp field + `Stamp W-XX` button (§5). Row buttons: **What-if · Edit · Close ·
 Delete** (uniform 84px ghost; Delete inked on Forest / loss-color on White). **Edit** (PIN-gated)
 opens EVERY initiation field inline in the grid cells: symbol · instrument (dropdown, re-auto-fills
 multiplier) · side · lots · entry · init date · currency · **USD/INR rate · this trade** (USD only,

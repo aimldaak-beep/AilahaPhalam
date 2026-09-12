@@ -72,9 +72,14 @@ const LAST = '2026-W37';
 const jw = journalWeeks(live.map((r) => r.data as Trade), LAST);
 for (const w of jw) console.log(`       ${w.weekKey}  realized ${w.realized}  unrealized ${w.unrealized}  total ${w.total}  (${w.realizedRows.length} closed · ${w.openRows.length} open)`);
 const closedSum = live.map((r) => r.data as Trade).filter((t) => !isOpen(t)).reduce((s, t) => s + realized(t), 0);
-const openPieces = live.map((r) => r.data as Trade).filter(isOpen).reduce((s, t) => s + weekPieces(t).filter((p) => p.weekKey <= LAST).reduce((a, p) => a + p.val, 0), 0);
-const unstamped = live.map((r) => r.data as Trade).filter(isOpen).reduce((s, t) => s + weekPieces(t).filter((p) => p.weekKey <= LAST && !p.stamped).reduce((a, p) => a + p.val, 0), 0);
-note(jw.reduce((s, w) => s + w.total, 0) === closedSum + openPieces, `Σ week totals ${jw.reduce((s, w) => s + w.total, 0)} = Σ closed realized ${closedSum} + open-trade pieces ≤ ${LAST} ${openPieces} (of which unstamped ended weeks ${unstamped} — entry-leg brokerage of positions awaiting their Saturday stamp; the live headline omits unstamped weeks)`);
+const openPieces = live.map((r) => r.data as Trade).filter(isOpen).reduce((s, t) => s + weekPieces(t).filter((p) => p.stamped).reduce((a, p) => a + p.val, 0), 0);
+const unstampedN = live.map((r) => r.data as Trade).filter(isOpen).reduce((s, t) => s + weekPieces(t).filter((p) => !p.stamped).length, 0);
+const openN = live.filter((r) => isOpen(r.data as Trade)).length;
+note(jw.reduce((s, w) => s + w.total, 0) === closedSum + openPieces, `Σ week totals ${jw.reduce((s, w) => s + w.total, 0)} = Σ closed realized ${closedSum} + open-trade STAMPED pieces ${openPieces} (= live MTM; ${unstampedN} unstamped open-week rows shown but uncounted)`);
+for (const r of live) { const t = r.data as Trade; if (!isOpen(t)) continue;
+  const weeks = weekPieces(t).map((p) => p.weekKey);
+  note(weeks.length > 0 && jw.filter((w) => w.openRows.some((o) => o.trade.id === t.id)).length === weeks.length, `OPEN ${t.symbol.padEnd(10)} listed in every week alive: ${weeks.join(', ')} (${weekPieces(t).filter((p) => p.stamped).length} stamped)`); }
+note(openN === 2, `live trades on the ledger: ${openN} (law: TATAELXSI + GIFTNIFTY intact)`);
 const carried = jw.reduce((s, w) => s + w.openRows.filter((r) => !isOpen(r.trade)).reduce((a, r) => a + r.piece.val, 0), 0); // pre-close pieces of closed trades (booked as unrealized in earlier weeks)
 note(jw.reduce((s, w) => s + w.realized, 0) === closedSum - carried, `Σ REALIZED lines ${jw.reduce((s, w) => s + w.realized, 0)} = Σ closed realized ${closedSum} − carried pre-close pieces (${carried}) — closing piece = realized − earlier pieces`);
 console.log(diffs ? `\n${diffs} DIFFERENCE(S) — DO NOT SHIP` : '\nIDENTICAL — ship gate passed');

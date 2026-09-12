@@ -11,7 +11,7 @@ import { useState, useEffect, useMemo, Fragment } from 'react';
 import type { ReactNode, KeyboardEvent as ReactKeyboardEvent, CSSProperties } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
-import { Trade, TradeDirection, estimateInstantPnL } from './types';
+import { Trade, TradeDirection, estimateInstantPnL, getWeeksBetween } from './types';
 import {
   INSTR, SpecInstrument, specNameOf, signed, nf,
   weekKeyOf, mondayOf, todayStr, weekLabel, heldDays,
@@ -83,10 +83,10 @@ export default function App() {
 
   const [closeEdit, setCloseEdit] = useState<string | null>(null);
   const [sel, setSel] = useState<string[]>([]);
-  const [satOpen, setSatOpen] = useState(true);
-  const [satDismissed, setSatDismissed] = useState(false);
-  const [satVals, setSatVals] = useState<Record<string, string>>({});
-  const [satErr, setSatErr] = useState('');
+  const [stampAll, setStampAll] = useState<string | null>(null);          // journal "Stamp all" form open for this weekKey
+  const [stampVals, setStampVals] = useState<Record<string, string>>({}); // typed closes, keyed tradeId|weekKey
+  const [stampErr, setStampErr] = useState('');
+  const [alertDismissed, setAlertDismissed] = useState(false);            // main-page pending alert; returns on any view change
   const [formErr, setFormErr] = useState('');
   const [editErr, setEditErr] = useState('');
   const [closing, setClosing] = useState<{ id: string; px: string; err?: string } | null>(null);
@@ -154,17 +154,19 @@ export default function App() {
   const live = useMemo(() => trades.filter(isOpen), [trades]);
   const closed = useMemo(() => trades.filter(isClosed), [trades]);
 
-  // ---- the Saturday voice asks CLOSE STAMPS only (per-trade FX law: no weekly rate) ----
-  // Every live trade initiated before the asked week's Saturday owes a Saturday close-stamp
-  // (a weekly mark — the position stays open). Already-saved stamps show back as progress.
-  const satTrades = live.filter((tr) => tr.dateInitiated < saturdayISO);
-  const satStampOf = (tr: Trade): string => satVals[tr.id] ?? (tr.fridayClosingPrices[endWeekKey] != null ? String(tr.fridayClosingPrices[endWeekKey]) : '');
-  // The week is owed while any asked trade still has no stamp for it.
-  const settleDue = satTrades.some((tr) => tr.fridayClosingPrices[endWeekKey] == null);
-  const showSaturday = settleDue && !satDismissed && view === 'live';
-  const showSettleBanner = settleDue && !showSaturday;
+  // ---- WEEKLY CLOSE STAMPS (2026-09-12 law): a stamp field on every live trade from the moment
+  // it is live (any week it is alive, editable any time) + "Stamp all" in the journal + a
+  // main-page alert from Saturday 17:00 IST while any live trade is unstamped for the asked
+  // week (endWeekKey: this week from Sat 17:00; the previous week before that — overdue).
+  // The old auto-popup Saturday panel is retired; its data (fridayClosingPrices) is unchanged.
+  const unstampedFor = (weekKey: string) => live.filter((tr) => weekKeyOf(tr.dateInitiated) <= weekKey && tr.fridayClosingPrices[weekKey] == null);
+  const pendingTrades = live.filter((tr) => tr.dateInitiated < saturdayISO && tr.fridayClosingPrices[endWeekKey] == null);
+  const alertDue = pendingTrades.length > 0;
+  const alertUrgent = nowIST.getDay() !== 6; // Sunday onward (the week ended unstamped) = urgent
+  const showAlert = alertDue && !alertDismissed;
+  useEffect(() => { setAlertDismissed(false); }, [view]); // dismissible, but returns while unstamped
   // W-header: on Sat/Sun, once the ending week's stamps are all in, the header shows next week.
-  const headMondayISO = satPassed && !settleDue ? shiftISO(mondayOf(todayISO), 7) : mondayOf(todayISO);
+  const headMondayISO = satPassed && !alertDue ? shiftISO(mondayOf(todayISO), 7) : mondayOf(todayISO);
 
   // ---- persistence: diff prev vs next, mirror to Supabase ----
   const persist = async (prev: Trade[], next: Trade[]) => {
@@ -201,31 +203,26 @@ export default function App() {
   const selSum = useMemo(() => closed.filter((tr) => sel.includes(tr.id)).reduce((s, tr) => s + realized(tr), 0), [sel, closed]);
 
   // ---- actions ----
-  // SATURDAY VOICE: stamps each asked trade's Saturday close for the ending week (typed
-  // values only — nothing is ever auto-filled). No FX is asked: every USD trade converts
-  // at its own per-trade rate. Shared by "Save progress" and the full "Settle".
-  const stampSatCloses = (base: Trade[]) => {
-    const asked = new Set(satTrades.map((x) => x.id));
-    return base.map((tr) => {
-      if (!asked.has(tr.id)) return tr;
-      const v = satVals[tr.id];
-      if (v == null || v === '' || !(+v > 0) || tr.fridayClosingPrices[endWeekKey] === +v) return tr;
-      return { ...tr, fridayClosingPrices: { ...tr.fridayClosingPrices, [endWeekKey]: +v } };
+  // Stamp typed closes for one week onto the given trades (typed values only — nothing is ever
+  // auto-filled). Used by the per-card stamp row and the journal "Stamp all" form.
+  const stampKey = (id: string, weekKey: string) => id + '|' + weekKey;
+  const applyStamps = (weekKey: string, ids: string[]) => {
+    const set = new Set(ids);
+    const next = trades.map((tr) => {
+      if (!set.has(tr.id)) return tr;
+      const v = stampVals[stampKey(tr.id, weekKey)];
+      if (v == null || v === '' || !(+v > 0) || tr.fridayClosingPrices[weekKey] === +v) return tr;
+      return { ...tr, fridayClosingPrices: { ...tr.fridayClosingPrices, [weekKey]: +v } };
     });
-  };
-  // PARTIAL ENTRY: keep the stamps typed so far; the week stays asked until every one is in.
-  const saveSaturdayProgress = () => {
-    const next = stampSatCloses(trades);
     if (next.some((x, i) => x !== trades[i])) update(next);
-    setSatVals({});
-    setSatErr(`Progress saved — ${weekLabel(endWeekMondayISO)} stays open until every live close is in.`);
   };
-  const saveSaturday = () => {
-    const missing = satTrades.filter((tr) => !(+satStampOf(tr) > 0)).map((tr) => tr.symbol);
-    if (missing.length) { setSatErr(`Saturday close missing for ${missing.join(', ')} — every live trade needs its close-stamp to settle the week.`); return; }
-    setSatErr('');
-    update(stampSatCloses(trades));
-    setSatVals({}); setSatDismissed(true);
+  const stampAllSave = (weekKey: string) => {
+    const owed = unstampedFor(weekKey);
+    const missing = owed.filter((tr) => !(+(stampVals[stampKey(tr.id, weekKey)] ?? '') > 0)).map((tr) => tr.symbol);
+    applyStamps(weekKey, owed.map((tr) => tr.id));
+    if (missing.length && missing.length < owed.length) { setStampErr(`Stamped what you entered — still unstamped: ${missing.join(', ')}.`); return; }
+    if (missing.length === owed.length && owed.length) { setStampErr('Enter at least one closing price.'); return; }
+    setStampErr(''); setStampAll(null);
   };
 
   // Inline-editable weekly CLOSE value (per trade), same UX as @rate — no PIN. MTM recomputes.
@@ -621,15 +618,18 @@ export default function App() {
     <div style={{ minHeight: '100vh', background: t.bg, color: t.ink, ...sans, transition: 'background 180ms, color 180ms' }}>
       <div style={{ maxWidth: 1140, margin: '0 auto', padding: '48px 24px 96px' }}>
 
-        {/* SETTLEMENT BANNER — the ask never goes quiet: dismissed panel or another view → loud top banner; overdue (Monday onward) → red. */}
-        {showSettleBanner && (
-          <div role="alert" onClick={() => { setSatDismissed(false); setSatErr(''); setView('live'); }}
-            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, padding: '12px 18px', marginBottom: 28, borderRadius: 4, cursor: 'pointer',
-              background: askOverdue ? '#C2402E' : t.ink, color: askOverdue ? '#FFFFFF' : t.bg }}>
+        {/* PENDING-STAMPS ALERT — from Saturday 17:00 IST while any live trade is unstamped for the asked week; urgent (red) from Sunday; dismissible but returns on any navigation while unstamped. */}
+        {showAlert && (
+          <div role="alert" data-alert="pending-stamps"
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, padding: '12px 18px', marginBottom: 28, borderRadius: 4,
+              background: alertUrgent ? '#C2402E' : t.ink, color: alertUrgent ? '#FFFFFF' : t.bg }}>
             <span style={{ fontSize: SZ.meta, fontWeight: 600 }}>
-              {askOverdue ? 'OVERDUE · ' : ''}{weekLabel(endWeekMondayISO)} is open — enter each live trade's Saturday close.
+              {alertUrgent ? 'URGENT · ' : ''}{weekLabel(endWeekMondayISO).split(' · ')[0]} closing values pending — {pendingTrades.length} trade{pendingTrades.length > 1 ? 's' : ''} unstamped ({pendingTrades.map((x) => x.symbol).join(', ')})
             </span>
-            <span style={{ fontSize: SZ.btn, fontWeight: 600, whiteSpace: 'nowrap' }}>Settle now →</span>
+            <span style={{ display: 'flex', gap: 18, alignItems: 'baseline', whiteSpace: 'nowrap' }}>
+              <button onClick={() => { setView('journal'); setStampAll(endWeekKey); setStampErr(''); }} style={{ ...sans, fontSize: SZ.btn, fontWeight: 600, color: 'inherit', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Stamp all →</button>
+              <button onClick={() => setAlertDismissed(true)} title="Dismiss for now (returns while unstamped)" style={{ ...sans, fontSize: 15, color: 'inherit', background: 'none', border: 'none', cursor: 'pointer', padding: 0, opacity: 0.8 }}>✕</button>
+            </span>
           </div>
         )}
 
@@ -751,32 +751,6 @@ export default function App() {
         {/* LIVE */}
         {view === 'live' && (
           <>
-            {showSaturday && (
-              <div role="region" aria-label="Weekly settlement" style={{ border: '2px solid ' + (askOverdue ? '#C2402E' : t.ink), borderRadius: 4, padding: '20px 22px', marginBottom: 40 }}>
-                <div style={{ fontSize: SZ.symbol, fontWeight: 600, color: askOverdue ? '#C2402E' : t.ink }}>{askOverdue ? 'Overdue settlement — ' : 'Settlement — '}{weekLabel(endWeekMondayISO)}</div>
-                <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 4, marginBottom: 14 }}>Each live trade's Saturday close (a weekly close-stamp — positions stay open). Settle stamps every close and marks the week's MTM; USD trades convert at their own rate. Nothing is ever pre-filled — only your entered numbers count.</div>
-                {satTrades.map((tr) => {
-                  const last = liveMtmRows(tr).filter((r) => r.weekKey < endWeekKey);
-                  const lastClose = last.length ? last[last.length - 1].close : entryVal(tr);
-                  return (
-                    <div key={tr.id} style={{ display: 'grid', gridTemplateColumns: '300px 250px 260px', alignItems: 'baseline', padding: '7px 0' }}>
-                      <span style={{ fontSize: 15, fontWeight: 600 }}>{tr.symbol} <span style={{ color: t.faint, fontWeight: 400 }}>· {specNameOf(tr.instrument)} — Saturday close price</span></span>
-                      <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>last {px(tr, lastClose)}</span>
-                      <input placeholder="Saturday close" aria-label={`${tr.symbol} Saturday close price`} value={satStampOf(tr)}
-                        onChange={(e) => { setSatVals({ ...satVals, [tr.id]: e.target.value.replace(/[^\d.]/g, '') }); setSatErr(''); }}
-                        style={{ ...mono, fontSize: SZ.num, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink, width: 190 }} />
-                    </div>
-                  );
-                })}
-                {satErr && <div style={{ fontSize: SZ.meta, fontWeight: 600, color: satErr.startsWith('Progress saved') ? t.faint : t.loss, marginTop: 10 }}>{satErr}</div>}
-                <div style={{ marginTop: 16, display: 'flex', gap: 16, alignItems: 'baseline' }}>
-                  <button onClick={saveSaturday} style={{ ...sans, fontSize: SZ.btn, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '9px 20px', cursor: 'pointer' }}>Settle {weekLabel(endWeekMondayISO).split(' · ')[0]}</button>
-                  <button onClick={saveSaturdayProgress} style={{ ...sans, fontSize: SZ.btn, fontWeight: 600, color: t.ink, background: 'none', border: '1px solid ' + t.hair, borderRadius: 3, padding: '8px 16px', cursor: 'pointer' }}>Save progress</button>
-                  <button onClick={() => setSatDismissed(true)} style={{ ...sans, fontSize: SZ.btn, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>Later</button>
-                </div>
-              </div>
-            )}
-
             <div style={{ fontSize: SZ.meta, color: t.faint, marginBottom: 8 }}>Open MTM · {live.length} live · after profit share</div>
             {isNaN(totalLive)
               ? <div style={{ ...mono, fontSize: 34, lineHeight: 1, fontWeight: 600, color: t.loss }}>FX rate not set</div>
@@ -851,11 +825,29 @@ export default function App() {
                     );
                   })()}
 
-                  {/* ZONE 3 — weekly MTM ledger: fixed grid, indented 200 under the meta column */}
-                  {rows.length > 0 ? (
-                    <div style={{ marginTop: 16 }}>
-                      {rows.map((r, i) => (
-                        <div key={i} style={{ display: 'grid', gridTemplateColumns: '160px 150px 100px 150px', marginLeft: 200, padding: '6px 0', alignItems: 'baseline', columnGap: 18 }}>
+                  {/* ZONE 3 — weekly MTM ledger: fixed grid, indented 200. Every week the trade is alive
+                      has a row: a stamped week = its MTM row (close inline-editable); an unstamped week =
+                      the WEEKLY CLOSE stamp field + button, available from the moment the trade is live. */}
+                  <div style={{ marginTop: 16 }}>
+                    {getWeeksBetween(tr.dateInitiated, todayISO).map((w) => {
+                      const r = rows.find((x) => x.weekKey === w.weekKey);
+                      if (!r) {
+                        const k = stampKey(tr.id, w.weekKey); const v = stampVals[k] ?? '';
+                        return (
+                          <div key={w.weekKey} data-stamp-row={w.weekKey} style={{ display: 'grid', gridTemplateColumns: '160px 150px 100px 150px', marginLeft: 200, padding: '6px 0', alignItems: 'baseline', columnGap: 18 }}>
+                            <span style={{ fontSize: SZ.meta, color: t.faint }}>{weekLabel(w.mondayDateStr)}</span>
+                            <input placeholder="weekly close" aria-label={`${tr.symbol} ${weekLabel(w.mondayDateStr).split(' · ')[0]} weekly close`} value={v}
+                              onChange={(e) => setStampVals({ ...stampVals, [k]: e.target.value.replace(/[^\d.]/g, '') })}
+                              onKeyDown={(e) => { if (e.key === 'Enter' && +v > 0) applyStamps(w.weekKey, [tr.id]); }}
+                              style={{ ...mono, fontSize: SZ.numSm + 1, width: 120, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink }} />
+                            <button onClick={() => { if (+v > 0) applyStamps(w.weekKey, [tr.id]); }} disabled={!(+v > 0)} title="Stamp this week's closing price (editable any time)"
+                              style={{ ...sans, fontSize: 13, fontWeight: 600, color: +v > 0 ? t.bg : t.faint, background: +v > 0 ? t.ink : 'none', border: '1px solid ' + (+v > 0 ? t.ink : t.hair), borderRadius: 3, padding: '3px 0', width: 100, cursor: +v > 0 ? 'pointer' : 'default' }}>Stamp {weekLabel(w.mondayDateStr).split(' · ')[0]}</button>
+                            <span style={{ ...sans, fontSize: SZ.label, color: t.loss, textAlign: 'right', letterSpacing: '0.05em', textTransform: 'uppercase' }}>unstamped</span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div key={w.weekKey} style={{ display: 'grid', gridTemplateColumns: '160px 150px 100px 150px', marginLeft: 200, padding: '6px 0', alignItems: 'baseline', columnGap: 18 }}>
                           <span style={{ fontSize: SZ.meta, color: t.faint }}>{r.label}</span>
                           {closeEdit === (tr.id + '-' + r.weekKey) ? (
                             <input autoFocus defaultValue={r.close}
@@ -872,11 +864,9 @@ export default function App() {
                           ) : <span />}
                           <span style={{ ...mono, fontSize: SZ.num, fontWeight: 500, textAlign: 'right', color: isNaN(r.val) ? t.loss : pl(r.val) }}>{isNaN(r.val) ? fxNa(SZ.label) : sgn(tr, r.val)}</span>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 12, marginLeft: 200 }}>opened this week — first close stamps Saturday</div>
-                  )}
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}
@@ -906,7 +896,7 @@ export default function App() {
               </div>
               <div style={{ ...mono, fontSize: 44, lineHeight: 1, fontWeight: 500, color: isNaN(grand) ? t.loss : pl(grand), marginBottom: 6 }}>{isNaN(grand) ? fxNa(28) : signed(grand)}</div>
               <div style={{ fontSize: SZ.meta, color: t.faint, marginBottom: 20, maxWidth: 900 }}>
-                Each week: REALIZED = booked by trades closed that week · UNREALIZED = the change in value during the week of every position still open at its close (this Saturday's stamp minus last week's, or minus entry if opened this week) · WEEK TOTAL = what was actually made that week. A trade that spans weeks appears in every week it was alive; its weekly pieces sum to its realized total when it closes.
+                Every trade, every week: CLOSED trades are REALIZED in the week they closed · OPEN trades are UNREALIZED in every week they are alive, marked at that week's close stamp (this week's stamp minus last week's, or minus entry if opened this week) — an unstamped week shows the trade as "unstamped" and is not counted · WEEK TOTAL = realized + unrealized. A trade that spans weeks appears in every week it was alive; its weekly pieces sum to its realized total when it closes.
               </div>
               {sel.length > 0 && (
                 <div style={{ marginBottom: 24, padding: '13px 17px', border: '1px solid ' + t.ink, borderRadius: 4, display: 'flex', alignItems: 'baseline', gap: 16 }}>
@@ -920,14 +910,45 @@ export default function App() {
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, paddingBottom: 10, borderBottom: '1px solid ' + t.ink }}>
                     <span style={{ fontSize: 15, fontWeight: 600 }}>{w.label}</span>
                     <span style={{ fontSize: SZ.meta, color: t.faint }}>
-                      {w.realizedRows.length} closed · {w.openRows.length} open{!w.ended ? ' · in progress' : ''}
+                      {w.realizedRows.length} closed · {w.openRows.length} open{w.unstamped ? ` · ${w.unstamped} unstamped` : ''}{!w.ended ? ' · in progress' : ''}
                     </span>
+                    {w.unstamped > 0 && stampAll !== w.weekKey && (
+                      <button onClick={() => { setStampAll(w.weekKey); setStampErr(''); }} style={{ ...ghost, fontWeight: 600, color: t.ink }}>Stamp all · {w.unstamped}</button>
+                    )}
                     <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'baseline', gap: 12 }}>
                       <span style={secLabel}>Week total</span>
                       {money(w.total, 22)}
                     </span>
                   </div>
 
+                  {stampAll === w.weekKey && (() => {
+                    const owed = unstampedFor(w.weekKey); const wl = w.label.split(' · ')[0];
+                    return (
+                      <div role="region" aria-label={`Stamp all ${wl}`} style={{ border: '1px solid ' + t.ink, borderRadius: 4, padding: '16px 18px', marginTop: 16 }}>
+                        <div style={{ fontSize: 15, fontWeight: 600 }}>Stamp all — {w.label}</div>
+                        <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 4, marginBottom: 10 }}>One closing price per live trade still unstamped for this week (a weekly mark — positions stay open). Only entered numbers count; edit any stamp later on the live card.</div>
+                        {owed.length === 0 && <div style={{ fontSize: SZ.meta, color: t.faint, padding: '6px 0' }}>Every live trade is stamped for {wl}.</div>}
+                        {owed.map((tr) => {
+                          const k = stampKey(tr.id, w.weekKey);
+                          return (
+                            <div key={tr.id} style={{ display: 'grid', gridTemplateColumns: '300px 250px 260px', alignItems: 'baseline', padding: '7px 0', borderBottom: '1px solid ' + t.hair }}>
+                              <span style={{ fontSize: 15, fontWeight: 600 }}>{tr.symbol} <span style={{ color: t.faint, fontWeight: 400 }}>· {specNameOf(tr.instrument)} — {wl} close</span></span>
+                              <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>entry {px(tr, entryVal(tr))}</span>
+                              <input placeholder="closing price" aria-label={`${tr.symbol} ${wl} close`} value={stampVals[k] ?? ''}
+                                onChange={(e) => { setStampVals({ ...stampVals, [k]: e.target.value.replace(/[^\d.]/g, '') }); setStampErr(''); }}
+                                onKeyDown={(e) => e.key === 'Enter' && stampAllSave(w.weekKey)}
+                                style={{ ...mono, fontSize: SZ.num, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink, width: 190 }} />
+                            </div>
+                          );
+                        })}
+                        {stampErr && <div style={{ fontSize: SZ.meta, fontWeight: 600, color: t.loss, marginTop: 10 }}>{stampErr}</div>}
+                        <div style={{ marginTop: 14, display: 'flex', gap: 16, alignItems: 'baseline' }}>
+                          <button onClick={() => stampAllSave(w.weekKey)} style={{ ...sans, fontSize: SZ.btn, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '8px 18px', cursor: 'pointer' }}>Stamp {wl}</button>
+                          <button onClick={() => { setStampAll(null); setStampErr(''); }} style={{ ...sans, fontSize: SZ.btn, color: t.faint, background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {w.realizedRows.length > 0 && section('Realized · closed this week', w.realized)}
                   {w.realizedRows.map(({ trade: tr, piece, pieces, total, carried, reconciled }) => {
                     const c = closeDateOf(tr); const held = heldDays(tr.dateInitiated, c);
@@ -948,19 +969,18 @@ export default function App() {
                     );
                   })}
 
-                  {w.openRows.length > 0 && section('Unrealized · open at week end · change this week', w.unrealized)}
+                  {w.openRows.length > 0 && section('Unrealized · open this week · change during the week', w.unrealized)}
                   {w.openRows.map(({ trade: tr, piece }) => (
-                    <div key={tr.id} style={rowGrid}>
+                    <div key={tr.id} data-open-row={tr.id} style={rowGrid}>
                       <span />
                       <span style={{ ...sans, fontSize: SZ.num, fontWeight: 600 }}>{tr.symbol}</span>
                       <span style={{ fontSize: SZ.meta, color: t.faint }}>opened {dmy(tr.dateInitiated)}</span>
-                      <span style={{ fontSize: SZ.meta, color: piece.stamped ? t.faint : t.loss }}>{piece.stamped ? `mark ${px(tr, piece.close)}` : 'no close stamp'}</span>
+                      <span style={{ fontSize: SZ.meta, color: piece.stamped ? t.faint : t.loss }}>{piece.stamped ? `mark ${px(tr, piece.close)}` : 'unstamped'}</span>
                       <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>{piece.role === 'initiation' ? 'entry' : 'from'}</span>
-                      <span style={{ fontSize: SZ.meta, color: t.faint }}>{px(tr, piece.open)} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · ×{tr.lotSize}{tr.currency === 'USD' ? ` · $ @${tradeRate(tr) ?? '?'}` : ''} · share {realPct(tr)}%</span>
-                      {money(piece.val)}
+                      <span style={{ fontSize: SZ.meta, color: t.faint }}>{px(tr, piece.open)} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · ×{tr.lotSize}{tr.currency === 'USD' ? ` · $ @${tradeRate(tr) ?? '?'}` : ''} · share {realPct(tr)}%{isOpen(tr) ? '' : ' · closed later'}</span>
+                      {piece.stamped ? money(piece.val) : <span style={{ ...sans, fontSize: SZ.label, fontWeight: 600, color: t.loss, textAlign: 'right', letterSpacing: '0.05em', textTransform: 'uppercase' }}>unstamped</span>}
                     </div>
                   ))}
-                  {!w.ended && w.openRows.length === 0 && <div style={{ fontSize: SZ.meta, color: t.faint, marginTop: 12 }}>Week in progress — open positions mark at Saturday's close.</div>}
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', gap: 28, marginTop: 14 }}>
                     <span style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}><span style={secLabel}>Realized</span>{money(w.realized, SZ.numSm, 500)}</span>

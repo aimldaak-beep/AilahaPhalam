@@ -91,7 +91,7 @@ console.log('3. INR trades untouched: no FX field read, rate 1');
   check('INR trade ignores usdToInrRate entirely', realized(t2) === 6400);
 }
 
-console.log('4. Journal: carry-forward — trade appears every week alive, pieces = week changes, totals');
+console.log('4. Journal: FULL trade list, OPEN = unrealized in EVERY week alive, CLOSED = realized in closing week; carry-forward');
 {
   const usd = T({ id: 'usd', symbol: 'DOW', status: 'Closed', sellPrice: 40250, sellDate: '2026-09-09',
     fridayClosingPrices: { '2026-W35': 40100, '2026-W36': 40300 } });
@@ -99,37 +99,46 @@ console.log('4. Journal: carry-forward — trade appears every week alive, piece
     realizationRate: 1, dateInitiated: '2026-08-31', buyDate: '2026-08-31', fridayClosingPrices: { '2026-W36': 24500, '2026-W37': 24450 } });
   const same = T({ id: 'same', symbol: 'NAS', instrument: 'Nasdaq', lotSize: 20, buyPrice: 20000, sellPrice: 20100, status: 'Closed',
     dateInitiated: '2026-09-01', buyDate: '2026-09-01', sellDate: '2026-09-03', usdToInrRate: 89 });
-  const jw = journalWeeks([usd, inr, same], '2026-W37'); // W37 has ended (Sat 12 Sep passed)
+  const all = journalWeeks([usd, inr, same], '2026-W37');
+  // The open trade is alive up to TODAY (real clock): weeks after W37 (if any, when this proof runs later) may only hold it as an unstamped row.
+  const later = all.filter((w) => w.weekKey > '2026-W37');
+  check('weeks after W37 (if any) hold only the open trade, unstamped, uncounted', later.every((w) => w.realizedRows.length === 0 && w.openRows.every((r) => r.trade.id === 'inr' && !r.piece.stamped) && w.unrealized === 0 && w.total === 0));
+  const jw = all.filter((w) => w.weekKey <= '2026-W37');
   const keys = jw.map((w) => w.weekKey).join(',');
   check('weeks newest-first: W37, W36, W35', keys === '2026-W37,2026-W36,2026-W35', keys);
   const [w37, w36, w35] = jw;
   check('W35: DOW open row (init piece +35640), nothing realized', w35.openRows.length === 1 && w35.openRows[0].piece.val === 35640 && w35.realizedRows.length === 0);
   check('W36: DOW open (+72000) + NIFTY open (init piece), NAS realized same-week', w36.openRows.map((r) => r.trade.id).join() === 'usd,inr' && w36.realizedRows.length === 1 && w36.realizedRows[0].trade.id === 'same');
-  // NAS same-week: (100×20×89)=178000 − ($5+$5)×89=890 → 177110 ×0.8 = 141688
   check('NAS same-week realized piece = 141688, not carried', w36.realizedRows[0].piece.val === 141688 && !w36.realizedRows[0].carried, String(w36.realizedRows[0].piece.val));
-  const nifW36 = w36.openRows[1].piece; // (24500−24400)×75 = 7500 − entry 0.0003×24400×75=549 → 6951
+  const nifW36 = w36.openRows[1].piece;
   check('NIFTY W36 init piece = 7500 − 549 = 6951', nifW36.val === 6951, String(nifW36.val));
   check('W36 unrealized = 72000 + 6951, realized = 141688, total', w36.unrealized === 78951 && w36.realized === 141688 && w36.total === 220639, `${w36.unrealized}/${w36.realized}/${w36.total}`);
   check('W37: DOW realized row carries closing piece −18360, carried=true, history 3 pieces, reconciled', (() => {
     const r = w37.realizedRows.find((x) => x.trade.id === 'usd')!;
     return r.piece.val === -18360 && r.carried && r.pieces.length === 3 && r.total === 89280 && r.reconciled;
   })());
-  const nifW37 = w37.openRows.find((r) => r.trade.id === 'inr')!.piece; // (24450−24500)×75 = −3750, no brokerage
+  const nifW37 = w37.openRows.find((r) => r.trade.id === 'inr')!.piece;
   check('NIFTY W37 change = −3750 (this week minus last week, NOT cumulative)', nifW37.val === -3750 && nifW37.open === 24500 && nifW37.close === 24450, JSON.stringify(nifW37));
   check('W37 total = −18360 + −3750', w37.total === -22110, String(w37.total));
   const grand = jw.reduce((s, w) => s + w.total, 0);
-  check('Σ week totals = every piece once = realized(DOW)+realized(NAS)+NIFTY open MTM', grand === 89280 + 141688 + 6951 - 3750, String(grand));
+  check('Σ week totals (≤W37) = every stamped piece once', grand === 89280 + 141688 + 6951 - 3750, String(grand));
   check('Σ DOW pieces across W35/W36/W37 journals = its realized', 35640 + 72000 - 18360 === realized(usd));
 }
 
-console.log('5. Journal: in-progress week + unstamped open week');
+console.log('5. Journal: an OPEN trade is NEVER dropped — this week (not yet ended) lists it; unstamped weeks show "unstamped", uncounted');
 {
-  const open = T({ id: 'o', dateInitiated: '2026-09-07', buyDate: '2026-09-07', fridayClosingPrices: {} });
+  const open = T({ id: 'o', symbol: 'TATA', dateInitiated: '2026-09-09', buyDate: '2026-09-09', fridayClosingPrices: {} }); // opened Wed 9 Sep (W37), no stamp
   const closedNow = T({ id: 'c', status: 'Closed', sellPrice: 40100, sellDate: '2026-09-14', dateInitiated: '2026-09-14', buyDate: '2026-09-14' });
-  const jw = journalWeeks([open, closedNow], '2026-W37');
-  const w38 = jw.find((w) => w.weekKey === '2026-W38')!, w37 = jw.find((w) => w.weekKey === '2026-W37')!;
-  check('W38 (in progress) listed for the realized trade only, no open rows', !!w38 && !w38.ended && w38.realizedRows.length === 1 && w38.openRows.length === 0);
-  check('W37 open row unstamped → stamped=false, change = −entry brokerage only (−360)', w37.openRows[0].piece.stamped === false && w37.openRows[0].piece.val === -360, JSON.stringify(w37.openRows[0].piece));
+  // lastEnded = W36 (Saturday afternoon before 17:00 IST) — the exact condition that hid TATAELXSI/GIFTNIFTY on 12-Sep.
+  const jw = journalWeeks([open, closedNow], '2026-W36');
+  const w37 = jw.find((w) => w.weekKey === '2026-W37')!;
+  check('W37 exists and lists the open trade even though W37 has not "ended" (the old gate dropped it)', !!w37 && !w37.ended && w37.openRows.length === 1 && w37.openRows[0].trade.id === 'o');
+  check('unstamped: piece.stamped=false, week.unstamped=1, NOT counted (unrealized 0, total 0)', w37.openRows[0].piece.stamped === false && w37.unstamped === 1 && w37.unrealized === 0 && w37.total === 0, JSON.stringify(w37.openRows[0].piece));
+  const stamped = { ...open, fridayClosingPrices: { '2026-W37': 40100 } };
+  const w37s = journalWeeks([stamped, closedNow], '2026-W36').find((w) => w.weekKey === '2026-W37')!;
+  check('after stamping W37: counted = (100×5×90 − 450)×0.8 = 35640, unstamped 0', w37s.unrealized === 35640 && w37s.unstamped === 0, String(w37s.unrealized));
+  const w38 = jw.find((w) => w.weekKey === '2026-W38')!;
+  check('W38 (future close) listed for the realized trade; any open row there is unstamped', !!w38 && w38.realizedRows.length === 1 && w38.openRows.every((r) => !r.piece.stamped));
 }
 
 console.log('6. Closed trades grouped by closing week (display grouping; totals = Σ realized)');

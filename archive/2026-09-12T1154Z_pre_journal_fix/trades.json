@@ -1,0 +1,522 @@
+[
+ {
+  "id": "816e5f15-4226-4377-b604-0ef9925896f2",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1787569050123_62417",
+   "status": "Closed",
+   "symbol": "GIFT NIFTY",
+   "buyDate": "2026-08-24",
+   "lotSize": 50,
+   "buyPrice": 24231.5,
+   "currency": "INR",
+   "sellDate": "2026-08-24",
+   "direction": "Short",
+   "sellPrice": 24345,
+   "instrument": "Gift Nifty",
+   "numberOfLots": 35,
+   "usdToInrRate": 1,
+   "dateInitiated": "2026-08-24",
+   "exitBrokerage": null,
+   "entryBrokerage": null,
+   "realizationRate": 1,
+   "fridayClosingPrices": {},
+   "fridayUsdToInrRates": {}
+  },
+  "created_at": "2026-08-24T10:57:30.377755+00:00"
+ },
+ {
+  "id": "dac4508f-6049-4bc3-9112-17e9e91c379c",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1787569093713_106007",
+   "status": "Closed",
+   "symbol": "GIFT NIFTY",
+   "buyDate": "2026-08-24",
+   "lotSize": 50,
+   "buyPrice": 24187,
+   "currency": "INR",
+   "sellDate": "2026-08-24",
+   "direction": "Short",
+   "sellPrice": 24345,
+   "instrument": "Gift Nifty",
+   "numberOfLots": 25,
+   "usdToInrRate": 1,
+   "dateInitiated": "2026-08-24",
+   "exitBrokerage": null,
+   "entryBrokerage": null,
+   "realizationRate": 1,
+   "fridayClosingPrices": {},
+   "fridayUsdToInrRates": {}
+  },
+  "created_at": "2026-08-24T10:58:13.674925+00:00"
+ },
+ {
+  "id": "91c33078-4205-47f0-aae4-5b3502fac1da",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1787574546790_142428",
+   "status": "Closed",
+   "symbol": "DOW",
+   "buyDate": "2026-09-01",
+   "lotSize": 5,
+   "buyPrice": 53032,
+   "currency": "USD",
+   "sellDate": "2026-08-24",
+   "direction": "Short",
+   "sellPrice": 53213,
+   "instrument": "DOW",
+   "numberOfLots": 1,
+   "usdToInrRate": 89.9,
+   "dateInitiated": "2026-08-24",
+   "exitBrokerage": null,
+   "entryBrokerage": null,
+   "realizationRate": 0.8,
+   "closedUsdToInrRate": 89.9,
+   "fridayClosingPrices": {
+    "2026-W35": 53590
+   },
+   "fridayUsdToInrRates": {
+    "2026-W35": 90.1,
+    "2026-W36": 89.9
+   }
+  },
+  "created_at": "2026-08-24T12:29:06.664142+00:00"
+ },
+ {
+  "id": "0542d0af-3845-4f91-8692-2ebc45aa5451",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1787637561374_61835",
+   "status": "Closed",
+   "symbol": "RBLBANK",
+   "buyDate": "2026-08-25",
+   "lotSize": 3175,
+   "buyPrice": 386,
+   "currency": "INR",
+   "sellDate": "2026-08-24",
+   "direction": "Short",
+   "sellPrice": 390.85,
+   "instrument": "NSE Futures",
+   "numberOfLots": 10,
+   "usdToInrRate": 1,
+   "dateInitiated": "2026-08-24",
+   "exitBrokerage": null,
+   "entryBrokerage": null,
+   "realizationRate": 1,
+   "fridayClosingPrices": {},
+   "fridayUsdToInrRates": {}
+  },
+  "created_at": "2026-08-25T05:59:18.904457+00:00"
+ },
+ {
+  "id": "4dcc08d5-cdd6-478a-92f8-4ab41119aab4",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1787761883026_44420570",
+   "status": "Closed",
+   "symbol": "GIFT NIFTY",
+   "buyDate": "2026-08-27",
+   "lotSize": 50,
+   "buyPrice": 24310.5,
+   "currency": "INR",
+   "sellDate": "2026-08-26",
+   "direction": "Short",
+   "sellPrice": 24331.4,
+   "instrument": "Gift Nifty",
+   "numberOfLots": 60,
+   "usdToInrRate": 1,
+   "dateInitiated": "2026-08-26",
+   "exitBrokerage": null,
+   "entryBrokerage": null,
+   "realizationRate": 1,
+   "fridayClosingPrices": {},
+   "fridayUsdToInrRates": {}
+  },
+  "created_at": "2026-08-26T16:31:23.309061+00:00"
+ },
+ {
+  "id": "03c7a8a4-226f-4f62-b8ea-b78941192f11",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1787830932226_19800276",
+   "status": "Closed",
+   "symbol": "NASDAQ",
+   "buyDate": "2026-08-31",
+   "lotSize": 20,
+   "buyPrice": 29325,
+   "currency": "USD",
+   "sellDate": "2026-08-27",
+   "direction": "Short",
+   "sellPrice": 29549,
+   "instrument": "Nasdaq",
+   "numberOfLots": 1,
+   "usdToInrRate": 89.9,
+   "dateInitiated": "2026-08-27",
+   "exitBrokerage": null,
+   "entryBrokerage": null,
+   "realizationRate": 0.8,
+   "closedUsdToInrRate": 89.9,
+   "fridayClosingPrices": {
+    "2026-W35": 29509.5
+   },
+   "fridayUsdToInrRates": {
+    "2026-W35": 90.1,
+    "2026-W36": 89.9
+   }
+  },
+  "created_at": "2026-08-27T11:42:13.112442+00:00"
+ },
+ {
+  "id": "8790e6f0-a1f3-4035-8126-d80278693138",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1787849519156_31726",
+   "status": "Closed",
+   "symbol": "COPPER",
+   "buyDate": "2026-09-01",
+   "lotSize": 25000,
+   "buyPrice": 6.601,
+   "currency": "USD",
+   "sellDate": "2026-08-27",
+   "direction": "Short",
+   "sellPrice": 6.649,
+   "instrument": "COPPER-HG",
+   "numberOfLots": 1,
+   "usdToInrRate": 89.9,
+   "dateInitiated": "2026-08-27",
+   "exitBrokerage": null,
+   "entryBrokerage": 5,
+   "realizationRate": 0.8,
+   "closedUsdToInrRate": 89.9,
+   "fridayClosingPrices": {
+    "2026-W35": 6.64
+   },
+   "fridayUsdToInrRates": {
+    "2026-W35": 90.1,
+    "2026-W36": 89.9
+   }
+  },
+  "created_at": "2026-08-27T16:51:58.629449+00:00"
+ },
+ {
+  "id": "d66291ac-6d72-4c5b-82e8-be527a7007a3",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1787892202997_307392",
+   "status": "Closed",
+   "symbol": "GLENMARK",
+   "buyDate": "2026-08-28",
+   "lotSize": 375,
+   "buyPrice": 2456,
+   "currency": "INR",
+   "sellDate": "2026-08-28",
+   "direction": "Short",
+   "sellPrice": 2469,
+   "instrument": "Futures",
+   "numberOfLots": 10,
+   "usdToInrRate": 1,
+   "dateInitiated": "2026-08-28",
+   "exitBrokerage": null,
+   "entryBrokerage": null,
+   "realizationRate": 1,
+   "fridayClosingPrices": {},
+   "fridayUsdToInrRates": {}
+  },
+  "created_at": "2026-08-28T04:43:26.488779+00:00"
+ },
+ {
+  "id": "bd6c9dad-fd85-477a-8b3d-2615a3fce7c7",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "fx_weekly_rates_v1",
+   "kind": "fx_weekly_rates",
+   "weeks": {
+    "2026-W35": {
+     "rate": 90.1,
+     "settled": true,
+     "settledAt": "2026-08-29T12:15:18.482Z"
+    },
+    "2026-W36": {
+     "rate": 89.9,
+     "settled": true,
+     "settledAt": "2026-09-07T03:35:18.069Z"
+    },
+    "2026-W37": {
+     "rate": 89.9,
+     "settled": false
+    }
+   }
+  },
+  "created_at": "2026-08-28T05:12:45.245711+00:00"
+ },
+ {
+  "id": "bbcec0ea-84fa-44c7-a58a-c63760355f5d",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1788148669837_3769900",
+   "status": "Closed",
+   "symbol": "GLENMARK",
+   "buyDate": "2026-09-02",
+   "lotSize": 375,
+   "buyPrice": 2442.4,
+   "currency": "INR",
+   "sellDate": "2026-08-31",
+   "direction": "Short",
+   "sellPrice": 2462,
+   "instrument": "NSE Futures",
+   "numberOfLots": 10,
+   "usdToInrRate": 1,
+   "dateInitiated": "2026-08-31",
+   "exitBrokerage": null,
+   "entryBrokerage": null,
+   "realizationRate": 1,
+   "fridayClosingPrices": {},
+   "fridayUsdToInrRates": {}
+  },
+  "created_at": "2026-08-31T03:57:49.684228+00:00"
+ },
+ {
+  "id": "1ab6b3c9-3dd3-4b28-aace-877402aef1f0",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1788352793354_207901460",
+   "status": "Closed",
+   "symbol": "NIKKEI",
+   "buyDate": "2026-08-31",
+   "lotSize": 5,
+   "buyPrice": 64215,
+   "currency": "USD",
+   "sellDate": "2026-09-04",
+   "direction": "Long",
+   "sellPrice": 64895,
+   "instrument": "Nikkei",
+   "numberOfLots": 1,
+   "usdToInrRate": 89.9,
+   "dateInitiated": "2026-08-31",
+   "exitBrokerage": null,
+   "entryBrokerage": null,
+   "realizationRate": 1,
+   "closedUsdToInrRate": 89.9,
+   "fridayClosingPrices": {},
+   "fridayUsdToInrRates": {
+    "2026-W36": 89.9
+   }
+  },
+  "created_at": "2026-09-02T12:39:54.037543+00:00"
+ },
+ {
+  "id": "a9de90e9-0ea9-4108-9b7d-e65d8b9921d5",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1788784405983_32299564",
+   "status": "Closed",
+   "symbol": "NIKKEI",
+   "buyDate": "2026-09-08",
+   "lotSize": 5,
+   "buyPrice": 65150,
+   "currency": "USD",
+   "sellDate": "2026-09-07",
+   "direction": "Short",
+   "sellPrice": 66085,
+   "instrument": "Nikkei",
+   "numberOfLots": 1,
+   "usdToInrRate": 95.55,
+   "dateInitiated": "2026-09-07",
+   "exitBrokerage": null,
+   "entryBrokerage": null,
+   "realizationRate": 1,
+   "fridayClosingPrices": {},
+   "fridayUsdToInrRates": {}
+  },
+  "created_at": "2026-09-07T12:33:25.912111+00:00"
+ },
+ {
+  "id": "87c95aa7-8078-4449-aa82-16246dd0dfac",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1788839567718_87461299",
+   "status": "CarryForwardLong",
+   "symbol": "GIFT NIFTY",
+   "buyDate": "2026-09-07",
+   "lotSize": 50,
+   "buyPrice": 23789,
+   "currency": "INR",
+   "sellDate": null,
+   "direction": "Long",
+   "sellPrice": null,
+   "instrument": "Gift Nifty",
+   "numberOfLots": 40,
+   "usdToInrRate": 1,
+   "dateInitiated": "2026-09-07",
+   "exitBrokerage": null,
+   "entryBrokerage": null,
+   "realizationRate": 1,
+   "fridayClosingPrices": {
+    "2026-W37": 23575
+   },
+   "fridayUsdToInrRates": {}
+  },
+  "created_at": "2026-09-08T03:52:45.799577+00:00"
+ },
+ {
+  "id": "9dd913b9-5b28-4b54-957a-8acc93eaeac2",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1788871692292_119589336",
+   "status": "Closed",
+   "symbol": "COPPER",
+   "buyDate": "2026-09-10",
+   "lotSize": 25000,
+   "buyPrice": 6.69,
+   "currency": "USD",
+   "sellDate": "2026-09-07",
+   "direction": "Short",
+   "sellPrice": 6.77,
+   "instrument": "COPPER-HG",
+   "numberOfLots": 1,
+   "usdToInrRate": 89.9,
+   "dateInitiated": "2026-09-07",
+   "exitBrokerage": 5,
+   "entryBrokerage": 5,
+   "realizationRate": 0.8,
+   "closedUsdToInrRate": 89.9,
+   "fridayClosingPrices": {},
+   "fridayUsdToInrRates": {}
+  },
+  "created_at": "2026-09-08T12:48:12.850844+00:00"
+ },
+ {
+  "id": "3ff77197-a56e-44d7-b0c2-9b73667860e4",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1788871792140_119689184",
+   "status": "Closed",
+   "symbol": "COPPER",
+   "buyDate": "2026-09-09",
+   "lotSize": 25000,
+   "buyPrice": 6.7485,
+   "currency": "USD",
+   "sellDate": "2026-09-07",
+   "direction": "Short",
+   "sellPrice": 6.7675,
+   "instrument": "COPPER-HG",
+   "numberOfLots": 1,
+   "usdToInrRate": 89.9,
+   "dateInitiated": "2026-09-07",
+   "exitBrokerage": 5,
+   "entryBrokerage": 5,
+   "realizationRate": 0.8,
+   "closedUsdToInrRate": 89.9,
+   "fridayClosingPrices": {},
+   "fridayUsdToInrRates": {}
+  },
+  "created_at": "2026-09-08T12:49:52.320031+00:00"
+ },
+ {
+  "id": "e7c71e1d-1178-4044-b2ee-05cd8fc9ed05",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1789032863607_108525920",
+   "status": "CarryForwardLong",
+   "symbol": "TATAELXSI",
+   "buyDate": "2026-09-09",
+   "lotSize": 125,
+   "buyPrice": 3422,
+   "currency": "INR",
+   "sellDate": null,
+   "direction": "Long",
+   "sellPrice": null,
+   "instrument": "NSE Futures",
+   "numberOfLots": 10,
+   "usdToInrRate": 1,
+   "dateInitiated": "2026-09-09",
+   "exitBrokerage": null,
+   "entryBrokerage": null,
+   "realizationRate": 1,
+   "fridayClosingPrices": {
+    "2026-W37": 3405.8
+   },
+   "fridayUsdToInrRates": {}
+  },
+  "created_at": "2026-09-10T09:34:21.425349+00:00"
+ },
+ {
+  "id": "566b1eeb-c72b-4a8f-9fe2-f5fce8e00ddc",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1789043732604_119397971",
+   "status": "Closed",
+   "symbol": "NIKKEI",
+   "buyDate": "2026-09-11",
+   "lotSize": 5,
+   "buyPrice": 63800,
+   "currency": "USD",
+   "sellDate": "2026-09-09",
+   "direction": "Short",
+   "sellPrice": 64210,
+   "instrument": "Nikkei",
+   "numberOfLots": 1,
+   "usdToInrRate": 95.55,
+   "dateInitiated": "2026-09-09",
+   "exitBrokerage": null,
+   "entryBrokerage": null,
+   "realizationRate": 1,
+   "fridayClosingPrices": {},
+   "fridayUsdToInrRates": {}
+  },
+  "created_at": "2026-09-10T12:35:33.175848+00:00"
+ },
+ {
+  "id": "d43d5594-b15d-4a02-b44e-4197d2327834",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1789115478711_24471224",
+   "status": "Closed",
+   "symbol": "NIFTY",
+   "buyDate": "2026-09-11",
+   "lotSize": 65,
+   "buyPrice": 23353.4,
+   "currency": "INR",
+   "sellDate": "2026-09-11",
+   "direction": "Long",
+   "sellPrice": 23455,
+   "instrument": "Futures",
+   "numberOfLots": 10,
+   "usdToInrRate": 1,
+   "dateInitiated": "2026-09-11",
+   "exitBrokerage": null,
+   "entryBrokerage": null,
+   "realizationRate": 1,
+   "fridayClosingPrices": {},
+   "fridayUsdToInrRates": {}
+  },
+  "created_at": "2026-09-11T08:31:23.107859+00:00"
+ },
+ {
+  "id": "26df2731-a0a8-4384-a1a2-7670631068db",
+  "user_id": "d0758d86-126a-4174-990d-2ba7f3129b22",
+  "data": {
+   "id": "trade_1789117650849_26643361",
+   "status": "Closed",
+   "symbol": "NIKKEI",
+   "buyDate": "2026-09-11",
+   "lotSize": 5,
+   "buyPrice": 64355,
+   "currency": "USD",
+   "sellDate": "2026-09-11",
+   "direction": "Long",
+   "sellPrice": 64755,
+   "instrument": "Nikkei",
+   "numberOfLots": 1,
+   "usdToInrRate": 95.55,
+   "dateInitiated": "2026-09-11",
+   "exitBrokerage": null,
+   "entryBrokerage": null,
+   "realizationRate": 1,
+   "fridayClosingPrices": {},
+   "fridayUsdToInrRates": {}
+  },
+  "created_at": "2026-09-11T09:07:35.162612+00:00"
+ }
+]

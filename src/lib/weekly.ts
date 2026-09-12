@@ -77,17 +77,24 @@ export interface RealizedRow { trade: Trade; piece: WeekPiece; pieces: WeekPiece
 export interface OpenRow { trade: Trade; piece: WeekPiece }
 export interface JournalWeek {
   weekKey: string; monday: string; label: string;
-  ended: boolean;                 // week's Saturday has passed (open positions are marked)
+  ended: boolean;                 // week's Saturday 17:00 IST has passed (informational)
   realizedRows: RealizedRow[]; openRows: OpenRow[];
   realized: number; unrealized: number; total: number;
+  unstamped: number;              // open rows in this week with no close stamp yet (excluded from totals)
 }
 
 /**
- * Build the journal, newest week first.
- *  - a closed trade's closing week is always listed (its REALIZED row);
- *  - every other week a trade was alive in, up to `lastEndedWeekKey` (the most recent week
- *    whose Saturday has passed), lists it under UNREALIZED with that week's piece;
- *  - the in-progress week is listed only if a trade closed in it (no open marks yet).
+ * Build the journal, newest week first, from the FULL trade list. The only classification
+ * per trade is OPEN or CLOSED (2026-09-12 fix — no week gate may drop a trade):
+ *  - a CLOSED trade = a REALIZED row in the week it closed (earlier weeks it lived in show
+ *    its pre-close pieces as UNREALIZED rows, so its pieces reconcile week by week);
+ *  - an OPEN trade = an UNREALIZED row in EVERY week it is alive (initiation → today),
+ *    marked at that week's close stamp; a week with no stamp yet is listed "unstamped"
+ *    (never omitted, never given an invented mark) and is NOT counted in the week's totals.
+ * `lastEndedWeekKey` only annotates `ended` (Saturday 17:00 IST passed) for the header.
+ * ROOT CAUSE of the 12-Sep bug: the previous version listed open pieces only when
+ * `weekKey <= lastEndedWeekKey`, and that key stays at the PREVIOUS week until Saturday
+ * 17:00 IST — so trades opened this week vanished from this week's journal.
  */
 export function journalWeeks(trades: Trade[], lastEndedWeekKey: string): JournalWeek[] {
   const weeks = new Map<string, JournalWeek>();
@@ -95,7 +102,7 @@ export function journalWeeks(trades: Trade[], lastEndedWeekKey: string): Journal
     let w = weeks.get(key);
     if (!w) {
       const monday = getWeekInfo(mondayFromKey(trades, key)).mondayDateStr;
-      w = { weekKey: key, monday, label: weekLabel(monday), ended: key <= lastEndedWeekKey, realizedRows: [], openRows: [], realized: 0, unrealized: 0, total: 0 };
+      w = { weekKey: key, monday, label: weekLabel(monday), ended: key <= lastEndedWeekKey, realizedRows: [], openRows: [], realized: 0, unrealized: 0, total: 0, unstamped: 0 };
       weeks.set(key, w);
     }
     return w;
@@ -110,10 +117,10 @@ export function journalWeeks(trades: Trade[], lastEndedWeekKey: string): Journal
         const w = wk(p.weekKey);
         w.realizedRows.push({ trade: t, piece: p, pieces, total, carried: pieces.length > 1, reconciled: reconcile(t).ok });
         w.realized += p.val;
-      } else if (p.weekKey <= lastEndedWeekKey) {
+      } else {
         const w = wk(p.weekKey);
         w.openRows.push({ trade: t, piece: p });
-        w.unrealized += p.val;
+        if (p.stamped) w.unrealized += p.val; else w.unstamped++;
       }
     }
   }
