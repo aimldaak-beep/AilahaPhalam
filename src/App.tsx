@@ -19,7 +19,7 @@ import {
   dispCcy, sgn, px, signedUsd, nativePnl, tradeRate, hasLegacyRates, exitLegBrokerage,
 } from './lib/v2engine';
 import { isDocRow, shiftISO } from './lib/fxmodel';
-import { journalWeeks, closedByWeek, weekPieces, reconcile } from './lib/weekly';
+import { journalWeeks, closedByWeek, weekPieces, reconcile, owesStampFor } from './lib/weekly';
 import type { WeekPiece } from './lib/weekly';
 import {
   fetchWeeklyMarks, syncWeeklyMarksForTrade, deleteWeeklyMarksForTrade, overlayMissingMarks,
@@ -80,6 +80,12 @@ export default function App() {
   const endWeekMondayISO = mondayOf(askDateISO);
   const saturdayISO = shiftISO(endWeekMondayISO, 5);
   const askOverdue = !satPassed; // Monday onward with the week still open = red
+  // STAMP WINDOW (2026-09-14): the live card shows stamp rows ONLY from Saturday 00:00 IST through
+  // Sunday, and only for THAT week (the one whose Friday close just passed). Monday–Friday the card
+  // shows the trade and nothing about stamps; stamps stay reachable via the journal week. The
+  // Saturday 17:00 alert is unaffected.
+  const stampWindow = nowIST.getDay() === 6 || nowIST.getDay() === 0;
+  const stampWeekKey = weekKeyOf(istDateISO);
 
   const [closeEdit, setCloseEdit] = useState<string | null>(null);
   const [sel, setSel] = useState<string[]>([]);
@@ -159,7 +165,8 @@ export default function App() {
   // main-page alert from Saturday 17:00 IST while any live trade is unstamped for the asked
   // week (endWeekKey: this week from Sat 17:00; the previous week before that — overdue).
   // The old auto-popup Saturday panel is retired; its data (fridayClosingPrices) is unchanged.
-  const unstampedFor = (weekKey: string) => live.filter((tr) => weekKeyOf(tr.dateInitiated) <= weekKey && tr.fridayClosingPrices[weekKey] == null);
+  // STAMP LAW: owed only for weeks the trade was alive at the close of (opened on/before that Friday).
+  const unstampedFor = (weekKey: string) => live.filter((tr) => owesStampFor(tr, weekKey) && tr.fridayClosingPrices[weekKey] == null);
   const pendingTrades = live.filter((tr) => tr.dateInitiated < saturdayISO && tr.fridayClosingPrices[endWeekKey] == null);
   const alertDue = pendingTrades.length > 0;
   const alertUrgent = nowIST.getDay() !== 6; // Sunday onward (the week ended unstamped) = urgent
@@ -825,13 +832,16 @@ export default function App() {
                     );
                   })()}
 
-                  {/* ZONE 3 — weekly MTM ledger: fixed grid, indented 200. Every week the trade is alive
-                      has a row: a stamped week = its MTM row (close inline-editable); an unstamped week =
-                      the WEEKLY CLOSE stamp field + button, available from the moment the trade is live. */}
+                  {/* ZONE 3 — weekly MTM ledger: fixed grid, indented 200. A stamped week = its MTM row
+                      (close editable inside the stamp window). STAMP LAW + WINDOW (2026-09-14): the
+                      WEEKLY CLOSE stamp field + button appears ONLY Sat 00:00 → Sun 23:59 IST, only for
+                      that week, and only if the trade was alive at that week's close (opened on/before
+                      its Friday) — never for a week before it opened. Mon–Fri: nothing about stamps. */}
                   <div style={{ marginTop: 16 }}>
                     {getWeeksBetween(tr.dateInitiated, todayISO).map((w) => {
                       const r = rows.find((x) => x.weekKey === w.weekKey);
                       if (!r) {
+                        if (!stampWindow || w.weekKey !== stampWeekKey || !owesStampFor(tr, w.weekKey)) return null;
                         const k = stampKey(tr.id, w.weekKey); const v = stampVals[k] ?? '';
                         return (
                           <div key={w.weekKey} data-stamp-row={w.weekKey} style={{ display: 'grid', gridTemplateColumns: '160px 150px 100px 150px', marginLeft: 200, padding: '6px 0', alignItems: 'baseline', columnGap: 18 }}>
@@ -854,9 +864,12 @@ export default function App() {
                               onBlur={(e) => { editClose(r.weekKey, tr.id, +e.target.value.replace(/[^\d.]/g, '') || r.close); setCloseEdit(null); }}
                               onKeyDown={(e) => { if (e.key === 'Enter') { editClose(r.weekKey, tr.id, +(e.target as HTMLInputElement).value.replace(/[^\d.]/g, '') || r.close); setCloseEdit(null); } if (e.key === 'Escape') setCloseEdit(null); }}
                               style={{ ...mono, fontSize: SZ.numSm + 1, width: 120, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
-                          ) : (
+                          ) : stampWindow ? (
                             <button onClick={() => setCloseEdit(tr.id + '-' + r.weekKey)} title="Edit this week's closing value"
                               style={{ ...mono, fontSize: SZ.numSm + 1, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px dashed ' + t.hair, padding: 0, textAlign: 'left' }}>close {px(tr, r.close)}</button>
+                          ) : (
+                            // Weekday: the week's closing value as plain text — edit it via the journal week.
+                            <span style={{ ...mono, fontSize: SZ.numSm + 1, color: t.faint }}>close {px(tr, r.close)}</span>
                           )}
                           {tr.currency === 'USD' ? (
                             // The trade's own rate — the same on every week of its life.
@@ -975,7 +988,20 @@ export default function App() {
                       <span />
                       <span style={{ ...sans, fontSize: SZ.num, fontWeight: 600 }}>{tr.symbol}</span>
                       <span style={{ fontSize: SZ.meta, color: t.faint }}>opened {dmy(tr.dateInitiated)}</span>
-                      <span style={{ fontSize: SZ.meta, color: piece.stamped ? t.faint : t.loss }}>{piece.stamped ? `mark ${px(tr, piece.close)}` : 'unstamped'}</span>
+                      {/* Existing stamp: editable here on ANY day (the live card offers it only Sat–Sun). */}
+                      {piece.stamped && isOpen(tr) && piece.role !== 'closing' ? (
+                        closeEdit === ('j-' + tr.id + '-' + piece.weekKey) ? (
+                          <input autoFocus defaultValue={piece.close} aria-label={`${tr.symbol} ${wk(piece.label)} mark`}
+                            onBlur={(e) => { editClose(piece.weekKey, tr.id, +e.target.value.replace(/[^\d.]/g, '') || piece.close); setCloseEdit(null); }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { editClose(piece.weekKey, tr.id, +(e.target as HTMLInputElement).value.replace(/[^\d.]/g, '') || piece.close); setCloseEdit(null); } if (e.key === 'Escape') setCloseEdit(null); }}
+                            style={{ ...mono, fontSize: SZ.meta, width: 110, border: 'none', borderBottom: '1px solid ' + t.ink, outline: 'none', background: 'none', color: t.ink }} />
+                        ) : (
+                          <button onClick={() => setCloseEdit('j-' + tr.id + '-' + piece.weekKey)} title="Edit this week's closing stamp" data-mark-edit={piece.weekKey}
+                            style={{ ...sans, fontSize: SZ.meta, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px dashed ' + t.hair, padding: 0, textAlign: 'left' }}>mark {px(tr, piece.close)}</button>
+                        )
+                      ) : (
+                        <span style={{ fontSize: SZ.meta, color: piece.stamped ? t.faint : t.loss }}>{piece.stamped ? `mark ${px(tr, piece.close)}` : 'unstamped'}</span>
+                      )}
                       <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>{piece.role === 'initiation' ? 'entry' : 'from'}</span>
                       <span style={{ fontSize: SZ.meta, color: t.faint }}>{px(tr, piece.open)} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · ×{tr.lotSize}{tr.currency === 'USD' ? ` · $ @${tradeRate(tr) ?? '?'}` : ''} · share {realPct(tr)}%{isOpen(tr) ? '' : ' · closed later'}</span>
                       {piece.stamped ? money(piece.val) : <span style={{ ...sans, fontSize: SZ.label, fontWeight: 600, color: t.loss, textAlign: 'right', letterSpacing: '0.05em', textTransform: 'uppercase' }}>unstamped</span>}

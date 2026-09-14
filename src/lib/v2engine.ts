@@ -121,21 +121,45 @@ export function exitLegBrokerage(t: Trade): number {
 
 export interface MtmRow { weekKey: string; monday: string; label: string; close: number; rate: number; val: number; }
 
+/**
+ * STAMP LAW (2026-09-14): a trade OWES a weekly close stamp only for weeks it was ALIVE AT THE
+ * WEEK'S CLOSE — initiated on or before that week's Friday. A trade opened on Saturday/Sunday
+ * falls inside that Mon–Sun week by calendar but never saw its close: its first stamp is the
+ * FOLLOWING week's. Weeks before initiation are never owed. A stamp that already exists for a
+ * week is always honoured (shown, counted, editable), whatever the initiation date.
+ * The engine (types.ts) still charges the entry leg in the CALENDAR initiation week; that
+ * non-owed, never-stamped week's value FOLDS into the trade's first owed week (liveMtmRows here,
+ * weekPieces in lib/weekly.ts) so the ledger, the journal and realized() agree to the rupee.
+ */
+export const aliveAtWeekClose = (t: Trade, fridayISO: string): boolean => t.dateInitiated <= fridayISO;
+export function owesStampFor(t: Trade, weekKey: string): boolean {
+  if (t.fridayClosingPrices?.[weekKey] != null) return true;
+  const endStr = getGloballyCloseDate(t) ?? todayStr();
+  const w = getWeeksBetween(t.dateInitiated, endStr).find((x) => x.weekKey === weekKey);
+  return !!w && aliveAtWeekClose(t, w.fridayDateStr);
+}
+
 /** Live MTM ledger rows — one per week that has a stamped close, brokerage &
- *  realization included (uses the v1 calculateTradeForWeek at the trade's own rate). */
+ *  realization included (uses the v1 calculateTradeForWeek at the trade's own rate).
+ *  A non-owed unstamped week (STAMP LAW) folds its value into the next stamped row. */
 export function liveMtmRows(t: Trade): MtmRow[] {
   const rows: MtmRow[] = [];
   const weeks = getWeeksBetween(t.dateInitiated, todayStr());
+  let carry = 0;
   for (const w of weeks) {
     const close = t.fridayClosingPrices[w.weekKey];
-    if (close == null) continue; // no stamped close yet -> no row (matches spec)
+    if (close == null) { // no stamped close yet -> no row (matches spec); a non-owed week's value carries forward
+      if (!owesStampFor(t, w.weekKey)) carry += calculateTradeForWeek(t, w.weekKey).netProfit;
+      continue;
+    }
     const calc = calculateTradeForWeek(t, w.weekKey);
     rows.push({
       weekKey: w.weekKey, monday: w.mondayDateStr, label: weekLabel(w.mondayDateStr),
       // The rate this week converts at (legacy stamp if any, else the trade's own rate).
       close, rate: weekRateOf(t, w.weekKey),
-      val: Math.round(calc.netProfit),
+      val: Math.round(calc.netProfit + carry),
     });
+    carry = 0;
   }
   return rows;
 }

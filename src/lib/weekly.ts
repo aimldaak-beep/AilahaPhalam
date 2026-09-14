@@ -27,7 +27,7 @@
  * Summing WEEK TOTAL over all weeks therefore counts every piece exactly once.
  */
 import { Trade, calculateTradeForWeek, getWeeksBetween, getWeekKeyForClose, getWeekInfo } from '../types';
-import { realized, isOpen, isClosed, closeDateOf, todayStr, weekKeyOf, weekLabel, weekRateOf } from './v2engine';
+import { realized, isOpen, isClosed, closeDateOf, todayStr, weekKeyOf, weekLabel, weekRateOf, owesStampFor, aliveAtWeekClose } from './v2engine';
 
 export interface WeekPiece {
   weekKey: string; monday: string; label: string;
@@ -39,21 +39,32 @@ export interface WeekPiece {
   val: number;       // rounded rupee net change for this week (NaN if a USD trade has no rate)
 }
 
+/** STAMP LAW (2026-09-14) — defined in v2engine.ts (owesStampFor / aliveAtWeekClose), re-exported here. */
+export { owesStampFor, aliveAtWeekClose };
+
 /** Every weekly piece of a trade, initiation → close (or → today for open trades). */
 export function weekPieces(t: Trade): WeekPiece[] {
   const endStr = isClosed(t) ? closeDateOf(t) : todayStr();
   const out: WeekPiece[] = [];
+  let carry: { val: number; open: number } | null = null; // STAMP LAW: a non-owed, unstamped week folds forward
   for (const w of getWeeksBetween(t.dateInitiated, endStr)) {
     const c = calculateTradeForWeek(t, w.weekKey);
     if (!c.isActive) continue;
     const closing = c.role === 'closing' || c.role === 'same-week-closed';
+    const stamped = closing || t.fridayClosingPrices?.[w.weekKey] != null;
+    if (!stamped && !owesStampFor(t, w.weekKey)) {
+      carry = { val: (carry?.val ?? 0) + c.netProfit, open: carry?.open ?? c.openingPrice };
+      continue;
+    }
     out.push({
-      weekKey: w.weekKey, monday: w.mondayDateStr, label: weekLabel(w.mondayDateStr), role: c.role,
-      open: c.openingPrice, close: c.closingPrice,
-      stamped: closing || t.fridayClosingPrices?.[w.weekKey] != null,
+      weekKey: w.weekKey, monday: w.mondayDateStr, label: weekLabel(w.mondayDateStr),
+      role: carry ? (closing ? 'same-week-closed' : 'initiation') : c.role,
+      open: carry ? carry.open : c.openingPrice, close: c.closingPrice,
+      stamped,
       rate: weekRateOf(t, w.weekKey),
-      val: Math.round(c.netProfit),
+      val: Math.round(c.netProfit + (carry?.val ?? 0)),
     });
+    carry = null;
   }
   // Closed trade: the closing piece absorbs the rounding residual so Σ pieces === realized(t).
   if (isClosed(t) && out.length) {
@@ -90,7 +101,9 @@ export interface JournalWeek {
  *    its pre-close pieces as UNREALIZED rows, so its pieces reconcile week by week);
  *  - an OPEN trade = an UNREALIZED row in EVERY week it is alive (initiation → today),
  *    marked at that week's close stamp; a week with no stamp yet is listed "unstamped"
- *    (never omitted, never given an invented mark) and is NOT counted in the week's totals.
+ *    (never omitted, never given an invented mark) and is NOT counted in the week's totals —
+ *    except a week the trade was not alive at the close of (opened that Sat/Sun): it owes no stamp
+ *    there and is not listed (STAMP LAW, `owesStampFor`).
  * `lastEndedWeekKey` only annotates `ended` (Saturday 17:00 IST passed) for the header.
  * ROOT CAUSE of the 12-Sep bug: the previous version listed open pieces only when
  * `weekKey <= lastEndedWeekKey`, and that key stays at the PREVIOUS week until Saturday
@@ -118,6 +131,8 @@ export function journalWeeks(trades: Trade[], lastEndedWeekKey: string): Journal
         w.realizedRows.push({ trade: t, piece: p, pieces, total, carried: pieces.length > 1, reconciled: reconcile(t).ok });
         w.realized += p.val;
       } else {
+        // STAMP LAW: a week the trade was not alive at the close of never reaches here — weekPieces
+        // folds it into the first owed week (a pre-existing stamp for it is always kept).
         const w = wk(p.weekKey);
         w.openRows.push({ trade: t, piece: p });
         if (p.stamped) w.unrealized += p.val; else w.unstamped++;

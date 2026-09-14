@@ -64,13 +64,25 @@ can self-check) and service-key-WRITE only (client JWT writes are RLS-blocked by
 - Weeks run **MONDAY → SUNDAY**. A week's identity is its **Monday date**; internally the key is
   `getWeekInfo(date).weekKey` = `"YYYY-Www"` (Monday-derived), e.g. `2026-W35` = Mon 24 Aug 2026.
 - **Weekly close stamps — the stamp law (2026-09-12 evening; retires the auto-popup Saturday panel):**
-  1. **Every live trade carries a WEEKLY CLOSE stamp field from the moment it is live.** On the live
-     card's ledger (zone 3) every week the trade is alive has a row: a stamped week = its MTM row
-     (close inline-editable), an unstamped week = `<label> · [weekly close input] · Stamp W-XX · UNSTAMPED`
-     (`data-stamp-row="YYYY-Www"`, input `aria-label "<symbol> W-XX weekly close"`). AKS enters the
-     closing price whenever he has it (Friday's close on Friday) — no waiting for Saturday; editable any
-     time. The stamp is `fridayClosingPrices[weekKey]` (mirrored to `weekly_marks`) and feeds that
-     week's unrealized mark in the journal and the live MTM row.
+  1. **STAMP LAW (2026-09-14, `v2engine.ts owesStampFor`): a trade owes a weekly close stamp ONLY for
+     weeks it was ALIVE AT THE WEEK'S CLOSE — initiated on or before that week's Friday.** A trade opened
+     on Saturday/Sunday sits in that Mon–Sun week by calendar but never saw its close: it owes NOTHING
+     for it (no card row, no journal row, not in Stamp-all, not in the alert); its first stamp is the
+     FOLLOWING week's. Never a week before it opened. A stamp that already exists is always honoured.
+     The engine (§7, unchanged) still charges the entry leg in the calendar initiation week; that
+     non-owed, never-stamped week's value **folds into the first owed week** (`liveMtmRows` and
+     `weekPieces` both carry it) so ledger, journal and `realized()` agree to the rupee (proof
+     `scripts/stamp-window-proof.ts`, `npm run test:stamp`).
+  1b. **STAMP WINDOW (2026-09-14): the live card shows stamp rows ONLY from Saturday 00:00 IST through
+     Sunday 23:59 IST, and only for THAT week** (`stampWindow`, `stampWeekKey = weekKeyOf(istDateISO)`):
+     `<label> · [weekly close input] · Stamp W-XX · UNSTAMPED` (`data-stamp-row="YYYY-Www"`, input
+     `aria-label "<symbol> W-XX weekly close"`), one row per live trade that owes that week. Inside the
+     window the ledger's `close X` values are inline-editable; **Monday–Friday the card shows the trade
+     and nothing about stamps** — no rows, no inputs, ledger closes as plain text. Older owed-but-missed
+     weeks are stamped via the journal week (Stamp-all), never the card. The stamp is
+     `fridayClosingPrices[weekKey]` (mirrored to `weekly_marks`) and feeds that week's unrealized mark
+     in the journal and the live MTM row. An existing stamp is editable ANY day in the journal: the open
+     row's `mark X` is a button (`data-mark-edit`, input `aria-label "<symbol> W-XX mark"`).
   2. **"Stamp all"** — a journal week block whose open rows include unstamped trades shows a
      `Stamp all · N` button; it opens ONE form (`role=region "Stamp all W-XX"`) with a row per live
      trade still unstamped for that week (`aria-label "<symbol> W-XX close"`); `Stamp W-XX` applies the
@@ -85,8 +97,13 @@ can self-check) and service-key-WRITE only (client JWT writes are RLS-blocked by
   4. The old auto-popup settlement panel (`role=region "Weekly settlement"`) is GONE; its data
      (stamps) is unchanged and its timing helpers (IST clock, `satPassed`, `endWeekKey`,
      `saturdayISO`) now drive the alert. Header advances to next week on Sat/Sun once nothing is owed.
-  - Smoke: `scripts/seed_journalfix.py` → `scripts/smoke-journalfix.mjs` (Sat 15:00 · Sat 17:30 · Sun
-    12:00 IST clocks, 8 steps) → `scripts/cleanup_pertrade.py`.
+  - Smoke (2026-09-12 law): `scripts/seed_journalfix.py` → `scripts/smoke-journalfix.mjs` (Sat 15:00 · Sat
+    17:30 · Sun 12:00 IST clocks, 8 steps) → `scripts/cleanup_pertrade.py`. NOTE: its A2 step (stamp rows
+    on a Saturday-15:00 clock for W37) predates the window law and is superseded.
+  - Smoke (2026-09-14 stamp law + window): `scripts/seed_stampwin.py` (adds SUN-PT opened Sunday 13 Sep)
+    → `scripts/smoke-stampwin.mjs` (Wed 16 Sep 12:00 · Sat 19 Sep 10:00 · Sun 20 Sep 12:00 · Wed 23 Sep
+    clocks, 12 steps) → `scripts/cleanup_pertrade.py`. Backup: `scripts/backup_db.py <dir>` +
+    `scripts/dump_realized.ts <dir>`; gate `scripts/reconcile_backup.ts <dump> <dir> strict`.
 
 ## 6. USD/INR — the PER-TRADE FX LAW (2026-09-12; supersedes the weekly settlement model)
 **Every USD-denominated trade carries its OWN USD/INR rate** — `Trade.usdToInrRate` — entered by
@@ -218,7 +235,9 @@ journal (newest first, `data-week="YYYY-Www"`) shows:
   opened · `mark <stamp>` · `from|entry <prev mark>` · meta · piece. **A week with no stamp yet shows the
   trade as red "unstamped" — never omitted, never given an invented value — and is NOT counted** in the
   week's unrealized / total (`JournalWeek.unstamped` counts them; header says "· N unstamped"; a
-  `Stamp all · N` button opens the form, §5).
+  `Stamp all · N` button opens the form, §5). STAMP LAW (§5.1): a week the trade was not alive at the
+  close of (opened that Sat/Sun) is not a week it is "alive in" for the journal — `weekPieces` folds it
+  into the first owed week, so it is neither listed nor counted as unstamped.
 - **WEEK TOTAL = realized + unrealized**; footer repeats REALIZED · UNREALIZED · WEEK TOTAL; the journal
   headline (44px) = Σ WEEK TOTAL = Σ closed realized + Σ stamped open pieces (= the live headline's
   MTM, since `liveMtmRows` also skips unstamped weeks). `ended` (Saturday 17:00 IST passed) is only the
@@ -233,8 +252,9 @@ Layout: 7-column row grid (`30 | 200 | 130 | 130 | 90 | 1fr | 150`), gold/green 
 grey uppercase section labels. Download-as-Excel is unchanged (closed trades).
 
 ## 12. Live trades
-Open positions only. Per-trade weekly MTM ledger (§7) — every week the trade is alive has a row; an
-unstamped week is the WEEKLY CLOSE stamp field + `Stamp W-XX` button (§5). Row buttons: **What-if · Edit · Close ·
+Open positions only. Per-trade weekly MTM ledger (§7) — a row per stamped week; the WEEKLY CLOSE
+stamp field + `Stamp W-XX` button appears only inside the Sat–Sun stamp window, for that week, for
+trades that owe it (§5.1/1b) — weekdays show nothing about stamps. Row buttons: **What-if · Edit · Close ·
 Delete** (uniform 84px ghost; Delete inked on Forest / loss-color on White). **Edit** (PIN-gated)
 opens EVERY initiation field inline in the grid cells: symbol · instrument (dropdown, re-auto-fills
 multiplier) · side · lots · entry · init date · currency · **USD/INR rate · this trade** (USD only,
