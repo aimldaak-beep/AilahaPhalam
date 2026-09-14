@@ -79,7 +79,8 @@ note(jw.reduce((s, w) => s + w.total, 0) === closedSum + openPieces, `Σ week to
 for (const r of live) { const t = r.data as Trade; if (!isOpen(t)) continue;
   const weeks = weekPieces(t).map((p) => p.weekKey);
   note(weeks.length > 0 && jw.filter((w) => w.openRows.some((o) => o.trade.id === t.id)).length === weeks.length, `OPEN ${t.symbol.padEnd(10)} listed in every week alive: ${weeks.join(', ')} (${weekPieces(t).filter((p) => p.stamped).length} stamped)`); }
-note(openN === 2, `live trades on the ledger: ${openN} (law: TATAELXSI + GIFTNIFTY intact)`);
+  { const liveOpen = live.filter((r) => isOpen(r.data)).length, bkOpen = backup.filter((r) => isOpen(r.data)).length;
+    note(liveOpen === bkOpen, `live trades on the ledger: ${liveOpen} = backup ${bkOpen} (law: every pre-existing live trade intact — ${backup.filter((r) => isOpen(r.data)).map((r) => r.data.symbol).join(', ')})`); }
 const carried = jw.reduce((s, w) => s + w.openRows.filter((r) => !isOpen(r.trade)).reduce((a, r) => a + r.piece.val, 0), 0); // pre-close pieces of closed trades (booked as unrealized in earlier weeks)
 note(jw.reduce((s, w) => s + w.realized, 0) === closedSum - carried, `Σ REALIZED lines ${jw.reduce((s, w) => s + w.realized, 0)} = Σ closed realized ${closedSum} − carried pre-close pieces (${carried}) — closing piece = realized − earlier pieces`);
 console.log(diffs ? `\n${diffs} DIFFERENCE(S) — DO NOT SHIP` : '\nIDENTICAL — ship gate passed');
