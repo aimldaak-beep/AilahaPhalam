@@ -127,10 +127,12 @@ and renders **"USD/INR missing — Edit trade"** — never a default.
 wins if present; otherwise the trade's own `usdToInrRate`. New trades never get stamps, so they
 convert at their one rate for life. Legacy trades keep their frozen history **byte-identical**
 (AKS's ship gate: pre-existing trades, P&Ls, stamps and weekly totals identical to the backup).
-An explicit rate change (or currency change) in Edit trade CLEARS the legacy stamps
-(`buildEdited`), after which the trade's own rate rules its whole life. The live card meta says
-"(weekly history kept)" while legacy stamps exist; the journal history line shows `@rate` on a
-piece whose legacy rate differs from the trade's rate.
+**2026-10-17 — the PER-WEEK RATE law (§20): `fridayUsdToInrRates[week]` is no longer "legacy": it is the
+trade's nullable per-week USD/INR rate, a first-class editable row in Edit trade.** A currency change
+still clears every week rate (INR has no FX); a BASE rate change no longer clears them (they are visible
+rows — the confirm line names the weeks still overriding, blank them to follow the new base). The live
+card meta says "(weekly history kept)" while week rates exist; the journal history line shows `@rate`
+on a piece whose week rate differs from the trade's rate.
 
 Migration 2026-09-12 (`scripts/migrate_per_trade_fx.py`, idempotent): every existing USD trade
 received its frozen closing-week rate (all 9 closed USD trades → 89.9; no open USD trades
@@ -258,7 +260,8 @@ trades that owe it (§5.1/1b) — weekdays show nothing about stamps. Row button
 Delete** (uniform 84px ghost; Delete inked on Forest / loss-color on White). **Edit** (PIN-gated)
 opens EVERY initiation field inline in the grid cells: symbol · instrument (dropdown, re-auto-fills
 multiplier) · side · lots · entry · init date · currency · **USD/INR rate · this trade** (USD only,
-required) · realization · entry-leg brokerage (blank = legacy auto). One Save commits all fields atomically and recomputes the whole weekly MTM chain;
+required) · realization · entry-leg brokerage (blank = legacy auto). PLUS (2026-10-17, §20) **every weekly row**: that week's close stamp and (USD) that week's own USD/INR rate,
+with the row's MTM and the trade total recomputing live. One Save commits all fields atomically and recomputes the whole weekly MTM chain;
 Esc cancels. **Delete** (PIN-gated) confirms ("Delete SYMBOL — entry X, N lots? Its weekly marks go
 too.") and removes the trade AND its `weekly_marks`.
 
@@ -276,7 +279,7 @@ A trade that lived across weeks gets a second row (`data-history`) with its per-
 (`historyLine`, shared with the journal): `W35 +₹… W36 +₹… W37 −₹… = realized +₹…`. Rows carry
 `data-trade="<id>"`. Multi-select + selected-sum bar (shared with Journal), headline = total realized,
 Download-as-Excel unchanged. **Edit** (PIN-gated) opens the full edit grid in place under the row (all live
-fields PLUS exit price · exit-leg brokerage · closed date); Save recomputes realized + held-days and re-files
+fields PLUS exit price · exit-leg brokerage · closed date, PLUS every weekly row — §20); Save recomputes realized + held-days and re-files
 the trade into the correct week if the closed date moved. **Delete** is PIN-gated per row.
 Backup + gate for this change: `archive/2026-09-12T1049Z_pre_closed_grouping/` and `scripts/reconcile_backup.ts <live_dump> archive/2026-09-12T1049Z_pre_closed_grouping` → IDENTICAL.
 Proof: `fx-pertrade-proof.ts` §6; smoke `seed_closedwk.py` → `smoke-closedwk.mjs` (8 steps) → `cleanup_pertrade.py`.
@@ -301,8 +304,8 @@ trade's stored multiplier.
 | profit | `#0A7D4F` (green) | `#EFC44F` (flat gold, no glow) |
 | loss | `#C2402E` (red) | `#ABB0AA` (grey) |
 
-Theme choice persists in `localStorage` (`ap_theme`), default Forest. Swatches sit in the nav after
-Add trade; Team access + Sign out are tiny links under the date (kept out of the nav so the nav
+Theme choice persists in `localStorage` (`ap_theme`), default Forest. Nav: Live trades · Journal · Closed
+trades · **Weekly Statistics** (2026-10-17, §21) · Add trade. Swatches sit in the nav after Add trade; Team access + Sign out are tiny links under the date (kept out of the nav so the nav
 matches the design spec).
 
 ## 16. Type scale + layout grid
@@ -344,3 +347,39 @@ row-for-row before the wipe): the original `trades`, `weekly_marks`, `signals` (
 `aimlda.ak@gmail.com` and `19.aimlda@gmail.com` are the live Google users (aimlda.ak has real
 trades). NEVER delete their rows. Smoke/test users are always `smoke-*@example.com`, RLS-scoped,
 and deleted after each test run.
+
+## 20. EDIT ALL + PER-WEEK USD/INR RATE (2026-10-17)
+Pure model `src/lib/edit.ts` (`editStateOf`, `buildEdited`, `explicitWeekRate`); App.tsx only renders it.
+**Edit (PIN-gated, live and closed) exposes EVERY field, including every weekly row.** Under the trade-level
+grid, one row per journal piece (`weekPieces`, `data-edit-week="YYYY-Www"`): label · close stamp input
+(`aria-label "<symbol> W-XX close stamp"`; the closing week shows `exit N` — its mark IS the Exit price field) ·
+USD only: that week's USD/INR input (`"<symbol> W-XX USD/INR"`, placeholder `base <rate>`) · the week's MTM,
+recomputed LIVE through the engine on the draft trade (`buildEdited(e).updated` → `weekPieces`); footer
+`data-edit-total` = realized (closed) / live MTM (open). Enter saves, Esc cancels, nothing writes until Save.
+**Storage — nullable, inside the trade's own JSON, NO migration:** a week's rate is `fridayUsdToInrRates[week]`
+(the engine's existing per-week precedence: week rate, or `closedUsdToInrRate` in the closing week, else the
+base `usdToInrRate` — `types.ts` UNCHANGED). Absent = NULL = base rate, so every existing weekly number is
+unchanged and no existing row was written; `weekly_marks` (mirror) has no new column. Rates are applied as a
+DIFF against what the form opened with, so untouched weeks keep byte-identical legacy values; setting the
+closing week keeps `closedUsdToInrRate` in step (set/removed with it); if the closing week moves, a legacy
+closing rate stays with the week it priced. Blank brokerage keeps the key's original shape (absent stays
+absent). Round-trip law: open + save untouched = byte-identical trade (proof: 46/46 real trades).
+Proofs: `npx tsx scripts/edit-all-proof.ts <trades.json>` (round trip · per-week rate · stamp edit · full-field
+edit + re-file · legacy closing rate), `scripts/intact-proof.ts` (before/after numbers identical, 0 rows
+written), smoke `scripts/smoke-editall.mjs` (MOCKED Supabase from a read-only dump — no row can be written).
+
+## 21. WEEKLY STATISTICS page (2026-10-17)
+Nav item **Weekly Statistics** (`view === 'stats'`), read-only. Pure model `src/lib/stats.ts weeklyStats(trades)`.
+Weeks newest-first (journal W-XX labels, `data-stats-week`); under each, ONE line per instrument with
+activity (`data-stats-line`): `<instrument> — <net ₹ this week>` · `<n> trades (k unstamped)`. Purely THIS
+week's value per instrument in isolation; NO cross-instrument total (the journal keeps the combined view).
+Per-trade contribution = its journal piece for the week (`weekPieces` = the unchanged engine): opened & closed
+this week = value(entry→exit) − both legs; opened, open at end = value(entry→stamp) − entry leg; carried, open =
+value(last stamp→stamp), no brokerage; carried, closed = value(last stamp→exit) − exit leg; USD at THAT week's
+rate (NULL → base), INR native; multiplier, lots, realization via the engine. A carried trade alive at the
+week's close with no stamp is `unstamped`: not zero, not summed, noted on the line. Pieces are rounded per
+week; a closed trade's closing piece carries the ≤₹1 residual so Σ = realized (journal law).
+Proof: `npx tsx scripts/stats-proof.ts <trades.json>` recomputes every line straight from the formula
+(independently of lib/weekly.ts) — 2026-10-17 on real rows: 8 weeks · 39 lines · 7 instruments · 45/46 trades
+(the 46th has an empty closed date and produces no weeks anywhere), ALL MATCH.
+

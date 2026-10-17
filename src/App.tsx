@@ -21,6 +21,9 @@ import {
 import { isDocRow, shiftISO } from './lib/fxmodel';
 import { journalWeeks, closedByWeek, weekPieces, reconcile, owesStampFor } from './lib/weekly';
 import type { WeekPiece } from './lib/weekly';
+import { editStateOf, buildEdited as buildEditedPure, isoFromForm, dmyInput, entryVal, exitVal, sideOf } from './lib/edit';
+import type { EditState } from './lib/edit';
+import { weeklyStats } from './lib/stats';
 import {
   fetchWeeklyMarks, syncWeeklyMarksForTrade, deleteWeeklyMarksForTrade, overlayMissingMarks,
 } from './lib/marks';
@@ -33,22 +36,9 @@ const THEMES = {
 } as const;
 type ThemeKey = keyof typeof THEMES;
 type PinAction = 'edit' | 'delete' | 'live-edit' | 'live-delete' | 'team';
-type EditState = {
-  id: string; kind: 'live' | 'closed';
-  symbol: string; instr: SpecInstrument; side: 'LONG' | 'SHORT'; lots: string; mult: string; entry: string; date: string;
-  ccy: 'INR' | 'USD'; rate: string; real: number; entryBrok: string;   // rate = the trade's own USD/INR (USD only)
-  exit: string; exitBrok: string; closedDate: string;   // closed-only (blank for live)
-  origInstr: SpecInstrument; origCcy: 'INR' | 'USD';
-};
 // JOB 5 — raised type scale (supersedes DESIGN_SPEC's SZ values).
 const SZ = { hero: 64, big: 50, num: 19, numSm: 17, meta: 15, label: 13, btn: 15, symbol: 20 };
 
-const isoFromForm = (s: string) => {
-  // accepts dd-mm-yyyy (spec) or yyyy-mm-dd; returns yyyy-mm-dd
-  const m = s.trim().match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
-  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
-  return s.trim();
-};
 const dmy = (iso: string) => {
   const d = new Date(iso);
   return isNaN(d.getTime()) ? iso : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
@@ -62,7 +52,7 @@ export default function App() {
 
   const [themeKey, setThemeKey] = useState<ThemeKey>(() => (localStorage.getItem('ap_theme') as ThemeKey) || 'forest');
   const t = THEMES[themeKey];
-  const [view, setView] = useState<'live' | 'journal' | 'closedv' | 'add'>('live');
+  const [view, setView] = useState<'live' | 'journal' | 'closedv' | 'stats' | 'add'>('live');
 
   const todayISO = todayStr();
 
@@ -346,76 +336,22 @@ export default function App() {
   const act = (action: PinAction, id: string) => { pinOk && pinHash ? runAction(action, id) : askPin(action, id); };
   // ---- FULL EDIT (live + closed): every field editable, atomic Save ----
   const openEdit = (tr: Trade, kind: 'live' | 'closed') => {
-    const spec = specNameOf(tr.instrument);
-    setEdit({
-      id: tr.id, kind,
-      symbol: tr.symbol, instr: spec, origInstr: spec,
-      side: sideOf(tr), lots: String(tr.numberOfLots), mult: String(tr.lotSize), entry: String(entryVal(tr)),
-      date: dmyInput(tr.dateInitiated), ccy: dispCcy(tr), origCcy: dispCcy(tr),
-      rate: tr.currency === 'USD' && tr.usdToInrRate != null ? String(tr.usdToInrRate) : '',
-      real: tr.realizationRate ?? 1.0, entryBrok: tr.entryBrokerage != null ? String(tr.entryBrokerage) : '',
-      exit: kind === 'closed' ? String(exitVal(tr)) : '',
-      exitBrok: kind === 'closed' && tr.exitBrokerage != null ? String(tr.exitBrokerage) : '',
-      closedDate: kind === 'closed' ? dmyInput(closeDateOf(tr)) : '',
-    });
+    setEdit(editStateOf(tr, kind));
     setWhatIf(null); setClosing(null); setEditErr('');
   };
 
-  // Build the updated trade from an edit state; also report orphaned marks + instr/ccy changes.
-  const buildEdited = (e: EditState) => {
-    const orig = trades.find((t) => t.id === e.id)!;
-    const meta = INSTR[e.instr];
-    const entry = +e.entry || 0;
-    const lots = parseInt(e.lots) || orig.numberOfLots;
-    const mult = +e.mult > 0 ? +e.mult : orig.lotSize;   // per-trade multiplier (editable)
-    const iso = isoFromForm(e.date);
-    const newInitWeek = weekKeyOf(iso);
-    const fcp = orig.fridayClosingPrices || {};
-    // Week-identity integrity: no mark may be earlier than the (new) initiation week.
-    const orphans = Object.keys(fcp).filter((wk) => wk < newInitWeek).sort();
-    const cleanFcp = Object.fromEntries(Object.entries(fcp).filter(([wk]) => wk >= newInitWeek));
-    const dir: TradeDirection = e.side === 'LONG' ? 'Long' : 'Short';
-    const base: Trade = {
-      ...orig,
-      symbol: e.symbol.toUpperCase().trim() || orig.symbol, instrument: meta.v1, lotSize: mult,
-      direction: dir, numberOfLots: lots, dateInitiated: iso,
-      currency: e.ccy, realizationRate: e.real,
-      // Per-trade FX: the trade's own rate (USD); INR trades store 1.
-      usdToInrRate: e.ccy === 'USD' ? (+e.rate > 0 ? +e.rate : orig.usdToInrRate) : 1,
-      entryBrokerage: e.entryBrok.trim() === '' ? null : +e.entryBrok,
-      fridayClosingPrices: cleanFcp,
-    };
-    // An explicit rate change (or currency change) retires any legacy per-week FX stamps:
-    // from now on the trade converts at its own rate for its whole life.
-    const rateChanged = e.ccy !== e.origCcy || (e.ccy === 'USD' && +e.rate > 0 && +e.rate !== orig.usdToInrRate);
-    if (rateChanged) { base.fridayUsdToInrRates = {}; delete base.closedUsdToInrRate; }
-    let updated: Trade;
-    if (e.kind === 'live') {
-      updated = {
-        ...base, status: dir === 'Long' ? 'CarryForwardLong' : 'CarryForwardShort',
-        buyPrice: dir === 'Long' ? entry : null, sellPrice: dir === 'Long' ? null : entry,
-        buyDate: dir === 'Long' ? iso : null, sellDate: dir === 'Long' ? null : iso, exitBrokerage: null,
-      };
-    } else {
-      const cIso = isoFromForm(e.closedDate);
-      const exit = +e.exit || 0;
-      updated = {
-        ...base, status: 'Closed',
-        buyPrice: dir === 'Long' ? entry : exit, sellPrice: dir === 'Long' ? exit : entry,
-        buyDate: dir === 'Long' ? iso : cIso, sellDate: dir === 'Long' ? cIso : iso,
-        exitBrokerage: e.exitBrok.trim() === '' ? null : +e.exitBrok,
-      };
-    }
-    return { updated, orphans, instrChanged: e.instr !== e.origInstr, ccyChanged: e.ccy !== e.origCcy };
-  };
+  // Build the updated trade from an edit state (pure model: lib/edit.ts) — every field incl. every
+  // weekly row's stamp + per-week USD/INR rate; reports orphaned marks + instr/ccy/base-rate changes.
+  const buildEdited = (e: EditState) => buildEditedPure(trades.find((x) => x.id === e.id)!, e);
 
   const trySaveEdit = () => {
     if (!edit) return;
     if (edit.ccy === 'USD' && !(+edit.rate > 0)) { setEditErr('USD/INR rate required — a USD trade converts at its own rate.'); return; }
     setEditErr('');
-    const { updated, orphans, instrChanged, ccyChanged } = buildEdited(edit);
+    const { updated, orphans, instrChanged, ccyChanged, rateChanged, keptWeekRates } = buildEdited(edit);
     const notes: string[] = [];
     if (instrChanged || ccyChanged) notes.push('Recomputes all P&L for this trade — proceed?');
+    if (rateChanged && !ccyChanged && keptWeekRates.length) notes.push(`${keptWeekRates.length} weekly rate${keptWeekRates.length > 1 ? 's' : ''} (${keptWeekRates.map((k) => k.replace(/^\d+-/, '')).join(', ')}) still override the new trade rate for their weeks — blank them in the weekly rows to use the new rate everywhere.`);
     if (orphans.length) notes.push(`${orphans.length} weekly mark${orphans.length > 1 ? 's' : ''} before the new initiation week (${weekLabel(mondayOf(isoFromForm(edit.date)))}) will be removed: ${orphans.join(', ')}.`);
     if (notes.length) setEditConfirm({ trade: updated, notes });
     else commitEdit(updated);
@@ -430,9 +366,6 @@ export default function App() {
     setLiveDelete(null);
   };
 
-  const exitVal = (tr: Trade) => (tr.direction === 'Long' ? tr.sellPrice : tr.buyPrice) ?? 0;
-  const entryVal = (tr: Trade) => (tr.direction === 'Long' ? tr.buyPrice : tr.sellPrice) ?? 0;
-  const sideOf = (tr: Trade) => (tr.direction === 'Long' ? 'LONG' : 'SHORT');
   const realPct = (tr: Trade) => Math.round((tr.realizationRate ?? 1) * 100);
 
   // ---- Excel download ----
@@ -575,6 +508,48 @@ export default function App() {
           {isClosed && cell(`Exit brokerage (${e.ccy === 'USD' ? '$' : '₹'})`, <input placeholder="auto" value={e.exitBrok} onChange={(x) => setE({ exitBrok: x.target.value.replace(/[^\d.]/g, '') })} onKeyDown={onEditKey} style={gridInput(150)} />)}
           {isClosed && cell('Closed date', <input value={e.closedDate} onChange={(x) => setE({ closedDate: x.target.value })} onKeyDown={onEditKey} style={gridInput(150)} />)}
         </div>
+        {/* WEEKLY ROWS (2026-10-17): every week the trade is alive in — its close stamp and (USD) ITS OWN
+            USD/INR rate are editable; the row's MTM recomputes live through the engine on the draft trade.
+            Blank rate = the trade's base rate (stored as nothing — NULL falls back). */}
+        {(() => {
+          const draft = buildEdited(e).updated;
+          const pieces = weekPieces(draft);
+          const total = isClosed ? realized(draft) : liveMtm(draft);
+          const wkInp = (w: number) => ({ ...mono, fontSize: SZ.numSm, width: w, border: 'none', borderBottom: '1px solid ' + t.hair, outline: 'none', background: 'none', color: t.ink } as const);
+          return (
+            <div data-edit-weeks style={{ marginTop: 22 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '160px 150px 130px 150px', columnGap: 18, paddingBottom: 6, borderBottom: '1px solid ' + t.hair }}>
+                <span style={slotLabel}>Week</span><span style={slotLabel}>Close stamp</span><span style={slotLabel}>{e.ccy === 'USD' ? 'USD/INR · this week' : ''}</span><span style={{ ...slotLabel, textAlign: 'right' }}>Week MTM</span>
+              </div>
+              {pieces.map((p) => {
+                const closing = p.role === 'closing' || p.role === 'same-week-closed';
+                const wl = p.label.split(' · ')[0];
+                return (
+                  <div key={p.weekKey} data-edit-week={p.weekKey} style={{ display: 'grid', gridTemplateColumns: '160px 150px 130px 150px', columnGap: 18, padding: '7px 0', alignItems: 'baseline', borderBottom: '1px solid ' + t.hair }}>
+                    <span style={{ fontSize: SZ.meta, color: t.faint }}>{p.label}</span>
+                    {closing ? (
+                      <span title="The closing week is marked at the exit price (edit Exit price above)" style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>exit {px(draft, p.close)}</span>
+                    ) : (
+                      <input placeholder="unstamped" aria-label={`${e.symbol} ${wl} close stamp`} value={e.stamps[p.weekKey] ?? ''}
+                        onChange={(x) => setE({ stamps: { ...e.stamps, [p.weekKey]: x.target.value.replace(/[^\d.]/g, '') } })} onKeyDown={onEditKey} style={wkInp(120)} />
+                    )}
+                    {e.ccy === 'USD' ? (
+                      <input placeholder={`base ${e.rate || '?'}`} aria-label={`${e.symbol} ${wl} USD/INR`} value={e.weekRates[p.weekKey] ?? ''}
+                        onChange={(x) => setE({ weekRates: { ...e.weekRates, [p.weekKey]: x.target.value.replace(/[^\d.]/g, '') } })} onKeyDown={onEditKey} style={wkInp(90)} />
+                    ) : <span />}
+                    {p.stamped
+                      ? <span style={{ ...mono, fontSize: SZ.num, fontWeight: 500, textAlign: 'right', color: isNaN(p.val) ? t.loss : pl(p.val) }}>{isNaN(p.val) ? fxNa(SZ.label) : signed(p.val)}</span>
+                      : <span style={{ ...sans, fontSize: SZ.label, fontWeight: 600, color: t.loss, textAlign: 'right', letterSpacing: '0.05em', textTransform: 'uppercase' }}>unstamped</span>}
+                  </div>
+                );
+              })}
+              <div style={{ display: 'grid', gridTemplateColumns: '160px 150px 130px 150px', columnGap: 18, padding: '9px 0', alignItems: 'baseline' }}>
+                <span style={secLabel}>{isClosed ? 'Realized' : 'Live MTM'}</span><span /><span style={{ fontSize: SZ.label, color: t.faint }}>{e.ccy === 'USD' ? 'blank = trade rate' : ''}</span>
+                <span data-edit-total style={{ ...mono, fontSize: SZ.num, fontWeight: 600, textAlign: 'right', color: isNaN(total) ? t.loss : pl(total) }}>{isNaN(total) ? fxNa(SZ.label) : signed(total)}</span>
+              </div>
+            </div>
+          );
+        })()}
         {editErr && <div style={{ ...sans, fontSize: SZ.meta, fontWeight: 600, color: t.loss, marginTop: 12 }}>{editErr}</div>}
         <div style={{ marginTop: 18, display: 'flex', gap: 12 }}>
           <button onClick={trySaveEdit} style={{ ...sans, fontSize: 13, fontWeight: 600, background: t.ink, color: t.bg, border: 'none', borderRadius: 3, padding: '7px 16px', cursor: 'pointer' }}>Save</button>
@@ -654,6 +629,7 @@ export default function App() {
             <Tab id="live" label="Live trades" />
             <Tab id="journal" label="Journal" />
             <Tab id="closedv" label="Closed trades" />
+            <Tab id="stats" label="Weekly Statistics" />
             <Tab id="add" label="Add trade" />
             {/* THEME — after Add trade (spec) */}
             <span style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 6 }}>
@@ -1117,6 +1093,38 @@ export default function App() {
           );
         })()}
 
+        {/* WEEKLY STATISTICS — read-only: per week (newest first), one line per instrument with THAT week's net ₹ value in isolation */}
+        {view === 'stats' && (() => {
+          const sw = weeklyStats(trades);
+          return (
+            <>
+              <div style={{ fontSize: SZ.meta, color: t.faint, marginBottom: 8 }}>Weekly Statistics · per instrument · this week's value only · after share, net of brokerage</div>
+              <div style={{ fontSize: SZ.meta, color: t.faint, marginBottom: 28, maxWidth: 900 }}>
+                Each line is one instrument's net rupee value for that week alone: trades opened and closed in the week (entry → exit, both brokerage legs), trades opened in the week (entry → the week's stamp, entry leg), carried trades (last week's stamp → this week's stamp or exit; exit leg if closed). USD trades convert at that week's rate. A carried trade with no stamp for the week is not counted and is noted as unstamped. No totals across instruments here — the journal holds the combined view.
+              </div>
+              {sw.map((w) => (
+                <div key={w.weekKey} data-stats-week={w.weekKey} style={{ marginBottom: 34 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, paddingBottom: 8, borderBottom: '1px solid ' + t.ink }}>
+                    <span style={{ fontSize: 15, fontWeight: 600 }}>{w.label}</span>
+                    <span style={{ fontSize: SZ.meta, color: t.faint }}>{w.lines.length} instrument{w.lines.length > 1 ? 's' : ''}</span>
+                  </div>
+                  {w.lines.map((l) => (
+                    <div key={l.instrument} data-stats-line={l.instrument} style={{ display: 'grid', gridTemplateColumns: '200px 30px 220px 1fr', alignItems: 'baseline', padding: '12px 0', borderBottom: '1px solid ' + t.hair }}>
+                      <span style={{ ...sans, fontSize: SZ.num, fontWeight: 600 }}>{l.instrument}</span>
+                      <span style={{ fontSize: SZ.meta, color: t.faint }}>—</span>
+                      <span style={{ ...mono, fontSize: SZ.num, fontWeight: 600, color: isNaN(l.value) ? t.loss : pl(l.value) }}>{isNaN(l.value) ? fxNa(SZ.label) : signed(l.value)}</span>
+                      <span style={{ fontSize: SZ.meta, color: l.unstamped ? t.loss : t.faint }}>
+                        {l.stamped} trade{l.stamped !== 1 ? 's' : ''}{l.unstamped ? ` (${l.unstamped} unstamped)` : ''}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+              {sw.length === 0 && <div style={{ fontSize: 15, color: t.faint }}>No weeks yet — statistics fill as trades are marked and closed.</div>}
+            </>
+          );
+        })()}
+
         {/* ADD */}
         {view === 'add' && (
           <div style={{ maxWidth: 580 }}>
@@ -1181,8 +1189,3 @@ export default function App() {
   );
 }
 
-function dmyInput(iso: string) {
-  const d = new Date(iso);
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()}`;
-}

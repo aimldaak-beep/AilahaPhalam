@@ -14,7 +14,9 @@
     "test:weekly": "tsx scripts/weekly-mtm-proof.ts",
     "test:proofs": "npm run test:pnl && npm run test:whatif && npm run test:weekly && npm run test:fx && npm run test:stamp",
     "test:fx": "tsx scripts/fx-pertrade-proof.ts",
-    "test:stamp": "tsx scripts/stamp-window-proof.ts"
+    "test:stamp": "tsx scripts/stamp-window-proof.ts",
+    "test:editall": "tsx scripts/edit-all-proof.ts",
+    "test:stats": "tsx scripts/stats-proof.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
