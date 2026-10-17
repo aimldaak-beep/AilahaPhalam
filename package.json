@@ -16,7 +16,8 @@
     "test:fx": "tsx scripts/fx-pertrade-proof.ts",
     "test:stamp": "tsx scripts/stamp-window-proof.ts",
     "test:editall": "tsx scripts/edit-all-proof.ts",
-    "test:stats": "tsx scripts/stats-proof.ts"
+    "test:stats": "tsx scripts/stats-proof.ts",
+    "test:journaledit": "tsx scripts/journal-edit-proof.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

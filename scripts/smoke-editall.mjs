@@ -70,6 +70,60 @@ for (const theme of ['forest', 'white']) {
     const b = await body(p); must(b, /Week total/i, 'totals'); must(b, /W42 · 12–18 Oct/, 'label');
     await shot(p, `${theme}-journal`);
   });
+  await step(`${T} JOURNAL EDIT: PIN-gated Edit on EVERY row (realized + unrealized, every week block); closed W40 NIKKEI row opens the full edit grid (3 weekly rows) under that row; PIN fires first`, async () => {
+    const rows = await p.locator('[data-journal-row]').count(); const btns = await p.locator('[data-journal-edit]').count();
+    if (!(rows > 0 && rows === btns)) throw new Error(`rows ${rows} vs edit buttons ${btns}`);
+    for (const key of ['2026-W42', '2026-W40', '2026-W38', '2026-W35']) { const wb = p.locator(`[data-week="${key}"]`);
+      if ((await wb.locator('[data-journal-row]').count()) !== (await wb.locator('[data-journal-edit]').count())) throw new Error(`${key}: a row without Edit`); }
+    const w40 = p.locator('[data-week="2026-W40"]');
+    await w40.locator('[data-journal-edit="trade_1789711636057_9049909"]').click();
+    const pinInput = p.locator('input[type=password]'); await pinInput.waitFor({ timeout: 5000 });   // PIN gate fires
+    await pinInput.fill(PIN); await pinInput.press('Enter'); await p.waitForTimeout(600);
+    const form = w40.locator('[data-journal-edit-form="trade_1789711636057_9049909"]'); await form.waitFor({ timeout: 5000 });
+    if ((await p.locator('[data-journal-edit-form]').count()) !== 1) throw new Error('form must open under exactly one row');
+    if ((await form.locator('[data-edit-week]').count()) !== 3) throw new Error('weekly rows ≠ 3');
+    must(await form.innerText(), /W38[\s\S]*W39[\s\S]*W40[\s\S]*−₹1,39,590/, 'whole trade in the form');
+    if ((await form.locator('input').first().inputValue()) !== 'NIKKEI' || (await p.getByLabel('NIKKEI W39 close stamp').inputValue()) !== '66490') throw new Error('form fields not the NIKKEI trade');
+    if ((await w40.locator('[data-journal-edit="trade_1789711636057_9049909"]').innerText()) !== 'Close') throw new Error('button should read Close while editing');
+    await p.getByLabel('NIKKEI W39 USD/INR').fill('96.5'); await p.waitForTimeout(300);
+    must(await form.locator('[data-edit-total]').innerText(), /−₹1,58,340/, 'live recompute inside the journal form');
+    await shot(p, `${theme}-journal-edit-closed`);
+    await p.getByLabel('NIKKEI W39 USD/INR').press('Escape'); await p.waitForTimeout(300);
+    if (await p.locator('[data-journal-edit-form]').count()) throw new Error('form still open after Esc');
+  });
+  await step(`${T} JOURNAL EDIT on a CARRY-FORWARD appearance: the same NIKKEI in W38 (unrealized · closed later) opens the WHOLE trade under the W38 row; live KOTAKBANK in W42 opens too`, async () => {
+    const w38 = p.locator('[data-week="2026-W38"]');
+    await w38.locator('[data-journal-edit="trade_1789711636057_9049909"]').click(); await p.waitForTimeout(400);
+    if (await p.locator('input[type=password]').count()) throw new Error('PIN must already be unlocked this session');
+    const form = w38.locator('[data-journal-edit-form="trade_1789711636057_9049909"]'); await form.waitFor({ timeout: 5000 });
+    if ((await p.locator('[data-journal-edit-form]').count()) !== 1) throw new Error('form must open under the W38 row only');
+    if ((await form.locator('[data-edit-week]').count()) !== 3) throw new Error('whole trade: 3 weekly rows expected');
+    must(await form.innerText(), /W38[\s\S]*W39[\s\S]*W40[\s\S]*exit 65,235/, 'whole trade incl. closing week');
+    await shot(p, `${theme}-journal-edit-carry`);
+    await p.getByLabel('NIKKEI W38 close stamp').press('Escape'); await p.waitForTimeout(300);
+    const w42 = p.locator('[data-week="2026-W42"]');
+    await w42.locator('[data-journal-edit="trade_1791450008722_13845972"]').click(); await p.waitForTimeout(400);
+    const lf = w42.locator('[data-journal-edit-form="trade_1791450008722_13845972"]'); await lf.waitFor({ timeout: 5000 });
+    if ((await lf.locator('[data-edit-week]').count()) !== 2) throw new Error('KOTAKBANK: 2 weekly rows expected');
+    must(await lf.locator('[data-edit-total]').innerText(), /−₹69,307/, 'live MTM');
+    await p.getByLabel('KOTAKBANK W41 close stamp').press('Escape'); await p.waitForTimeout(300);
+    // journal plumbing unchanged: checkbox → selected-sum bar; Download panel opens; row grid intact (no wrap: every row is one line tall)
+    await w42.locator('[data-journal-row="trade_1789711636057_9049909"], [data-journal-row]').first().locator('span').first().click(); await p.waitForTimeout(200);
+    must(await body(p), /1 selected/, 'selected-sum bar');
+    await p.getByRole('button', { name: 'clear' }).click(); await p.waitForTimeout(200);
+    await p.getByRole('button', { name: 'Download as Excel' }).click(); await p.waitForTimeout(200);
+    must(await body(p), /Complete history \(44 trades\)/, 'download panel'); await p.getByRole('button', { name: 'Download as Excel' }).click();
+    const heights = await p.locator('[data-journal-row]').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height));
+    const oneLine = Math.min(...heights); const tall = heights.filter((h) => h > oneLine + 2);
+    if (tall.length) throw new Error(`${tall.length} of ${heights.length} journal rows taller than one line (${oneLine}px) — wrap: ${tall.slice(0, 5).join(',')}`);
+    const cols = await p.locator('[data-journal-row]').first().evaluate((e) => getComputedStyle(e).gridTemplateColumns);
+    if (!/^30px 200px 130px 130px 90px \d+(\.\d+)?px 48px 150px$/.test(cols)) throw new Error('row grid tracks changed: ' + cols);
+    // money column keeps its exact place: its right edge is the content column's right edge (1140 wide, centred)
+    const edge = await p.locator('[data-journal-row]').first().evaluate((e) => { const r = e.getBoundingClientRect(); const m = e.children[7].getBoundingClientRect(); return [Math.round(r.right - m.right), Math.round(r.width)]; });
+    if (edge[0] !== 0 || edge[1] !== 1140) throw new Error(`money column not flush right / row width: ${edge}`);
+    const clipped = await p.locator('[data-journal-row]').evaluateAll((els) => els.filter((e) => { const m = e.children[5]; return m.scrollWidth > m.clientWidth && !m.getAttribute('title'); }).length);
+    if (clipped) throw new Error(`${clipped} ellipsised meta cells without a full-text tooltip`);
+  });
   await step(`${T} CLOSED → Edit (PIN gate) → full edit grid with weekly rows; weekly rate edit recomputes live; Esc cancels (0 writes)`, async () => {
     await tab(p, 'Closed trades'); await p.waitForTimeout(500);
     // the carried USD NIKKEI (W38/W39 stamps, closed W40): expand W40 if collapsed, then Edit it
@@ -77,8 +131,9 @@ for (const theme of ['forest', 'white']) {
     if ((await wk.locator('[role=button]').getAttribute('aria-expanded')) === 'false') await wk.locator('[role=button]').click();
     const row = wk.locator('[data-trade="trade_1789711636057_9049909"]'); await row.waitFor({ timeout: 5000 });
     await row.getByRole('button', { name: 'Edit', exact: true }).click();
-    const pinInput = p.locator('input[type=password]'); await pinInput.waitFor({ timeout: 5000 });
-    await pinInput.fill(PIN); await pinInput.press('Enter'); await p.waitForTimeout(600);
+    const pinInput = p.locator('input[type=password]');
+    if (await pinInput.count()) { await pinInput.fill(PIN); await pinInput.press('Enter'); }   // PIN already unlocked by the journal step
+    await p.waitForTimeout(600);
     const weeksBlock = p.locator('[data-edit-weeks]'); await weeksBlock.waitFor({ timeout: 5000 });
     const rows = p.locator('[data-edit-week]'); const rc = await rows.count(); if (rc !== 3) throw new Error(`weekly rows ${rc} ≠ 3`);
     const before = await p.locator('[data-edit-total]').innerText(); must(before, /−₹1,39,590/, 'realized before');

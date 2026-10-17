@@ -250,8 +250,18 @@ at the PREVIOUS week until Saturday 17:00 IST — so trades opened this week (TA
 7-Sep) had their W37 pieces dropped; W37 still appeared only because 6 closed trades landed in it. The
 gate is removed. Backup + gate for the fix: `archive/2026-09-12T1154Z_pre_journal_fix/` and
 `scripts/reconcile_backup.ts <live_dump> archive/2026-09-12T1154Z_pre_journal_fix strict` → IDENTICAL.
-Layout: 7-column row grid (`30 | 200 | 130 | 130 | 90 | 1fr | 150`), gold/green money, hairline rows,
+Layout: 8-column row grid (`30 | 200 | 130 | 130 | 90 | 1fr | 48 | 150`), gold/green money, hairline rows,
 grey uppercase section labels. Download-as-Excel is unchanged (closed trades).
+**Journal EDIT (2026-10-18):** every row — REALIZED and UNREALIZED, every week block — carries a PIN-gated
+`Edit` (`data-journal-edit="<id>"`, rows `data-journal-row="<id>"`) in the fixed 48px action slot between the
+meta text and the money column (so every fixed track and the money column keep their exact place; 1fr absorbs
+the slot). The meta cell is single-line (`nowrap` + ellipsis, full text in its `title`) so a row never wraps.
+It opens the SAME full-edit grid as Live/Closed (`editForm`, §20) under the row it was clicked from
+(`data-journal-edit-form="<id>"`, `editFrom` = that week's key — a carried trade shows Edit on every appearance
+and any of them opens the WHOLE trade); the button reads `Close` while open. Save goes through the one
+`trySaveEdit → commitEdit → update` path — the journal re-derives pieces, WEEK TOTALs, REALIZED/UNREALIZED
+and the grand total from `trades`. Proof `npx tsx scripts/journal-edit-proof.ts <trades.json>` (journal after a
+journal-originated edit == straight recompute; 0 rows written); smoke `scripts/smoke-editall.mjs` (journal steps).
 
 ## 12. Live trades
 Open positions only. Per-trade weekly MTM ledger (§7) — a row per stamped week; the WEEKLY CLOSE

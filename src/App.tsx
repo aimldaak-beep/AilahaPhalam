@@ -92,6 +92,7 @@ export default function App() {
   const [pinVal, setPinVal] = useState('');
   const [pinErr, setPinErr] = useState('');
   const [edit, setEdit] = useState<EditState | null>(null);
+  const [editFrom, setEditFrom] = useState<string | null>(null); // Journal: weekKey of the row block the edit was opened from
   const [editConfirm, setEditConfirm] = useState<{ trade: Trade; notes: string[] } | null>(null);
   const [liveDelete, setLiveDelete] = useState<Trade | null>(null);
   const [whatIf, setWhatIf] = useState<{ id: string; exit: string; rate: string } | null>(null); // calculator only — writes nothing
@@ -755,7 +756,7 @@ export default function App() {
                     </span>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
                       <button onClick={() => { setClosing(null); setWhatIf(whatIf && whatIf.id === tr.id ? null : { id: tr.id, exit: '', rate: String(latestUsdRate(tr) ?? '') }); }} style={actBtn}>What-if</button>
-                      <button onClick={() => { setWhatIf(null); setClosing(null); act('live-edit', tr.id); }} style={actBtn}>Edit</button>
+                      <button onClick={() => { setWhatIf(null); setClosing(null); setEditFrom(null); act('live-edit', tr.id); }} style={actBtn}>Edit</button>
                       <button onClick={() => { setWhatIf(null); setClosing({ id: tr.id, px: '' }); }} style={actBtn}>Close</button>
                       <button onClick={() => act('live-delete', tr.id)} style={actDanger}>Delete</button>
                     </div>
@@ -866,7 +867,24 @@ export default function App() {
         {view === 'journal' && (() => {
           const jw = journalWeeks(trades, endWeekKey);
           const grand = jw.reduce((s, w) => s + w.total, 0);
-          const rowGrid = { display: 'grid', gridTemplateColumns: '30px 200px 130px 130px 90px 1fr 150px', alignItems: 'baseline', padding: '13px 0', borderBottom: '1px solid ' + t.hair } as const;
+          const rowGrid = { display: 'grid', gridTemplateColumns: '30px 200px 130px 130px 90px 1fr 48px 150px', alignItems: 'baseline', padding: '13px 0', borderBottom: '1px solid ' + t.hair } as const;
+          // Journal EDIT (2026-10-18): a PIN-gated Edit in a fixed 48px action slot on EVERY row (realized + unrealized,
+          // every week block), between the meta text and the money column so every fixed track and the money column
+          // keep their exact place (1fr absorbs the slot); the meta cell is single-line (ellipsis + full-text tooltip)
+          // so a row never wraps. Opens the SAME full-edit grid (editForm) used on Live/Closed, under the row it was
+          // clicked from; Save goes through the one commitEdit → update path, so the journal recomputes from `trades`.
+          const metaCell = (txt: string) => <span title={txt} style={{ fontSize: SZ.meta, color: t.faint, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{txt}</span>;
+          const jEdit = (tr: Trade, weekKey: string) => {
+            const editing = !!(edit && edit.id === tr.id && editFrom === weekKey);
+            return (
+              <span style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                <button data-journal-edit={tr.id} onClick={() => { if (editing) { setEdit(null); return; } setEditFrom(weekKey); setWhatIf(null); setClosing(null); act(isOpen(tr) ? 'live-edit' : 'edit', tr.id); }}
+                  style={{ ...sans, fontSize: 13, color: editing ? t.ink : t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{editing ? 'Close' : 'Edit'}</button>
+              </span>
+            );
+          };
+          const jEditForm = (tr: Trade, weekKey: string) => (edit && edit.id === tr.id && editFrom === weekKey
+            ? <div data-journal-edit-form={tr.id} style={{ padding: '4px 0 22px 30px', borderBottom: '1px solid ' + t.hair }}>{editForm()}</div> : null);
           const money = (v: number, size = SZ.num, weight = 600) => (
             <span style={{ ...mono, fontSize: size, fontWeight: weight, textAlign: 'right', color: isNaN(v) ? t.loss : pl(v) }}>{isNaN(v) ? fxNa(SZ.label) : signed(v)}</span>
           );
@@ -943,24 +961,27 @@ export default function App() {
                     const c = closeDateOf(tr); const held = heldDays(tr.dateInitiated, c);
                     return (
                       <div key={tr.id}>
-                        <div style={{ ...rowGrid, borderBottom: carried ? 'none' : rowGrid.borderBottom }}>
+                        <div data-journal-row={tr.id} style={{ ...rowGrid, borderBottom: carried ? 'none' : rowGrid.borderBottom }}>
                           <span onClick={() => setSel((s) => s.includes(tr.id) ? s.filter((i) => i !== tr.id) : [...s, tr.id])}
                             style={{ display: 'inline-block', width: 15, height: 15, borderRadius: 3, cursor: 'pointer', alignSelf: 'center', border: '1.5px solid ' + (sel.includes(tr.id) ? t.ink : t.hair), background: sel.includes(tr.id) ? t.ink : 'none' }} />
                           <span style={{ ...sans, fontSize: SZ.num, fontWeight: 600 }}>{tr.symbol}</span>
                           <span style={{ fontSize: SZ.meta, color: t.faint }}>initiated {dmy(tr.dateInitiated)}</span>
                           <span style={{ fontSize: SZ.meta, color: t.faint }}>closed {dmy(c)}</span>
                           <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>held {held}d</span>
-                          <span style={{ fontSize: SZ.meta, color: t.faint }}>{sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · ×{tr.lotSize}{tr.currency === 'USD' ? ` · $ @${tradeRate(tr) ?? '?'}` : ''} · share {realPct(tr)}%{carried ? ` · ${wk(piece.label)} piece` : ''}</span>
+                          {metaCell(`${sideOf(tr)} · ${tr.numberOfLots} lot${tr.numberOfLots > 1 ? 's' : ''} · ×${tr.lotSize}${tr.currency === 'USD' ? ` · $ @${tradeRate(tr) ?? '?'}` : ''} · share ${realPct(tr)}%${carried ? ` · ${wk(piece.label)} piece` : ''}`)}
+                          {jEdit(tr, w.weekKey)}
                           {money(piece.val)}
                         </div>
                         {carried && historyLine(tr, pieces, total, reconciled, { marginLeft: 230, padding: '0 0 12px', borderBottom: '1px solid ' + t.hair })}
+                        {jEditForm(tr, w.weekKey)}
                       </div>
                     );
                   })}
 
                   {w.openRows.length > 0 && section('Unrealized · open this week · change during the week', w.unrealized)}
                   {w.openRows.map(({ trade: tr, piece }) => (
-                    <div key={tr.id} data-open-row={tr.id} style={rowGrid}>
+                    <Fragment key={tr.id}>
+                    <div data-open-row={tr.id} data-journal-row={tr.id} style={rowGrid}>
                       <span />
                       <span style={{ ...sans, fontSize: SZ.num, fontWeight: 600 }}>{tr.symbol}</span>
                       <span style={{ fontSize: SZ.meta, color: t.faint }}>opened {dmy(tr.dateInitiated)}</span>
@@ -979,9 +1000,12 @@ export default function App() {
                         <span style={{ fontSize: SZ.meta, color: piece.stamped ? t.faint : t.loss }}>{piece.stamped ? `mark ${px(tr, piece.close)}` : 'unstamped'}</span>
                       )}
                       <span style={{ ...mono, fontSize: SZ.numSm, color: t.faint }}>{piece.role === 'initiation' ? 'entry' : 'from'}</span>
-                      <span style={{ fontSize: SZ.meta, color: t.faint }}>{px(tr, piece.open)} · {sideOf(tr)} · {tr.numberOfLots} lot{tr.numberOfLots > 1 ? 's' : ''} · ×{tr.lotSize}{tr.currency === 'USD' ? ` · $ @${tradeRate(tr) ?? '?'}` : ''} · share {realPct(tr)}%{isOpen(tr) ? '' : ' · closed later'}</span>
+                      {metaCell(`${px(tr, piece.open)} · ${sideOf(tr)} · ${tr.numberOfLots} lot${tr.numberOfLots > 1 ? 's' : ''} · ×${tr.lotSize}${tr.currency === 'USD' ? ` · $ @${tradeRate(tr) ?? '?'}` : ''} · share ${realPct(tr)}%${isOpen(tr) ? '' : ' · closed later'}`)}
+                      {jEdit(tr, w.weekKey)}
                       {piece.stamped ? money(piece.val) : <span style={{ ...sans, fontSize: SZ.label, fontWeight: 600, color: t.loss, textAlign: 'right', letterSpacing: '0.05em', textTransform: 'uppercase' }}>unstamped</span>}
                     </div>
+                    {jEditForm(tr, w.weekKey)}
+                    </Fragment>
                   ))}
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', gap: 28, marginTop: 14 }}>
@@ -1062,7 +1086,7 @@ export default function App() {
                                 <td style={td({ textAlign: 'right', fontWeight: 600, color: isNaN(p) ? t.loss : pl(p), borderBottom: carried ? 'none' : undefined })}>{isNaN(p) ? fxNa(SZ.label) : sgn(tr, p)}</td>
                                 <td style={{ ...td({ borderBottom: carried ? 'none' : undefined }), textAlign: 'right' }}>
                                   <span style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                                    <button onClick={() => editing ? setEdit(null) : act('edit', tr.id)} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{editing ? 'Close' : 'Edit'}</button>
+                                    <button onClick={() => { if (editing) setEdit(null); else { setEditFrom(null); act('edit', tr.id); } }} style={{ ...sans, fontSize: 13, color: t.faint, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{editing ? 'Close' : 'Edit'}</button>
                                     <button onClick={() => act('delete', tr.id)} style={{ ...sans, fontSize: 13, color: themeKey === 'white' ? t.loss : t.ink, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Delete</button>
                                   </span>
                                 </td>
