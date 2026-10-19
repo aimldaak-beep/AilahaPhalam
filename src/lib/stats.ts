@@ -60,5 +60,5 @@ export function weeklyStats(trades: Trade[]): StatsWeek[] {
 
 // Display order of instrument lines inside a week (the INSTR table's order).
 const INSTR_ORDER: Record<SpecInstrument, true> = {
-  DOW: true, NASDAQ: true, SNP: true, NIKKEI: true, GIFTNIFTY: true, 'NIFTY FUT': true, 'NSE FUT': true, 'COPPER-HG': true, 'COPPER-MHG': true,
+  DOW: true, NASDAQ: true, SNP: true, NIKKEI: true, GIFTNIFTY: true, 'NIFTY FUT': true, 'NSE FUT': true, 'COPPER-HG': true, 'COPPER-MHG': true, NG: true,
 };

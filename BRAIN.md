@@ -178,6 +178,7 @@ Spec name → auto-fill multiplier → default currency → v1 enum (selects the
 | **NSE FUT** | **(blank)** | INR | `NSE Futures` |
 | **COPPER-HG** (COMEX) | 25000 | USD ($) | `COPPER-HG` |
 | **COPPER-MHG** (COMEX) | 2500 | USD ($) | `COPPER-MHG` |
+| **NG** (NGCOMEX · Henry Hub Natural Gas) | 10000 | USD ($) | `NG-HH` |
 
 **The multiplier is a per-trade EDITABLE value** (v1 behavior). Selecting an instrument auto-fills it
 from the table; the user can override it per trade (validated > 0). **NSE FUT** is the stock-future
@@ -197,6 +198,18 @@ Current P&L — `nativePnl` reruns the engine at rate 1). COMEX auto-brokerage =
 override still applies, converted like any USD brokerage). Adding GOLD-GC/SILVER-SI later is a
 one-line `INSTR` entry (comex:true) + `Instrument` union value.
 
+**NGCOMEX group (2026-10-19) — NG, COMEX Henry Hub Natural Gas: a copper-style COMEX USD row in its OWN dropdown
+group (`group:'NGCOMEX'`, rendered as a separate `<optgroup>` after COMEX; the Add-trade dropdown now builds one optgroup
+per registry `group`).** Stored v1 enum `NG-HH` (the legacy `NG` union value and its 0.0003×turnover branch are untouched;
+no stored row uses either). Default multiplier 10000 (per-trade editable, standing rule), tick 0.001, **3-decimal** native
+prices (`INSTR.dp` — `px` reads `comexDp(t)`, default 4, so copper is unchanged), default brokerage **flat $5 per leg**
+(`calculateTurnoverAndBrokerage` branch for `NG-HH`; blank override = $5, manual per-leg override still wins), booked
+entry-leg in the open week / exit-leg in the close week and converted at the trade's per-week USD/INR exactly like every
+other USD leg. No NG-specific math: Live, Journal, Closed, Weekly Statistics (own `NG` line), full-edit and CSV all run
+the same engine functions copper uses. Proof: `scripts/ng-proof.ts` (in-memory; engine == straight formula; identical to
+COPPER-HG with manual $5/$5 legs). Browser smoke: `NG=1 … node scripts/smoke-editall.mjs` (scratch NG trades served by
+the mock only, both themes, 0 writes).
+
 ## 9. Brokerage — legacy auto-formulas (VERBATIM from `src/types.ts` `calculateTurnoverAndBrokerage`)
 ```ts
 const turnover = price * lots * lotSize;
@@ -209,7 +222,7 @@ if (instrument === 'Futures' || instrument === 'Option' || instrument === 'NG' |
 }
 ```
 So **GIFTNIFTY & NIFTY FUT → `0.0003 × turnover`** (0.03% of price×lots×multiplier); **DOW, NASDAQ,
-SNP, NIKKEI → `5 × lots`** ($5/lot flat, USD). The **entry leg** is charged in the **initiation
+SNP, NIKKEI → `5 × lots`** ($5/lot flat, USD); **COPPER-HG/MHG → 0** (manual per-leg); **NG (`NG-HH`) → `5`** (flat $5 per leg, 2026-10-19). The **entry leg** is charged in the **initiation
 week** (Long → buy side, Short → sell side); the **exit leg** at **close**. A per-leg override
 (`entryBrokerage`/`exitBrokerage` on the trade) replaces that leg's formula; **blank = auto formula**
 (legacy). USD legs are ×the week's rate. Proof/regression: `scripts/brokerage-proof.ts`,

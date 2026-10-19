@@ -1162,10 +1162,13 @@ export default function App() {
               <div><label style={lbl}>Instrument</label>
                 <select value={form.instr} onChange={(e) => { const k = e.target.value as SpecInstrument; const m = INSTR[k]; setForm({ ...form, instr: k, ccy: m.ccy, mult: m.mult == null ? '' : String(m.mult) }); }}
                   style={{ ...inp, ...sans, fontSize: SZ.num - 1, cursor: 'pointer', background: t.bg }}>
-                  {(Object.keys(INSTR) as SpecInstrument[]).filter((k) => !INSTR[k].comex).map((k) => <option key={k} value={k}>{k}</option>)}
-                  <optgroup label="COMEX">
-                    {(Object.keys(INSTR) as SpecInstrument[]).filter((k) => INSTR[k].comex).map((k) => <option key={k} value={k}>{k}</option>)}
-                  </optgroup>
+                  {(Object.keys(INSTR) as SpecInstrument[]).filter((k) => !INSTR[k].group).map((k) => <option key={k} value={k}>{k}</option>)}
+                  {/* one group per registry `group` (COMEX, NGCOMEX, …), in registry order */}
+                  {[...new Set((Object.keys(INSTR) as SpecInstrument[]).map((k) => INSTR[k].group).filter((g): g is string => !!g))].map((g) => (
+                    <optgroup key={g} label={g}>
+                      {(Object.keys(INSTR) as SpecInstrument[]).filter((k) => INSTR[k].group === g).map((k) => <option key={k} value={k}>{k}</option>)}
+                    </optgroup>
+                  ))}
                 </select></div>
               <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 10 }}>
                 <button onClick={() => setForm({ ...form, side: 'LONG' })} style={toggle(form.side === 'LONG')}>LONG · buy first</button>

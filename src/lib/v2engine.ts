@@ -35,14 +35,14 @@ export const hasLegacyRates = (t: Trade): boolean =>
 // Spec instrument -> { multiplier (lotSize), default currency, v1 enum for brokerage }.
 // The v1 enum decides the brokerage branch in calculateTurnoverAndBrokerage:
 //   'Futures'|'Gift Nifty'  -> 0.0003 * turnover ;  the four indices -> $5 * lots.
-export type SpecInstrument = 'DOW' | 'NASDAQ' | 'SNP' | 'NIKKEI' | 'GIFTNIFTY' | 'NIFTY FUT' | 'NSE FUT' | 'COPPER-HG' | 'COPPER-MHG';
+export type SpecInstrument = 'DOW' | 'NASDAQ' | 'SNP' | 'NIKKEI' | 'GIFTNIFTY' | 'NIFTY FUT' | 'NSE FUT' | 'COPPER-HG' | 'COPPER-MHG' | 'NG';
 // `mult` is only the AUTO-FILL default for the forms (null = blank, user must enter the
 // script's lot size). The engine NEVER reads this at compute time — it uses the trade's
 // stored per-trade `lotSize`. NSE FUT is a stock-future (RELIANCE 250, TCS 175, …).
 // COMEX entries (comex:true) are ordinary USD trades (own per-trade rate); comex only
 // governs native 4-decimal price formatting. A future COMEX row (GOLD-GC, SILVER-SI, …)
 // is a one-line addition here.
-export const INSTR: Record<SpecInstrument, { mult: number | null; ccy: 'USD' | 'INR'; v1: Instrument; comex?: boolean; tick?: number; group?: string }> = {
+export const INSTR: Record<SpecInstrument, { mult: number | null; ccy: 'USD' | 'INR'; v1: Instrument; comex?: boolean; tick?: number; dp?: number; group?: string }> = {
   DOW:        { mult: 5,   ccy: 'USD', v1: 'DOW' },
   NASDAQ:     { mult: 20,  ccy: 'USD', v1: 'Nasdaq' },
   SNP:        { mult: 50,  ccy: 'USD', v1: 'SnP' },
@@ -52,6 +52,10 @@ export const INSTR: Record<SpecInstrument, { mult: number | null; ccy: 'USD' | '
   'NSE FUT':  { mult: null, ccy: 'INR', v1: 'NSE Futures' },
   'COPPER-HG':  { mult: 25000, ccy: 'USD', v1: 'COPPER-HG',  comex: true, tick: 0.0005, group: 'COMEX' },
   'COPPER-MHG': { mult: 2500,  ccy: 'USD', v1: 'COPPER-MHG', comex: true, tick: 0.0005, group: 'COMEX' },
+  // NGCOMEX (2026-10-19): COMEX Henry Hub Natural Gas — a copper-style COMEX USD row in its own dropdown group.
+  // Only the label, default multiplier (10000), tick/decimals (0.001 / 3 dp) and the flat $5-per-leg brokerage
+  // schedule (types.ts) differ; every number flows through the identical engine path copper uses.
+  'NG':         { mult: 10000, ccy: 'USD', v1: 'NG-HH',      comex: true, tick: 0.001,  dp: 3, group: 'NGCOMEX' },
 };
 
 // COMEX helpers. A trade is COMEX iff its instrument's config is comex:true. COMEX trades
@@ -63,7 +67,9 @@ export const dispCcy = (t: Trade): 'USD' | 'INR' => (isComex(t) ? 'USD' : t.curr
 // Trade-scoped money: every P&L figure is ₹ (USD legs already converted by the engine).
 export const amt = (_t: Trade, v: number) => '₹' + Math.abs(v).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 export const sgn = (t: Trade, v: number) => (v >= 0 ? '+' : '−') + amt(t, v);
-export const px = (t: Trade, v: number) => (isComex(t) ? (+v).toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : nf(v));
+// COMEX native price decimals: the row's `dp` (NG = 3), default 4 (copper, unchanged).
+export const comexDp = (t: Trade): number => INSTR[specNameOf(t.instrument)]?.dp ?? 4;
+export const px = (t: Trade, v: number) => (isComex(t) ? (+v).toLocaleString('en-US', { minimumFractionDigits: comexDp(t), maximumFractionDigits: comexDp(t) }) : nf(v));
 // $ formatting for the small per-trade NATIVE detail line.
 export const usd = (v: number) => '$' + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
 export const signedUsd = (v: number) => (v >= 0 ? '+' : '−') + usd(v);

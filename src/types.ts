@@ -15,7 +15,8 @@ export type Instrument =
   | 'NSE Futures'
   | 'NSE Options'
   | 'COPPER-HG'
-  | 'COPPER-MHG';
+  | 'COPPER-MHG'
+  | 'NG-HH';   // COMEX Henry Hub Natural Gas (NGCOMEX group, 2026-10-19) — distinct from the legacy 'NG' value above
 
 export type TradeDirection = 'Long' | 'Short';
 
@@ -172,6 +173,10 @@ export function calculateTurnoverAndBrokerage(
   if (instrument === 'COPPER-HG' || instrument === 'COPPER-MHG') {
     // COMEX copper: no auto brokerage (P&L = (exit-entry) × lot_size × lots). Manual override still applies.
     brokerage = 0;
+  } else if (instrument === 'NG-HH') {
+    // COMEX Henry Hub NG (NGCOMEX, 2026-10-19): flat $5 per leg (entry leg in the open week, exit leg in the
+    // close week — the same per-leg booking and USD→₹ conversion as every other USD leg). Manual override still applies.
+    brokerage = 5;
   } else if (instrument === 'Futures' || instrument === 'Option' || instrument === 'NG' || instrument === 'Gift Nifty' || instrument === 'NSE Futures' || instrument === 'NSE Options') {
     brokerage = 0.0003 * turnover;
   } else {
